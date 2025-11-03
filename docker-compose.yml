@@ -9,14 +9,5 @@ services:
       - ./:/app/
     command: cargo watch -x "run -- server --target-address-display-program 192.168.2.248 -v"
 
-  binary_parser:
-    build:
-      context: ./docker/net-binary-parser
-      dockerfile: Dockerfile
-    container_name: net-binary-parser
-    ports:
-      - "5000:8080" # exposes the HTTP API to localhost
-    restart: unless-stopped
-
 volumes:
   rust_build_cache:

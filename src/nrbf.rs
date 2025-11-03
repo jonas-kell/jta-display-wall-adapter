@@ -1,19 +1,37 @@
-use reqwest::Client;
+use std::error::Error;
 
-/// Send a single TCP message to the Dockerized NRBF service
-pub async fn decode_single_nrbf(packet: &[u8], service_url: &str) -> String {
-    let client = Client::new();
-    match client.post(service_url).body(packet.to_vec()).send().await {
-        Ok(resp) if resp.status().is_success() => resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "<empty response>".into()),
-        Ok(resp) => {
-            format!(
-                "Deserialization failed: {}",
-                resp.text().await.unwrap_or_default()
-            )
-        }
-        Err(e) => format!("Error sending to NRBF service: {}", e),
+use nrbf::RemotingMessage;
+
+#[derive(Debug)]
+pub enum ParsedCommunication {
+    Unknown,
+}
+
+/// Decode the message custom action
+pub fn decode_single_nrbf(packet: &[u8]) -> Result<ParsedCommunication, Box<dyn Error>> {
+    let _ = packet;
+
+    log_bytes(packet);
+
+    match RemotingMessage::parse(packet) {
+        Ok(_something) => Ok(ParsedCommunication::Unknown),
+        Err(err) => Err(err.to_string().into()),
     }
+}
+
+fn log_bytes(buf: &[u8]) {
+    let decoded: String = String::from_utf8_lossy(buf).to_string();
+
+    let hex_repr = buf
+        .iter()
+        .map(|b| format!("{:02X}", b))
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    trace!(
+        "({} bytes)\nText: \n{}\nHex: \n{}",
+        buf.len(),
+        decoded.chars().collect::<String>(),
+        hex_repr.chars().collect::<String>(),
+    );
 }
