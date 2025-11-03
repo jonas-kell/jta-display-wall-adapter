@@ -132,6 +132,8 @@ async fn transfer_bidirectional(
                 Ok(n) => n,
                 Err(e) => return Err(e),
             };
+            log_dibo_communication_pretty("Inbound Communication", &buf, n);
+
             wo.write_all(&buf[..n]).await?;
         }
         Ok::<_, io::Error>(())
@@ -149,6 +151,8 @@ async fn transfer_bidirectional(
                 Ok(n) => n,
                 Err(e) => return Err(e),
             };
+            log_dibo_communication_pretty("Return Communication", &buf, n);
+
             wi.write_all(&buf[..n]).await?;
         }
         Ok::<_, io::Error>(())
@@ -160,4 +164,29 @@ async fn transfer_bidirectional(
     }
 
     Ok(())
+}
+
+pub fn log_dibo_communication_pretty(label: &str, buf: &[u8], n: usize) {
+    if n < 2 {
+        trace!("{} ({} bytes): <too short>", label, n);
+        return;
+    }
+
+    let start = 16;
+
+    let decoded: String = String::from_utf8_lossy(&buf[start..n]).to_string();
+
+    let hex_repr = buf[..n]
+        .iter()
+        .map(|b| format!("{:02X}", b))
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    trace!(
+        "{} ({} bytes)\nText: {}\nHex : {}",
+        label,
+        n,
+        decoded,
+        hex_repr
+    );
 }

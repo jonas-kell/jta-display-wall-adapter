@@ -10,7 +10,7 @@ mod args;
 mod client;
 mod server;
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "debug,actix=off,reqwest=off,hyper=off,mio=off");
 
