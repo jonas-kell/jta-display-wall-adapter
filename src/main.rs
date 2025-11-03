@@ -8,6 +8,7 @@ use server::run_server;
 
 mod args;
 mod client;
+mod nrbf;
 mod server;
 
 #[tokio::main]

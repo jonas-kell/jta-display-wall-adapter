@@ -1,4 +1,5 @@
 use crate::args::Args;
+use crate::nrbf::decode_single_nrbf;
 use std::io;
 use std::net::SocketAddr;
 use std::sync::{
@@ -132,7 +133,7 @@ async fn transfer_bidirectional(
                 Ok(n) => n,
                 Err(e) => return Err(e),
             };
-            log_dibo_communication_pretty("Inbound Communication", &buf, n);
+            log_dibo_communication_pretty("Inbound Communication", &buf, n).await;
 
             wo.write_all(&buf[..n]).await?;
         }
@@ -151,7 +152,7 @@ async fn transfer_bidirectional(
                 Ok(n) => n,
                 Err(e) => return Err(e),
             };
-            log_dibo_communication_pretty("Return Communication", &buf, n);
+            log_dibo_communication_pretty("Return Communication", &buf, n).await;
 
             wi.write_all(&buf[..n]).await?;
         }
@@ -166,15 +167,13 @@ async fn transfer_bidirectional(
     Ok(())
 }
 
-pub fn log_dibo_communication_pretty(label: &str, buf: &[u8], n: usize) {
+pub async fn log_dibo_communication_pretty(label: &str, buf: &[u8], n: usize) {
     if n < 2 {
         trace!("{} ({} bytes): <too short>", label, n);
         return;
     }
 
-    let start = 16;
-
-    let decoded: String = String::from_utf8_lossy(&buf[start..n]).to_string();
+    let decoded: String = String::from_utf8_lossy(&buf[..n]).to_string();
 
     let hex_repr = buf[..n]
         .iter()
@@ -182,11 +181,14 @@ pub fn log_dibo_communication_pretty(label: &str, buf: &[u8], n: usize) {
         .collect::<Vec<_>>()
         .join(" ");
 
+    let json = decode_single_nrbf(&buf[..n], "http://localhost:5000/deserialize").await;
+    println!("Decoded:\n{}", json);
+
     trace!(
         "{} ({} bytes)\nText: {}\nHex : {}",
         label,
         n,
-        decoded,
-        hex_repr
+        decoded.chars().take(400).collect::<String>(),
+        hex_repr.chars().take(400).collect::<String>(),
     );
 }
