@@ -1,5 +1,5 @@
 use crate::args::Args;
-use crate::nrbf::decode_single_nrbf;
+use crate::nrbf::{decode_single_nrbf, image_response, pre_response};
 use std::io;
 use std::net::SocketAddr;
 use std::sync::{
@@ -133,10 +133,10 @@ async fn transfer_bidirectional(
                 Ok(n) => n,
                 Err(e) => return Err(e),
             };
-            match decode_single_nrbf(&buf[..n]) {
-                Err(err) => trace!("Error when Decoding Inbound Communication: {}", err),
-                Ok(parsed) => trace!("Decoded Inbound Communication: {:?}", parsed),
-            }
+            // match decode_single_nrbf(&buf[..n]) {
+            //     Err(err) => trace!("Error when Decoding Inbound Communication: {}", err),
+            //     Ok(parsed) => trace!("Decoded Inbound Communication: {:?}", parsed),
+            // }
 
             wo.write_all(&buf[..n]).await?;
         }
@@ -160,7 +160,13 @@ async fn transfer_bidirectional(
                 Ok(parsed) => trace!("Decoded Return Communication: {:?}", parsed),
             }
 
-            wi.write_all(&buf[..n]).await?;
+            let pre_vec = pre_response();
+            let vec = image_response();
+
+            // wi.write_all(&buf[..n]).await?;
+
+            wi.write_all(&pre_vec).await?;
+            wi.write_all(&vec).await?;
         }
         Ok::<_, io::Error>(())
     };
