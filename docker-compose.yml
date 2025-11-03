@@ -1,0 +1,13 @@
+services:
+  server:
+    network_mode: "host"
+    build:
+      context: ./
+      dockerfile: ./docker/dev/Dockerfile
+    volumes:
+      - rust_build_cache:/usr/local/cargo/registry/
+      - ./:/app/
+    command: cargo watch -x "run -- server --target-address-timing-program 192.168.2.248 --target-address-display-program 192.168.2.248 -v"
+
+volumes:
+  rust_build_cache:

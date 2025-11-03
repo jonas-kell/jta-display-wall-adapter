@@ -1,0 +1,19 @@
+[package]
+name = "jta-display-wall-adapter"
+version = "0.0.0"
+description = "Software used for running custom display walls"
+authors = ["jonas-kell"]
+repository = "https://github.com/jonas-kell/jta-display-wall-adapter"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4.2", features = ["derive"] }
+actix-web = { version = "4.9" }
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+async-channel = "2.3.1"
+
+env_logger = "0.10"
+log = "0.4"
