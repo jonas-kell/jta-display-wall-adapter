@@ -171,6 +171,7 @@ async fn tcp_listener_server(
 
                 if args.passthrough_to_display_program {
                     tokio::spawn(async move {
+                        // TODO this could be made to timeout (?)
                         match TcpStream::connect(passthrough_target_addr).await {
                             Ok(outbound) => {
                                 debug!("Connected to target {}", passthrough_target_addr);
