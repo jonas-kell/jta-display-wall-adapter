@@ -21,3 +21,8 @@ white
 
 -> 0F 03 00 00 00 5E 00 00 00 02 is extranous
 -> 0B 01 01 02 02 03 03 00 00 is extranous
+
+
+SIZE:
+    5e = 94 for 1x10
+    86 = 134 for 2x10

@@ -242,9 +242,13 @@ pub fn image_response() -> Vec<u8> {
     // Convert to little-endian byte array ([u8; 8])
     let modifying: [u8; 8] = count_100ns.to_le_bytes();
 
-    let image_data = png_to_bmp_bytes("test.bmp");
+    let image_data = png_to_bmp_bytes("imagebig.png");
 
-    let data_before_image: [u8; 10] = [0x0F, 0x03, 0x00, 0x00, 0x00, 0x5E, 0x00, 0x00, 0x00, 0x02];
+    let data_before_imagea: [u8; 5] = [0x0F, 0x03, 0x00, 0x00, 0x00];
+
+    let image_data_size: [u8; 4] = (image_data.len() as u32).to_le_bytes();
+
+    let data_before_imageb: [u8; 1] = [0x02];
 
     let data_after_image: [u8; 9] = [0x0B, 0x01, 0x01, 0x02, 0x02, 0x03, 0x03, 0x00, 0x00];
 
@@ -252,7 +256,9 @@ pub fn image_response() -> Vec<u8> {
         HEADER_BYTES_TEMPLATE.as_slice(),
         start.as_slice(),
         modifying.as_slice(),
-        data_before_image.as_slice(),
+        data_before_imagea.as_slice(),
+        image_data_size.as_slice(),
+        data_before_imageb.as_slice(),
         image_data.as_slice(),
         data_after_image.as_slice(),
     ]
