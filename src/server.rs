@@ -163,9 +163,8 @@ async fn transfer_bidirectional(
             let pre_vec = pre_response();
             let vec = image_response();
 
-            // wi.write_all(&buf[..n]).await?;
-
             wi.write_all(&pre_vec).await?;
+            // wi.write_all(&buf[..n]).await?;
             wi.write_all(&vec).await?;
         }
         Ok::<_, io::Error>(())

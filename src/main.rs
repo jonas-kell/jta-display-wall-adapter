@@ -7,6 +7,7 @@ use client::run_client;
 use server::run_server;
 
 mod args;
+mod bitmap;
 mod client;
 mod nrbf;
 mod server;
