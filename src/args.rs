@@ -6,15 +6,27 @@ pub struct Args {
     /// Mode of operation: 'server' or 'client'
     #[arg(value_enum)]
     pub mode: Mode,
-    /// Address of where the display program lives (like "127.0.0.1")
-    #[arg(long)]
-    pub target_address_display_program: String,
     /// Port where the application should listen to the display program
     #[arg(long, default_value_t = String::from("18690"))]
-    pub listen_port_display_program: String,
+    pub listen_port: String,
     /// Verbosity (-v for verbose mode)
     #[arg(short, long, action = clap::ArgAction::SetTrue)]
     pub verbose: bool,
+    /// Passthrough data to an external display program
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub passthrough_to_display_program: bool,
+    /// Passthrough Port if external display program is used
+    #[arg(long, default_value_t = String::from("18690"))]
+    pub passthrough_port_display_program: String,
+    /// Address of where the display program lives (like "127.0.0.1")
+    #[arg(long, default_value_t = String::from("127.0.0.1"))]
+    pub passthrough_address_display_program: String,
+    /// If the data that gets passed through should get hexdump-displayed
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub hexdump_passthrough_communication: bool,
+    /// Wait for connection until checking for shutdown in ms
+    #[arg(long, default_value_t = 1000)]
+    pub wait_ms_before_testing_for_shutdown: u64,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]

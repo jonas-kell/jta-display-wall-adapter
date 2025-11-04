@@ -7,7 +7,7 @@ services:
     volumes:
       - rust_build_cache:/usr/local/cargo/registry/
       - ./:/app/
-    command: cargo watch -x "run -- server --target-address-display-program 192.168.2.248 -v"
+    command: cargo watch -x "run -- server --passthrough-address-display-program 192.168.2.248 -v"
 
 volumes:
   rust_build_cache:

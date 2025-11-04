@@ -1,11 +1,10 @@
-use std::{error::Error, time::SystemTime};
+use std::time::SystemTime;
 
-use crate::bitmap::png_to_bmp_bytes;
-
-#[derive(Debug)]
-pub enum ParsedCommunication {
-    Unknown,
-}
+use crate::{
+    args::Args,
+    bitmap::png_to_bmp_bytes,
+    instructions::{InstructionFromTimingClient, InstructionToTimingClient},
+};
 
 const NUMBER_OF_HEADER_BYTES: usize = 17;
 // https://winprotocoldocs-bhdugrdyduf5h2e4.b02.azurefd.net/MS-NRBF/%5bMS-NRBF%5d.pdf -> page 37
@@ -16,7 +15,10 @@ const NUMBER_OF_HEADER_BYTES: usize = 17;
 // 4 Bytes MinorVersion -> value must be 0
 
 /// Decode the message custom action
-pub fn decode_single_nrbf(packet: &[u8]) -> Result<ParsedCommunication, Box<dyn Error>> {
+pub fn decode_single_nrbf(
+    args: &Args,
+    packet: &[u8],
+) -> Result<InstructionFromTimingClient, String> {
     let header_bytes = &packet[0..NUMBER_OF_HEADER_BYTES];
     let rest_bytes = &packet[NUMBER_OF_HEADER_BYTES..];
 
@@ -36,12 +38,17 @@ pub fn decode_single_nrbf(packet: &[u8]) -> Result<ParsedCommunication, Box<dyn 
         return Err("Minor Version not 0".into());
     }
 
-    hex_log_bytes(header_bytes);
     trace!("Header: root_id:{} header_id:{}", root_id, header_id);
+    if args.hexdump_passthrough_communication {
+        hex_log_bytes(header_bytes);
+    }
 
-    log_bytes(rest_bytes);
+    if args.hexdump_passthrough_communication {
+        debug!("No command could be parsed from the following:");
+        text_log_bytes(rest_bytes);
+    }
 
-    Ok(ParsedCommunication::Unknown)
+    Err("No matching command could be parsed".into())
 }
 
 fn i32_from_bytes(bytes: &[u8]) -> i32 {
@@ -62,7 +69,7 @@ fn hex_log_bytes(buf: &[u8]) {
     );
 }
 
-fn log_bytes(buf: &[u8]) {
+fn text_log_bytes(buf: &[u8]) {
     let decoded: String = String::from_utf8_lossy(buf).to_string();
 
     let hex_repr = buf
@@ -84,7 +91,7 @@ const HEADER_BYTES_TEMPLATE: [u8; 17] = [
     0x00,
 ];
 
-pub fn pre_response() -> Vec<u8> {
+fn pre_response() -> Vec<u8> {
     let content: [u8; 1596] = [
         0x0C, 0x02, 0x00, 0x00, 0x00, 0x53, 0x44, 0x69, 0x73, 0x70, 0x6C, 0x61, 0x79, 0x42, 0x6F,
         0x61, 0x72, 0x64, 0x2E, 0x43, 0x6F, 0x6D, 0x6D, 0x75, 0x6E, 0x69, 0x63, 0x61, 0x74, 0x69,
@@ -200,7 +207,7 @@ pub fn pre_response() -> Vec<u8> {
     combined
 }
 
-pub fn image_response() -> Vec<u8> {
+fn image_response() -> Vec<u8> {
     let start: [u8; 250] = [
         0x0C, 0x02, 0x00, 0x00, 0x00, 0x53, 0x44, 0x69, 0x73, 0x70, 0x6C, 0x61, 0x79, 0x42, 0x6F,
         0x61, 0x72, 0x64, 0x2E, 0x43, 0x6F, 0x6D, 0x6D, 0x75, 0x6E, 0x69, 0x63, 0x61, 0x74, 0x69,
@@ -265,4 +272,11 @@ pub fn image_response() -> Vec<u8> {
     .concat();
 
     combined
+}
+
+pub fn generate_response_bytes(instruction: InstructionToTimingClient) -> Vec<u8> {
+    match instruction {
+        InstructionToTimingClient::SendBeforeFrameSetupInstruction => pre_response(),
+        InstructionToTimingClient::SendFrame => image_response(),
+    }
 }
