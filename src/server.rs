@@ -2,7 +2,7 @@ use crate::args::Args;
 use crate::instructions::{InstructionCommunicationChannel, InstructionToTimingClient};
 use crate::nrbf::{decode_single_nrbf, generate_response_bytes};
 use async_channel::RecvError;
-use std::io;
+use std::io::{self, Error, ErrorKind};
 use std::net::SocketAddr;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
@@ -12,7 +12,7 @@ use std::time::Duration;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpListener, TcpStream};
-use tokio::time;
+use tokio::time::{self, sleep};
 
 /// Start server
 pub async fn run_server(args: &Args) -> () {
@@ -40,35 +40,105 @@ pub async fn run_server(args: &Args) -> () {
 
     let comm_channel = InstructionCommunicationChannel::new(&args);
 
-    // Define tcp listeners
-    let tcp_listener_shutdown_marker = Arc::new(AtomicBool::new(false));
+    let shutdown_marker = Arc::new(AtomicBool::new(false));
 
     let tcp_listener_server_instance = tcp_listener_server(
         args.clone(),
         comm_channel.clone(),
-        Arc::clone(&tcp_listener_shutdown_marker),
+        Arc::clone(&shutdown_marker),
         own_addr_timing,
         passthrough_address_display_program,
     );
 
+    let client_communicator_instance = client_communicator(
+        args.clone(),
+        comm_channel.clone(),
+        Arc::clone(&shutdown_marker),
+    );
+
     // spawn the async runtimes in parallel
+    let client_communicator_task = tokio::spawn(client_communicator_instance);
     let tcp_listener_server_task = tokio::spawn(tcp_listener_server_instance);
     let shutdown_task = tokio::spawn(async move {
         // listen for ctrl-c
-        tokio::signal::ctrl_c().await.unwrap();
+        tokio::signal::ctrl_c().await?;
 
-        tcp_listener_shutdown_marker.store(true, Ordering::SeqCst);
+        shutdown_marker.store(true, Ordering::SeqCst);
+
+        Ok::<_, Error>(())
     });
 
     // Wait for all tasks to complete
-    // https://github.com/actix/actix-web/issues/2739#issuecomment-1107638674
-    match tokio::try_join!(tcp_listener_server_task, shutdown_task) {
+    match tokio::try_join!(
+        tcp_listener_server_task,
+        shutdown_task,
+        client_communicator_task
+    ) {
         Err(_) => error!("Error in at least one listening task"),
         Ok(_) => info!("All listeners closed successfully"),
     };
 }
 
-pub async fn tcp_listener_server(
+async fn client_communicator(
+    args: Args,
+    comm_channel: InstructionCommunicationChannel,
+    shutdown_marker: Arc<AtomicBool>,
+) -> io::Result<()> {
+    let _ = args;
+
+    let comm_channel_a = comm_channel.clone();
+    let print_commands_task = tokio::spawn(async move {
+        loop {
+            if shutdown_marker.load(Ordering::SeqCst) {
+                debug!("Shutdown requested, stopping client communicator");
+                break;
+            }
+
+            match comm_channel_a.wait_for_incomming_command().await {
+                Ok(command_res) => match command_res {
+                    Ok(comm) => {
+                        info!("Command received!!: {:?}", comm);
+                    }
+                    Err(e) => return Err(Error::new(ErrorKind::Other, e.to_string())),
+                },
+                Err(_) => {
+                    trace!("No incoming command to report");
+                    continue;
+                }
+            };
+        }
+        Ok::<_, Error>(())
+    });
+
+    let send_test_commands_task = tokio::spawn(async move {
+        sleep(Duration::from_secs(2)).await;
+        debug!("Sending Frame...");
+        match comm_channel
+            .send_out_command(InstructionToTimingClient::SendBeforeFrameSetupInstruction)
+            .await
+        {
+            Ok(()) => trace!("Command queued"),
+            Err(e) => return Err(Error::new(ErrorKind::Other, e.to_string())),
+        };
+        match comm_channel
+            .send_out_command(InstructionToTimingClient::SendFrame)
+            .await
+        {
+            Ok(()) => trace!("Command queued"),
+            Err(e) => return Err(Error::new(ErrorKind::Other, e.to_string())),
+        };
+
+        Ok::<_, Error>(())
+    });
+
+    let (a, b) = tokio::try_join!(print_commands_task, send_test_commands_task)?;
+    a?;
+    b?;
+
+    Ok(())
+}
+
+async fn tcp_listener_server(
     args: Args,
     comm_channel: InstructionCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
@@ -151,7 +221,7 @@ pub async fn tcp_listener_server(
             Ok(Err(e)) => error!("Accept error: {}", e),
             Err(_) => {
                 // expected on timeout, just loop
-                trace!("No incoming TCP connection within timeout interval");
+                trace!("No new TCP connection within timeout interval");
             }
         }
     }
@@ -182,7 +252,7 @@ async fn transfer_optional_bidirectional(
         let mut buf = [0u8; 65536];
         loop {
             if shutdown_marker.load(Ordering::SeqCst) {
-                debug!("Shutdown marker set, breaking client→server transfer");
+                debug!("Shutdown marker set, breaking client -> server transfer");
                 break;
             }
 
@@ -227,7 +297,7 @@ async fn transfer_optional_bidirectional(
         let mut buf = [0u8; 65536];
         loop {
             if shutdown_marker.load(Ordering::SeqCst) {
-                debug!("Shutdown marker set, breaking server→client transfer");
+                debug!("Shutdown marker set, breaking server -> client transfer");
                 break;
             }
 
@@ -272,13 +342,16 @@ async fn transfer_optional_bidirectional(
             tokio::select! {
                 r = tcp_inbound_source => {
                     match r {
-                        Ok(Some(n)) => wi.write_all(&buf[..n])
+                        Ok(Some(n)) => {
+                            trace!("Proxying TCP back to Timing Program");
+                            wi.write_all(&buf[..n])
                                             .await
-                                            .map_err(|e| e.to_string())?,
+                                            .map_err(|e| e.to_string())?
+                        },
                         Ok(None) => continue,
                         Err(e) => match e {
                             TimeoutOrIoError::Timeout => {
-                                trace!("No incoming TCP or Command Connection during timeout interval");
+                                trace!("No Outgoing TCP or Command Connection during timeout interval");
                                 continue;
                             },
                             TimeoutOrIoError::IoError(e) => {
@@ -293,6 +366,7 @@ async fn transfer_optional_bidirectional(
                 r = comm_channel_inbound_source => {
                     match r {
                         Ok(inst) => {
+                            trace!("Sending Bytes for custom command: {:?}", inst);
                             let bytes_to_send = generate_response_bytes(inst);
                             wi.write_all(&bytes_to_send)
                                             .await
@@ -300,7 +374,7 @@ async fn transfer_optional_bidirectional(
                         }
                         Err(e) => match e {
                             TimeoutOrIoError::Timeout => {
-                                trace!("No incoming TCP or Command Connection during timeout interval");
+                                trace!("No Outgoing TCP or Command Connection during timeout interval");
                                 continue;
                             },
                             TimeoutOrIoError::IoError(e) => {
