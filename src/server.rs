@@ -1,6 +1,6 @@
 use crate::args::Args;
 use crate::instructions::{InstructionCommunicationChannel, InstructionToTimingClient};
-use crate::nrbf::{decode_single_nrbf, generate_response_bytes, hex_log_bytes};
+use crate::nrbf::{generate_response_bytes, hex_log_bytes, BufferedParser};
 use async_channel::RecvError;
 use std::io::{self, Error, ErrorKind};
 use std::net::SocketAddr;
@@ -250,6 +250,7 @@ async fn transfer_optional_bidirectional(
     };
 
     let client_to_server = async {
+        let mut parser = BufferedParser::new(args.clone());
         let mut buf = [0u8; 65536];
         loop {
             if shutdown_marker.load(Ordering::SeqCst) {
@@ -275,15 +276,18 @@ async fn transfer_optional_bidirectional(
             };
 
             // Decoding takes care of logging if requested, as there the message is split up to provide more info!!
-            match decode_single_nrbf(&args, &buf[..n]) {
-                Err(err) => error!("Error when Decoding Inbound Communication: {}", err),
-                Ok(parsed) => {
-                    debug!("Decoded Inbound Communication: {:?}", parsed);
-                    match comm_channel.take_in_command(parsed).await {
-                        Ok(()) => (),
-                        Err(e) => return Err(e.to_string()),
+            match parser.feed_bytes(&buf[..n]) {
+                Some(res) => match res {
+                    Err(err) => error!("Error when Decoding Inbound Communication: {}", err),
+                    Ok(parsed) => {
+                        debug!("Decoded Inbound Communication: {:?}", parsed);
+                        match comm_channel.take_in_command(parsed).await {
+                            Ok(()) => (),
+                            Err(e) => return Err(e.to_string()),
+                        }
                     }
-                }
+                },
+                None => trace!("Received packet, but does not seeem to be end of communication"),
             };
 
             // if there is something we need to passthrough (otherwise it would be None)

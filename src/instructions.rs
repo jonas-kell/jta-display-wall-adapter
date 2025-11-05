@@ -11,6 +11,7 @@ pub enum InstructionFromTimingClient {
     Freetext(String),
     Advertisements,
     Clear,
+    StartList,
 }
 
 #[derive(Debug)]
