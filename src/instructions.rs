@@ -7,8 +7,9 @@ use crate::args::Args;
 
 #[derive(Debug)]
 pub enum InstructionFromTimingClient {
-    ClientInfo(),
+    ClientInfo,
     Freetext(String),
+    Clear,
 }
 
 #[derive(Debug)]
