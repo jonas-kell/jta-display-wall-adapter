@@ -12,6 +12,11 @@ pub enum InstructionFromTimingClient {
     Advertisements,
     Clear,
     StartList,
+    Timing,
+    Meta,
+    TimeText,
+    Results,
+    ResultsUpdate,
 }
 
 #[derive(Debug)]
