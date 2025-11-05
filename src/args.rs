@@ -21,6 +21,9 @@ pub struct Args {
     /// Address of where the display program lives (like "127.0.0.1")
     #[arg(long, default_value_t = String::from("127.0.0.1"))]
     pub passthrough_address_display_program: String,
+    /// If the data that is incoming through should get hexdump-displayed
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub hexdump_incoming_communication: bool,
     /// If the data that gets passed through should get hexdump-displayed
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub hexdump_passthrough_communication: bool,

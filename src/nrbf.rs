@@ -1,5 +1,3 @@
-use std::time::SystemTime;
-
 use crate::{
     args::Args,
     bitmap::png_to_bmp_bytes,
@@ -39,11 +37,11 @@ pub fn decode_single_nrbf(
     }
 
     trace!("Header: root_id:{} header_id:{}", root_id, header_id);
-    if args.hexdump_passthrough_communication {
+    if args.hexdump_incoming_communication {
         hex_log_bytes(header_bytes);
     }
 
-    if args.hexdump_passthrough_communication {
+    if args.hexdump_incoming_communication {
         debug!("No command could be parsed from the following:");
         text_log_bytes(rest_bytes);
     }
@@ -55,7 +53,7 @@ fn i32_from_bytes(bytes: &[u8]) -> i32 {
     return i32::from_le_bytes(bytes.try_into().unwrap_or([0x00, 0x00, 0x00, 0x00]));
 }
 
-fn hex_log_bytes(buf: &[u8]) {
+pub fn hex_log_bytes(buf: &[u8]) {
     let hex_repr = buf
         .iter()
         .map(|b| format!("{:02X}", b))
@@ -229,25 +227,7 @@ fn image_response() -> Vec<u8> {
     ];
 
     // I assume date param. Must increment to update?
-    // let modifying: [u8; 8] = [0x93, 0x82, 0xF6, 0x25, 0x38, 0x1B, 0xDE, 0x88];
-
-    // Does not totally fit. But is smoething along this line:
-    // https://winprotocoldocs-bhdugrdyduf5h2e4.b02.azurefd.net/MS-DTYP/%5bMS-DTYP%5d.pdf
-    //     The FILETIME structure is a 64-bit value that represents the number of 100-nanosecond intervals that
-    // have elapsed since January 1, 1601, Coordinated Universal Time (UTC).
-    // typedef struct _FILETIME {
-    //  DWORD dwLowDateTime;
-    //  DWORD dwHighDateTime;
-    // } FILETIME,
-    // *PFILETIME,
-    // *LPFILETIME;
-
-    let duration_since_epoch = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .expect("Time went backwards");
-    let count_100ns = (duration_since_epoch.as_nanos() / 100) as u64;
-    // Convert to little-endian byte array ([u8; 8])
-    let modifying: [u8; 8] = count_100ns.to_le_bytes();
+    let modifying = generate_timestamp_bytes();
 
     let image_data = png_to_bmp_bytes("imagebig.png");
 
@@ -279,4 +259,48 @@ pub fn generate_response_bytes(instruction: InstructionToTimingClient) -> Vec<u8
         InstructionToTimingClient::SendBeforeFrameSetupInstruction => pre_response(),
         InstructionToTimingClient::SendFrame => image_response(),
     }
+}
+
+// 2025-11-05T00:02:58Z = D4 84 B5 0F 07 1C DE 88 = 9862351050641867988
+// 2025-11-04T23:59:38Z = 47 F4 1B 98 06 1C DE 88 = 9862351048635315271 -> diff=2006552717 =^= 200s
+
+// https://winprotocoldocs-bhdugrdyduf5h2e4.b02.azurefd.net/MS-DTYP/%5bMS-DTYP%5d.pdf
+//     The FILETIME structure is a 64-bit value that represents the number of 100-nanosecond intervals that
+// have elapsed since January 1, 1601, Coordinated Universal Time (UTC).
+// typedef struct _FILETIME {
+//  DWORD dwLowDateTime;
+//  DWORD dwHighDateTime;
+// } FILETIME,
+// *PFILETIME,
+// *LPFILETIME;
+
+// def counts 100 ns intervals.
+
+// then used one call with more precision to get most likely combination
+// -> 2025-11-05 01:06:37.405113302 <-> CD CA 16 F2 0F 1C DE 88
+
+fn generate_timestamp_bytes() -> [u8; 8] {
+    let timestamp_number = u64::from_le_bytes(
+        [0xCD, 0xCA, 0x16, 0xF2, 0x0F, 0x1C, 0xDE, 0x88]
+            .try_into()
+            .unwrap(),
+    );
+
+    let difference_to_timestamp = chrono::Utc::now().signed_duration_since(
+        chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+            chrono::NaiveDateTime::parse_from_str(
+                "2025-11-05 01:06:37.405113302",
+                "%Y-%m-%d %H:%M:%S.%f",
+            )
+            .unwrap(),
+            chrono::Utc,
+        ),
+    );
+
+    let count_100ns = (difference_to_timestamp.num_nanoseconds().unwrap() / 100) as u64;
+
+    // Convert to little-endian byte array ([u8; 8])
+    let modifying: [u8; 8] = (timestamp_number + count_100ns).to_le_bytes();
+
+    modifying
 }

@@ -1,6 +1,6 @@
 use crate::args::Args;
 use crate::instructions::{InstructionCommunicationChannel, InstructionToTimingClient};
-use crate::nrbf::{decode_single_nrbf, generate_response_bytes};
+use crate::nrbf::{decode_single_nrbf, generate_response_bytes, hex_log_bytes};
 use async_channel::RecvError;
 use std::io::{self, Error, ErrorKind};
 use std::net::SocketAddr;
@@ -269,7 +269,7 @@ async fn transfer_optional_bidirectional(
                     Err(e) => return Err(e.to_string()),
                 },
                 Err(_) => {
-                    trace!("No incoming TCP connection within timeout interval");
+                    trace!("No incoming TCP message within timeout interval");
                     continue;
                 }
             };
@@ -345,6 +345,9 @@ async fn transfer_optional_bidirectional(
                     match r {
                         Ok(Some(n)) => {
                             trace!("Proxying TCP back to Timing Program");
+                            if args.hexdump_passthrough_communication {
+                                hex_log_bytes(&buf[..n]);
+                            }
                             wi.write_all(&buf[..n])
                                             .await
                                             .map_err(|e| e.to_string())?
