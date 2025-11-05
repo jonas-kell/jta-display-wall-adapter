@@ -1,3 +1,11 @@
+use nom::bytes::complete::{tag, take, take_until};
+// use nom::combinator::peek as nom_peek;
+use nom::error::{Error as NomError, ErrorKind as NomErrorKind};
+use nom::sequence::terminated;
+use nom::Err::{Error as NomErr, Failure as NomFailure};
+use nom::Parser;
+use nom::{branch::alt, IResult};
+
 use crate::{
     args::Args,
     bitmap::png_to_bmp_bytes,
@@ -41,6 +49,11 @@ pub fn decode_single_nrbf(
         hex_log_bytes(header_bytes);
     }
 
+    match parse_any_known_command(rest_bytes) {
+        Err(e) => trace!("Nom parser Error: {}", e.to_string()),
+        Ok((_, command)) => return Ok(command),
+    }
+
     if args.hexdump_incoming_communication {
         debug!("No command could be parsed from the following:");
         text_log_bytes(rest_bytes);
@@ -53,34 +66,120 @@ fn i32_from_bytes(bytes: &[u8]) -> i32 {
     return i32::from_le_bytes(bytes.try_into().unwrap_or([0x00, 0x00, 0x00, 0x00]));
 }
 
-pub fn hex_log_bytes(buf: &[u8]) {
-    let hex_repr = buf
-        .iter()
-        .map(|b| format!("{:02X}", b))
-        .collect::<Vec<_>>()
-        .join(" ");
+fn leb128_u32(input: &[u8]) -> IResult<&[u8], u32> {
+    let mut result: u32 = 0;
+    let mut shift = 0;
+    let mut consumed = 0;
 
-    trace!(
-        "({} bytes) Hex: \n{}",
-        buf.len(),
-        hex_repr.chars().collect::<String>(),
-    );
+    for &byte in input.iter() {
+        let value = (byte & 0x7F) as u32;
+        result |= value << shift;
+        consumed += 1;
+
+        if byte & 0x80 == 0 {
+            // MSB not set → last byte
+            return Ok((&input[consumed..], result));
+        }
+
+        shift += 7;
+
+        // u32 can only be up to 32 bits → max 5 bytes
+        if shift >= 32 {
+            return Err(NomFailure(NomError::new(
+                input,
+                nom::error::ErrorKind::TooLarge,
+            )));
+        }
+    }
+
+    Err(nom::Err::Incomplete(nom::Needed::new(1)))
+}
+
+fn take_until_and_consume<'a>(pattern: &[u8], input: &'a [u8]) -> IResult<&'a [u8], &'a [u8]> {
+    terminated(take_until(pattern), tag(pattern)).parse(input)
+}
+
+// fn peek(input: &[u8]) -> IResult<&[u8], &[u8]> {
+//     nom_peek(take(4usize)).parse(input)
+// }
+
+fn parse_failing_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingClient> {
+    Err(NomErr(NomError::new(input, NomErrorKind::Tag))) // test, this can never be parsed
+}
+
+fn parse_client_info_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingClient> {
+    let (input, _) = tag(&b"\x0C\x02\x00\x00\x00\x52\x44\x69\x73\x70\x6C\x61\x79\x42\x6F\x61\x72\x64\x2E\x43\x6F\x6D\x6D\x75\x6E\x69\x63\x61\x74\x69\x6F\x6E\x2C\x20\x56\x65\x72\x73\x69\x6F\x6E\x3D\x31\x2E\x30\x2E\x30\x2E\x31\x37\x2C\x20\x43\x75\x6C\x74\x75\x72\x65\x3D\x6E\x65\x75\x74\x72\x61\x6C\x2C\x20\x50\x75\x62\x6C\x69\x63\x4B\x65\x79\x54\x6F\x6B\x65\x6E\x3D\x6E\x75\x6C\x6C\x05\x01\x00\x00\x00\x2D\x44\x69\x73\x70\x6C\x61\x79\x42\x6F\x61\x72\x64\x2E\x43\x6F\x6D\x6D\x75\x6E\x69\x63\x61\x74\x69\x6F\x6E\x2E\x50\x61\x63\x6B\x65\x74\x73\x2E\x43\x6C\x69\x65\x6E\x74\x49\x6E\x66\x6F\x04\x00\x00\x00\x18\x3C\x43\x68\x61\x6E\x6E\x65\x6C\x3E\x6B\x5F\x5F\x42\x61\x63\x6B\x69\x6E\x67\x46\x69\x65\x6C\x64\x15\x3C\x4E\x61\x6D\x65\x3E\x6B\x5F\x5F\x42\x61\x63\x6B\x69\x6E\x67\x46\x69\x65\x6C\x64\x20\x3C\x41\x70\x70\x6C\x69\x63\x61\x74\x69\x6F\x6E\x4E\x61\x6D\x65\x3E\x6B\x5F\x5F\x42\x61\x63\x6B\x69\x6E\x67\x46\x69\x65\x6C\x64\x23\x3C\x41\x70\x6C\x6C\x69\x63\x61\x74\x69\x6F\x6E\x56\x65\x72\x73\x69\x6F\x6E\x3E\x6B\x5F\x5F\x42\x61\x63\x6B\x69\x6E\x67\x46\x69\x65\x6C\x64\x00\x01\x01\x01\x08\x02\x00\x00\x00\x00\x00\x00\x00\x06\x03\x00\x00\x00\x07\x54\x41\x46\x20\x54\x69\x43\x0A\x0A\x0B\x01\x01\x02\x02\x03\x03\x00\x00"[..])(input)?;
+
+    // TODO non fixed version detection (less strict)
+
+    //0C0200000052446973706C6179426F6172642E436F6D6D756E69636174696F6E2C2056657273696F6E3D312E302E302E31372C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D6E756C6C05010000002D446973706C6179426F6172642E436F6D6D756E69636174696F6E2E5061636B6574732E436C69656E74496E666F04000000183C4368616E6E656C3E6B5F5F4261636B696E674669656C64153C4E616D653E6B5F5F4261636B696E674669656C64203C4170706C69636174696F6E4E616D653E6B5F5F4261636B696E674669656C64233C41706C6C69636174696F6E56657273696F6E3E6B5F5F4261636B696E674669656C6400010101080200000000000000060300000007544146205469430A0A0B0101020203030000
+
+    Ok((input, InstructionFromTimingClient::ClientInfo()))
+}
+
+fn parse_text_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingClient> {
+    const FREETEXT: [u8; 45] = [
+        0x42, 0x61, 0x63, 0x6B, 0x69, 0x6E, 0x67, 0x46, 0x69, 0x65, 0x6C, 0x64, 0x00, 0x01, 0x01,
+        0x00, 0x08, 0x01, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06, 0x07, 0x00, 0x00,
+        0x00, 0x08, 0x46, 0x72, 0x65, 0x65, 0x74, 0x65, 0x78, 0x74, 0x06, 0x08, 0x00, 0x00, 0x00,
+    ];
+
+    const TEXT: [u8; 51] = [
+        0x42, 0x61, 0x63, 0x6B, 0x69, 0x6E, 0x67, 0x46, 0x69, 0x65, 0x6C, 0x64, 0x00, 0x01, 0x01,
+        0x01, 0x02, 0x08, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09, 0x08, 0x00, 0x00,
+        0x00, 0x06, 0x09, 0x00, 0x00, 0x00, 0x04, 0x54, 0x65, 0x78, 0x74, 0x09, 0x09, 0x00, 0x00,
+        0x00, 0x06, 0x0A, 0x00, 0x00, 0x00,
+    ];
+
+    let (input, _) = take_until_and_consume(&FREETEXT[..], input)?;
+    let (input, _) = take_until_and_consume(&TEXT[..], input)?;
+    let (input, text_len) = leb128_u32(input)?;
+    debug!("Message Length {}", text_len);
+    let (input, text_bytes) = take(text_len)(input)?;
+
+    let text = str::from_utf8(text_bytes)
+        .map(|s| s.to_string())
+        .map_err(|_| NomFailure(NomError::new(input, NomErrorKind::Alpha)))?;
+
+    // 04010000007F53797374656D2E436F6C6C656374696F6E732E47656E657269632E4C69737460315B5B53797374656D2E4F626A6563742C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D5D03000000065F6974656D73055F73697A65085F76657273696F6E0500000808090200000003000000240000001002000000040000000903000000090400000009050000000A0C0600000052446973706C6179426F6172642E436F6D6D756E69636174696F6E2C2056657273696F6E3D312E302E302E31372C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D6E756C6C05030000002D446973706C6179426F6172642E436F6D6D756E69636174696F6E2E5061636B6574732E4C6F61644C61796F757404000000234C61796F7574426173652B3C4368616E6E656C3E6B5F5F4261636B696E674669656C64244C61796F7574426173652B3C46696C654E616D653E6B5F5F4261636B696E674669656C64204C61796F7574426173652B3C4E616D653E6B5F5F4261636B696E674669656C642A4C61796F7574426173652B3C53656E6443757272656E566965773E6B5F5F4261636B696E674669656C640001010008010600000000000000060700000008467265657465787406080000002B4C61796F75745F66353665353433312D663132632D346261322D626136382D3063666131383339633930650005040000002E446973706C6179426F6172642E436F6D6D756E69636174696F6E2E5061636B6574732E53657450726F706572747905000000183C4368616E6E656C3E6B5F5F4261636B696E674669656C641B3C4C61796F75744E616D653E6B5F5F4261636B696E674669656C641C3C456C656D656E744E616D653E6B5F5F4261636B696E674669656C641D3C50726F70657274794E616D653E6B5F5F4261636B696E674669656C64163C56616C75653E6B5F5F4261636B696E674669656C6400010101020806000000000000000908000000060900000004546578740909000000060A00000014746573747465737474657374746573747465737405050000002D446973706C6179426F6172642E436F6D6D756E69636174696F6E2E5061636B6574732E53686F774C61796F7574050000000B436C6561724F7468657273234C61796F7574426173652B3C4368616E6E656C3E6B5F5F4261636B696E674669656C64244C61796F7574426173652B3C46696C654E616D653E6B5F5F4261636B696E674669656C64204C61796F7574426173652B3C4E616D653E6B5F5F4261636B696E674669656C642A4C61796F7574426173652B3C53656E6443757272656E566965773E6B5F5F4261636B696E674669656C6400000101000108010600000001000000000A0908000000010B0101020203030000
+
+    Ok((input, InstructionFromTimingClient::Freetext(text)))
+}
+
+fn parse_any_known_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingClient> {
+    alt((
+        |i| parse_failing_command(i),
+        |i| parse_client_info_command(i),
+        |i| parse_text_command(i),
+    ))
+    .parse(input)
+}
+
+pub fn hex_log_bytes(buf: &[u8]) {
+    trace!("({} bytes) Hex: \n{}", buf.len(), get_hex_repr(buf),);
+}
+
+// https://hexed.it/
+fn get_hex_repr(buf: &[u8]) -> String {
+    format!(
+        // "\\x{}",
+        "{}",
+        buf.iter()
+            .map(|b| format!("{:02X}", b))
+            .collect::<Vec<_>>()
+            // .join("\\x")
+            .join("")
+    )
 }
 
 fn text_log_bytes(buf: &[u8]) {
     let decoded: String = String::from_utf8_lossy(buf).to_string();
 
-    let hex_repr = buf
-        .iter()
-        .map(|b| format!("{:02X}", b))
-        .collect::<Vec<_>>()
-        .join(" ");
-
     trace!(
         "({} bytes)\nText: \n{}\nHex: \n{}",
         buf.len(),
         decoded.chars().collect::<String>(),
-        hex_repr.chars().collect::<String>(),
+        get_hex_repr(buf),
     );
 }
 
