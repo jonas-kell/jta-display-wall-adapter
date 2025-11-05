@@ -9,6 +9,7 @@ use crate::args::Args;
 pub enum InstructionFromTimingClient {
     ClientInfo,
     Freetext(String),
+    Advertisements,
     Clear,
 }
 
