@@ -155,6 +155,7 @@ fn parse_clock_command(input: &[u8]) -> IResult<&[u8], InstructionFromCameraProg
         hours,
         minutes,
         seconds,
+        fractional_part_in_ten_thousands: None,
     };
 
     Ok((input, InstructionFromCameraProgram::DayTime(dt)))

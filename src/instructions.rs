@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use tokio::time::{self, error::Elapsed};
 
-use crate::args::Args;
+use crate::{args::Args, hex::parse_race_time};
 
 #[derive(Debug)]
 pub enum IncomingInstruction {
@@ -62,12 +62,19 @@ impl RaceTime {
             ten_thousands: ten_thousands_out,
         }
     }
+
+    pub fn parse_from_string(input: &str) -> Result<Self, String> {
+        match parse_race_time(&input.as_bytes()) {
+            Ok((_, rt)) => Ok(rt),
+            Err(e) => Err(e.to_string()),
+        }
+    }
 }
 impl Display for RaceTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}{}{},{}{}{}{}",
+            "{}{}{}.{}{}{}{}",
             if let Some(hours) = self.hours {
                 format!("{}:", hours)
             } else {
@@ -112,6 +119,41 @@ pub struct DayTime {
     pub hours: u16,
     pub minutes: u16,
     pub seconds: u16,
+    pub fractional_part_in_ten_thousands: Option<u32>,
+}
+impl DayTime {
+    pub fn to_exact_string(&self) -> String {
+        format!(
+            "{}.{:04}",
+            self.to_string(),
+            self.fractional_part_in_ten_thousands.unwrap_or(0) % 10000
+        )
+    }
+
+    pub fn parse_from_string(input: &str) -> Result<Self, String> {
+        match parse_race_time(&input.as_bytes()) {
+            Ok((_, rt)) => {
+                if rt.hours.is_none() || rt.minutes.is_none() {
+                    return Err(String::from("DayTime needs hours and minutes!"));
+                }
+
+                let hours = rt.hours.unwrap_or(0);
+                let minutes = rt.minutes.unwrap_or(0);
+                let fractional_part_in_ten_thousands: u32 = rt.tenths as u32 * 1000
+                    + rt.hundrets.unwrap_or(0) as u32 * 100
+                    + rt.thousands.unwrap_or(0) as u32 * 10
+                    + rt.ten_thousands.unwrap_or(0) as u32;
+
+                Ok(DayTime {
+                    hours,
+                    minutes,
+                    seconds: rt.seconds,
+                    fractional_part_in_ten_thousands: Some(fractional_part_in_ten_thousands),
+                })
+            }
+            Err(e) => Err(e.to_string()),
+        }
+    }
 }
 impl Display for DayTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

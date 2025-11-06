@@ -1,7 +1,9 @@
 use crate::args::Args;
 use crate::forwarding::{PacketCommunicationChannel, PacketData};
 use crate::hex::hex_log_bytes;
-use crate::instructions::{InstructionCommunicationChannel, InstructionToTimingClient};
+use crate::instructions::{
+    DayTime, InstructionCommunicationChannel, InstructionToTimingClient, RaceTime,
+};
 use crate::nrbf::{generate_response_bytes, BufferedParser};
 use crate::xml_serial::{BufferedParserSerial, BufferedParserXML};
 use async_channel::RecvError;
@@ -133,6 +135,19 @@ async fn client_communicator(
     shutdown_marker: Arc<AtomicBool>,
 ) -> io::Result<()> {
     let _ = args;
+
+    // TEST
+    let dt = DayTime::parse_from_string("01:13:14").unwrap();
+    trace!("{:?}: {}", dt, dt.to_string());
+    let dt2 = DayTime::parse_from_string("12:13:14.1234").unwrap();
+    trace!("{:?}: {}", dt2, dt2.to_exact_string());
+    let rt = RaceTime::parse_from_string("0:0:13").unwrap();
+    trace!(
+        "{:?}: {} {}",
+        rt,
+        rt.to_string(),
+        rt.optimize_representation_for_display().to_string()
+    );
 
     let comm_channel_a = comm_channel.clone();
     let print_commands_task = tokio::spawn(async move {
