@@ -7,7 +7,7 @@ services:
     volumes:
       - rust_build_cache:/usr/local/cargo/registry/
       - ./:/app/
-    command: cargo watch -x "run -- server --passthrough-address-display-program 192.168.8.199 -v  --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --passthrough-to-display-program"
+    command: cargo watch -x "run -- server --passthrough-address-display-program 192.168.8.199 -v --address-camera-program 192.168.8.119 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --passthrough-to-display-program"
 
 volumes:
   rust_build_cache:

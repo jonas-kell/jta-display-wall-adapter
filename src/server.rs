@@ -39,12 +39,29 @@ pub async fn run_server(args: &Args) -> () {
         own_addr_timing
     );
 
+    let camera_program_timing_address: SocketAddr = format!(
+        "{}:{}",
+        args.address_camera_program, args.camera_exchange_timing_port
+    )
+    .parse()
+    .expect("Invalid camera program address for timing");
+    let camera_program_data_address: SocketAddr = format!(
+        "{}:{}",
+        args.address_camera_program, args.camera_exchange_data_port
+    )
+    .parse()
+    .expect("Invalid camera program address for data");
+    info!(
+        "Talking to the camera program on {} and {}",
+        camera_program_timing_address, camera_program_data_address
+    );
+
     let comm_channel = InstructionCommunicationChannel::new(&args);
     let comm_channel_packets = PacketCommunicationChannel::new(&args);
 
     let shutdown_marker = Arc::new(AtomicBool::new(false));
 
-    let tcp_listener_server_instance = tcp_listener_server(
+    let tcp_listener_server_instance = tcp_listener_timing_program(
         args.clone(),
         comm_channel.clone(),
         comm_channel_packets.clone(),
@@ -65,10 +82,19 @@ pub async fn run_server(args: &Args) -> () {
         Arc::clone(&shutdown_marker),
     );
 
+    let tcp_client_to_timing_and_data_exchange_instance = tcp_client_to_timing_and_data_exchange(
+        args.clone(),
+        Arc::clone(&shutdown_marker),
+        camera_program_timing_address,
+        camera_program_data_address,
+    );
+
     // spawn the async runtimes in parallel
     let client_communicator_task = tokio::spawn(client_communicator_instance);
     let tcp_listener_server_task = tokio::spawn(tcp_listener_server_instance);
-    let tcp_forwarder_server_instance = tokio::spawn(tcp_forwarder_server_instance);
+    let tcp_forwarder_server_task = tokio::spawn(tcp_forwarder_server_instance);
+    let tcp_client_to_timing_and_data_exchange_task =
+        tokio::spawn(tcp_client_to_timing_and_data_exchange_instance);
     let shutdown_task = tokio::spawn(async move {
         // listen for ctrl-c
         tokio::signal::ctrl_c().await?;
@@ -81,9 +107,10 @@ pub async fn run_server(args: &Args) -> () {
     // Wait for all tasks to complete
     match tokio::try_join!(
         tcp_listener_server_task,
-        tcp_forwarder_server_instance,
+        tcp_forwarder_server_task,
         shutdown_task,
-        client_communicator_task
+        client_communicator_task,
+        tcp_client_to_timing_and_data_exchange_task
     ) {
         Err(_) => error!("Error in at least one listening task"),
         Ok(_) => info!("All listeners closed successfully"),
@@ -149,12 +176,181 @@ async fn client_communicator(
     Ok(())
 }
 
+async fn tcp_client_to_timing_and_data_exchange(
+    args: Args,
+    shutdown_marker: Arc<AtomicBool>,
+    timing_addr: SocketAddr,
+    data_addr: SocketAddr,
+) -> io::Result<()> {
+    let args_timing = args.clone();
+    let shutdown_marker_timing = shutdown_marker.clone();
+    let timing_task = async move {
+        let mut buf = [0u8; 65536];
+
+        loop {
+            if shutdown_marker_timing.load(Ordering::SeqCst) {
+                debug!(
+                    "Shutdown requested, stopping trying to connect to {}",
+                    timing_addr
+                );
+                break;
+            }
+
+            // Wait for new connection with timeout so we can check shutdown flag periodically
+            match time::timeout(
+                Duration::from_millis(args_timing.wait_ms_before_testing_for_shutdown),
+                TcpStream::connect(timing_addr),
+            )
+            .await
+            {
+                Ok(Ok(mut timing_stream)) => {
+                    debug!("Connected to timing target {}", timing_addr);
+
+                    match time::timeout(
+                        Duration::from_millis(args_timing.wait_ms_before_testing_for_shutdown),
+                        timing_stream.read(&mut buf),
+                    )
+                    .await
+                    {
+                        Ok(read_result) => match read_result {
+                            Ok(0) => continue,
+                            Ok(n) => {
+                                let bytes_from_timing_endpoint = &buf[..n];
+
+                                match handle_communication_from_camera_program(
+                                    CameraProgramInfoType::Timing,
+                                    bytes_from_timing_endpoint,
+                                )
+                                .await
+                                {
+                                    Ok(_) => (),
+                                    Err(e) => return Err(Error::new(ErrorKind::Other, e)),
+                                };
+                            }
+                            Err(e) => {
+                                error!("Error in timing channel communication: {}", e.to_string());
+                                continue; // try to reconnect
+                            }
+                        },
+                        Err(_) => {
+                            trace!("No TCP message on timing channel within timeout interval");
+                            continue;
+                        }
+                    };
+                }
+                Ok(Err(e)) => error!("Timing exchange read error: {}", e),
+                Err(_) => {
+                    // expected on timeout, just loop
+                    trace!("No TCP connection to timing exchange could be established within timeout interval");
+                }
+            }
+        }
+
+        Ok::<_, Error>(())
+    };
+
+    let args_data = args;
+    let shutdown_marker_data = shutdown_marker;
+    let data_task = async move {
+        let mut buf = [0u8; 65536];
+
+        loop {
+            if shutdown_marker_data.load(Ordering::SeqCst) {
+                debug!(
+                    "Shutdown requested, stopping trying to connect to {}",
+                    data_addr
+                );
+                break;
+            }
+
+            // Wait for new connection with timeout so we can check shutdown flag periodically
+            match time::timeout(
+                Duration::from_millis(args_data.wait_ms_before_testing_for_shutdown),
+                TcpStream::connect(data_addr),
+            )
+            .await
+            {
+                Ok(Ok(mut data_stream)) => {
+                    debug!("Connected to data target {}", data_addr);
+
+                    match time::timeout(
+                        Duration::from_millis(args_data.wait_ms_before_testing_for_shutdown),
+                        data_stream.read(&mut buf),
+                    )
+                    .await
+                    {
+                        Ok(read_result) => match read_result {
+                            Ok(0) => continue,
+                            Ok(n) => {
+                                let bytes_from_data_endpoint = &buf[..n];
+
+                                match handle_communication_from_camera_program(
+                                    CameraProgramInfoType::Data,
+                                    bytes_from_data_endpoint,
+                                )
+                                .await
+                                {
+                                    Ok(_) => (),
+                                    Err(e) => return Err(Error::new(ErrorKind::Other, e)),
+                                };
+                            }
+                            Err(e) => {
+                                error!("Error in data channel communication: {}", e.to_string());
+                                continue; // try to reconnect
+                            }
+                        },
+                        Err(_) => {
+                            trace!("No TCP message on data channel within timeout interval");
+                            continue;
+                        }
+                    };
+                }
+                Ok(Err(e)) => error!("Data exchange read error: {}", e),
+                Err(_) => {
+                    // expected on timeout, just loop
+                    trace!("No TCP connection to data exchange could be established within timeout interval");
+                }
+            }
+        }
+
+        Ok::<_, Error>(())
+    };
+
+    match tokio::try_join!(timing_task, data_task) {
+        Err(e) => {
+            error!("Error in a camera program listener task");
+            return Err(e);
+        }
+        Ok(_) => info!("All camera program listeners closed successfully"),
+    };
+
+    Ok(())
+}
+
+#[derive(Debug)]
+enum CameraProgramInfoType {
+    Timing,
+    Data,
+}
+
+async fn handle_communication_from_camera_program(
+    data_type: CameraProgramInfoType,
+    data: &[u8],
+) -> Result<(), String> {
+    info!("Data from camera program: {:?}", data_type);
+
+    let decoded: String = String::from_utf8_lossy(data).to_string();
+    info!("{}", decoded);
+
+    Ok(())
+}
+
 enum TimeoutOrIoError {
     Timeout,
     ReceiveError(RecvError),
 }
 
-async fn tcp_listener_server(
+async fn tcp_listener_timing_program(
     args: Args,
     comm_channel: InstructionCommunicationChannel,
     comm_channel_packets: PacketCommunicationChannel,

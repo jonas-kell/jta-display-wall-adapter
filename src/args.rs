@@ -6,7 +6,7 @@ pub struct Args {
     /// Mode of operation: 'server' or 'client'
     #[arg(value_enum)]
     pub mode: Mode,
-    /// Port where the application should listen to the display program
+    /// Port where the application should listen to the timing program
     #[arg(long, default_value_t = String::from("18690"))]
     pub listen_port: String,
     /// Verbosity (-v for verbose mode)
@@ -21,6 +21,15 @@ pub struct Args {
     /// Address of where the display program lives (like "127.0.0.1")
     #[arg(long, default_value_t = String::from("127.0.0.1"))]
     pub passthrough_address_display_program: String,
+    /// Address of where camera program live (like "127.0.0.1")
+    #[arg(long, default_value_t = String::from("127.0.0.1"))]
+    pub address_camera_program: String,
+    /// Port where the camera program has their timing endpoint
+    #[arg(long, default_value_t = String::from("4445"))]
+    pub camera_exchange_timing_port: String,
+    /// Port where the camera program has their data endpoint
+    #[arg(long, default_value_t = String::from("4446"))]
+    pub camera_exchange_data_port: String,
     /// If the data that is incoming through should get hexdump-displayed
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub hexdump_incoming_communication: bool,
