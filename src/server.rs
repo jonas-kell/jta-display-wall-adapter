@@ -1,4 +1,5 @@
 use crate::args::Args;
+use crate::forwarding::{PacketCommunicationChannel, PacketData};
 use crate::instructions::{InstructionCommunicationChannel, InstructionToTimingClient};
 use crate::nrbf::{generate_response_bytes, hex_log_bytes, BufferedParser};
 use async_channel::RecvError;
@@ -39,14 +40,22 @@ pub async fn run_server(args: &Args) -> () {
     );
 
     let comm_channel = InstructionCommunicationChannel::new(&args);
+    let comm_channel_packets = PacketCommunicationChannel::new(&args);
 
     let shutdown_marker = Arc::new(AtomicBool::new(false));
 
     let tcp_listener_server_instance = tcp_listener_server(
         args.clone(),
         comm_channel.clone(),
+        comm_channel_packets.clone(),
         Arc::clone(&shutdown_marker),
         own_addr_timing,
+    );
+
+    let tcp_forwarder_server_instance = tcp_forwarder_server(
+        args.clone(),
+        comm_channel_packets.clone(),
+        Arc::clone(&shutdown_marker),
         passthrough_address_display_program,
     );
 
@@ -59,6 +68,7 @@ pub async fn run_server(args: &Args) -> () {
     // spawn the async runtimes in parallel
     let client_communicator_task = tokio::spawn(client_communicator_instance);
     let tcp_listener_server_task = tokio::spawn(tcp_listener_server_instance);
+    let tcp_forwarder_server_instance = tokio::spawn(tcp_forwarder_server_instance);
     let shutdown_task = tokio::spawn(async move {
         // listen for ctrl-c
         tokio::signal::ctrl_c().await?;
@@ -71,6 +81,7 @@ pub async fn run_server(args: &Args) -> () {
     // Wait for all tasks to complete
     match tokio::try_join!(
         tcp_listener_server_task,
+        tcp_forwarder_server_instance,
         shutdown_task,
         client_communicator_task
     ) {
@@ -138,12 +149,17 @@ async fn client_communicator(
     Ok(())
 }
 
+enum TimeoutOrIoError {
+    Timeout,
+    ReceiveError(RecvError),
+}
+
 async fn tcp_listener_server(
     args: Args,
     comm_channel: InstructionCommunicationChannel,
+    comm_channel_packets: PacketCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
     listen_addr: SocketAddr,
-    passthrough_target_addr: SocketAddr,
 ) -> io::Result<()> {
     let listener = TcpListener::bind(listen_addr).await?;
     debug!("TCP listener started on {}", listen_addr);
@@ -164,60 +180,179 @@ async fn tcp_listener_server(
             Ok(Ok((inbound, client_addr))) => {
                 debug!("Accepted connection from {}", client_addr);
 
-                let passthrough_target_addr = passthrough_target_addr.clone();
-                let shutdown_marker = shutdown_marker.clone();
+                let (mut ri, mut wi) = inbound.into_split();
+
+                // Connection is accepted. Handle all further in own task
+                // TODO -> technically if multiple connect, we would need to send out the messages to ALL connections!!
+
                 let comm_channel = comm_channel.clone();
+                let comm_channel_packets = comm_channel_packets.clone();
+                let shutdown_marker = shutdown_marker.clone();
                 let args = args.clone();
 
-                if args.passthrough_to_display_program {
-                    tokio::spawn(async move {
-                        // TODO this could be made to timeout (?)
-                        match TcpStream::connect(passthrough_target_addr).await {
-                            Ok(outbound) => {
-                                debug!("Connected to target {}", passthrough_target_addr);
-                                if let Err(e) = transfer_optional_bidirectional(
-                                    args,
-                                    inbound,
-                                    Some(outbound),
-                                    shutdown_marker.clone(),
-                                    comm_channel,
-                                )
-                                .await
-                                {
-                                    error!(
-                                        "Error during passthrough transfer between {} and {}: {}",
-                                        client_addr, passthrough_target_addr, e
-                                    );
-                                } else {
-                                    debug!(
-                                        "Closed passthrough connection between {} and {}",
-                                        client_addr, passthrough_target_addr
-                                    );
-                                }
+                tokio::spawn(async move {
+                    let comm_channel_read = comm_channel.clone();
+                    let comm_channel_write = comm_channel;
+                    let comm_channel_packets_read = comm_channel_packets.clone();
+                    let comm_channel_packets_write = comm_channel_packets;
+                    let shutdown_marker_read = shutdown_marker.clone();
+                    let shutdown_marker_write = shutdown_marker;
+                    let args_read = args.clone();
+                    let args_write = args;
+
+                    let read_handler = async move {
+                        let mut parser = BufferedParser::new(args_read.clone());
+                        let mut buf = [0u8; 65536];
+                        loop {
+                            if shutdown_marker_read.load(Ordering::SeqCst) {
+                                debug!(
+                                    "Shutdown marker set, breaking main external -> self transfer"
+                                );
+                                break;
                             }
-                            Err(e) => error!(
-                                "Failed to connect to target {} for passthrough: {}",
-                                passthrough_target_addr, e
-                            ),
+
+                            let n = match time::timeout(
+                                Duration::from_millis(
+                                    args_read.wait_ms_before_testing_for_shutdown,
+                                ),
+                                ri.read(&mut buf),
+                            )
+                            .await
+                            {
+                                Ok(read_result) => match read_result {
+                                    Ok(0) => break,
+                                    Ok(n) => n,
+                                    Err(e) => return Err(e.to_string()),
+                                },
+                                Err(_) => {
+                                    trace!("No incoming TCP message within timeout interval");
+                                    continue;
+                                }
+                            };
+
+                            // Decoding takes care of logging if requested, as there the message is split up to provide more info!!
+                            match parser.feed_bytes(&buf[..n]) {
+                                Some(res) => match res {
+                                    Err(err) => {
+                                        error!("Error when Decoding Inbound Communication: {}", err)
+                                    }
+                                    Ok(parsed) => {
+                                        debug!("Decoded Inbound Communication: {:?}", parsed);
+                                        match comm_channel_read.take_in_command(parsed).await {
+                                            Ok(()) => (),
+                                            Err(e) => return Err(e.to_string()),
+                                        }
+                                    }
+                                },
+                                None => trace!(
+                                    "Received packet, but does not seeem to be end of communication"
+                                ),
+                            };
+
+                            // all messages get forwarded unbuffered. Reader needs to take care of it themself
+                            if args_read.passthrough_to_display_program {
+                                match comm_channel_packets_read
+                                    .inbound_take_in(buf[..n].into())
+                                    .await
+                                {
+                                    Ok(_) => (),
+                                    Err(e) => return Err(e.to_string()),
+                                };
+                            }
                         }
-                    });
-                } else {
-                    tokio::spawn(async move {
-                        if let Err(e) = transfer_optional_bidirectional(
-                            args,
-                            inbound,
-                            None,
-                            shutdown_marker.clone(),
-                            comm_channel,
-                        )
-                        .await
-                        {
-                            error!("Error during communication with {}: {}", client_addr, e);
-                        } else {
-                            debug!("Closed connection to {}", client_addr);
+                        Ok::<_, String>(())
+                    };
+
+                    let write_handler = async move {
+                        loop {
+                            if shutdown_marker_write.load(Ordering::SeqCst) {
+                                debug!(
+                                    "Shutdown marker set, breaking main self -> external transfer"
+                                );
+                                break;
+                            }
+
+                            // wait on the tcp stream from passthrough
+                            let comm_channel_tcp_outbound_source = async {
+                                match comm_channel_packets_write.outbound_coming_out().await {
+                                    Ok(Ok(data)) => return Ok(data),
+                                    Ok(Err(e)) => return Err(TimeoutOrIoError::ReceiveError(e)),
+                                    Err(_) => {
+                                        return Err::<PacketData, TimeoutOrIoError>(
+                                            TimeoutOrIoError::Timeout,
+                                        )
+                                    }
+                                };
+                            };
+                            // wait on the back-send-command scheduler
+                            let comm_channel_command_outbound_source = async {
+                                match comm_channel_write.wait_for_command_to_send().await {
+                                    Ok(Ok(inst)) => return Ok(inst),
+                                    Ok(Err(e)) => return Err(TimeoutOrIoError::ReceiveError(e)),
+                                    Err(_) => {
+                                        return Err::<InstructionToTimingClient, TimeoutOrIoError>(
+                                            TimeoutOrIoError::Timeout,
+                                        )
+                                    }
+                                };
+                            };
+
+                            tokio::select! {
+                                r = comm_channel_tcp_outbound_source => {
+                                    match r {
+                                        Ok(data_to_send) => {
+                                            trace!("Proxying TCP back to Timing Program");
+                                            if args_write.hexdump_passthrough_communication {
+                                                hex_log_bytes(&data_to_send);
+                                            }
+                                            wi.write_all(&data_to_send)
+                                                            .await
+                                                            .map_err(|e| e.to_string())?
+                                        },
+                                        Err(e) => match e {
+                                            TimeoutOrIoError::Timeout => {
+                                                trace!("No Outgoing TCP or Command to send during timeout interval");
+                                                continue;
+                                            },
+                                            TimeoutOrIoError::ReceiveError(e) => {
+                                                return Err(e.to_string());
+                                            }
+                                        }
+                                    }
+                                },
+                                r = comm_channel_command_outbound_source => {
+                                    match r {
+                                        Ok(inst) => {
+                                            trace!("Sending Bytes for custom command: {:?}", inst);
+                                            let bytes_to_send = generate_response_bytes(inst);
+                                            wi.write_all(&bytes_to_send)
+                                                            .await
+                                                            .map_err(|e| e.to_string())?
+                                        }
+                                        Err(e) => match e {
+                                            TimeoutOrIoError::Timeout => {
+                                                trace!("No Outgoing TCP or Command Connection during timeout interval");
+                                                continue;
+                                            },
+                                            TimeoutOrIoError::ReceiveError(e) => {
+                                                return Err(e.to_string());
+                                            }
+                                        }
+                                    }
+                                },
+                            }
                         }
-                    });
-                }
+
+                        Ok::<_, String>(())
+                    };
+
+                    tokio::select! {
+                        r = write_handler => r?,
+                        r = read_handler => r?,
+                    }
+
+                    Ok::<_, String>(())
+                });
             }
             Ok(Err(e)) => error!("Accept error: {}", e),
             Err(_) => {
@@ -230,178 +365,124 @@ async fn tcp_listener_server(
     Ok(())
 }
 
-enum TimeoutOrIoError {
-    Timeout,
-    IoError(io::Error),
-    ReceiveError(RecvError),
-}
-
-async fn transfer_optional_bidirectional(
+async fn tcp_forwarder_server(
     args: Args,
-    inbound: TcpStream,
-    outbound: Option<TcpStream>,
+    comm_channel_packets: PacketCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
-    comm_channel: InstructionCommunicationChannel,
-) -> Result<(), String> {
-    let (mut ri, mut wi) = inbound.into_split();
-    let (mut ro, mut wo) = match outbound.map(|o| o.into_split()) {
-        Some((ro, wo)) => (Some(ro), Some(wo)),
-        None => (None, None),
+    passthrough_target_addr: SocketAddr,
+) -> io::Result<()> {
+    // never send stuff out here -> we can just die
+    if !args.passthrough_to_display_program {
+        return Ok(());
     };
 
-    let client_to_server = async {
-        let mut parser = BufferedParser::new(args.clone());
-        let mut buf = [0u8; 65536];
-        loop {
-            if shutdown_marker.load(Ordering::SeqCst) {
-                debug!("Shutdown marker set, breaking client -> server transfer");
-                break;
-            }
-
-            let n = match time::timeout(
-                Duration::from_millis(args.wait_ms_before_testing_for_shutdown),
-                ri.read(&mut buf),
-            )
-            .await
-            {
-                Ok(read_result) => match read_result {
-                    Ok(0) => break,
-                    Ok(n) => n,
-                    Err(e) => return Err(e.to_string()),
-                },
-                Err(_) => {
-                    trace!("No incoming TCP message within timeout interval");
-                    continue;
-                }
-            };
-
-            // Decoding takes care of logging if requested, as there the message is split up to provide more info!!
-            match parser.feed_bytes(&buf[..n]) {
-                Some(res) => match res {
-                    Err(err) => error!("Error when Decoding Inbound Communication: {}", err),
-                    Ok(parsed) => {
-                        debug!("Decoded Inbound Communication: {:?}", parsed);
-                        match comm_channel.take_in_command(parsed).await {
-                            Ok(()) => (),
-                            Err(e) => return Err(e.to_string()),
-                        }
-                    }
-                },
-                None => trace!("Received packet, but does not seeem to be end of communication"),
-            };
-
-            // if there is something we need to passthrough (otherwise it would be None)
-            if let Some(wo) = &mut wo {
-                wo.write_all(&buf[..n]).await.map_err(|e| e.to_string())?;
-            }
+    loop {
+        if shutdown_marker.load(Ordering::SeqCst) {
+            debug!(
+                "Shutdown requested, stopping trying to connect to {}",
+                passthrough_target_addr
+            );
+            break;
         }
-        Ok::<_, String>(())
-    };
 
-    let server_to_client = async {
-        let mut buf = [0u8; 65536];
-        loop {
-            if shutdown_marker.load(Ordering::SeqCst) {
-                debug!("Shutdown marker set, breaking server -> client transfer");
-                break;
-            }
+        // TODO if this would not connect in a long time, the internal passthrough buffer could accumulate a lot of data. Thik about if this is desired
 
-            // wait on the tcp stream from passthrough
-            let tcp_inbound_source = async {
-                // if there is something we need to passthrough (otherwise it would be None)
-                if let Some(ro) = &mut ro {
-                    match time::timeout(
-                        Duration::from_millis(args.wait_ms_before_testing_for_shutdown),
-                        ro.read(&mut buf),
-                    )
-                    .await
-                    {
-                        Ok(read_result) => match read_result {
-                            Ok(0) => Ok(None),
-                            Ok(n) => Ok(Some(n)),
-                            Err(e) => Err(TimeoutOrIoError::IoError(e)),
-                        },
-                        Err(_) => Err(TimeoutOrIoError::Timeout),
-                    }
-                } else {
-                    time::sleep(Duration::from_millis(
-                        args.wait_ms_before_testing_for_shutdown,
-                    ))
-                    .await;
-                    Err::<Option<usize>, TimeoutOrIoError>(TimeoutOrIoError::Timeout)
-                }
-            };
-            // wait on the back-send-command scheduler
-            let comm_channel_inbound_source = async {
-                match comm_channel.wait_for_command_to_send().await {
-                    Ok(Ok(inst)) => return Ok(inst),
-                    Ok(Err(e)) => return Err(TimeoutOrIoError::ReceiveError(e)),
-                    Err(_) => {
-                        return Err::<InstructionToTimingClient, TimeoutOrIoError>(
-                            TimeoutOrIoError::Timeout,
+        // Wait for new connection with timeout so we can check shutdown flag periodically
+        match time::timeout(
+            Duration::from_millis(args.wait_ms_before_testing_for_shutdown),
+            TcpStream::connect(passthrough_target_addr),
+        )
+        .await
+        {
+            Ok(Ok(outbound)) => {
+                debug!("Connected to forwarding target {}", passthrough_target_addr);
+
+                let (mut ro, mut wo) = outbound.into_split();
+
+                // Connection is accepted. only one connection, while one is running
+
+                let comm_channel_packets_read = comm_channel_packets.clone();
+                let comm_channel_packets_write = comm_channel_packets.clone();
+                let shutdown_marker_read = shutdown_marker.clone();
+                let shutdown_marker_write = shutdown_marker.clone();
+                let args_read = args.clone();
+                let args_write = args.clone();
+
+                let read_handler = async move {
+                    let mut buf = [0u8; 65536];
+                    loop {
+                        if shutdown_marker_read.load(Ordering::SeqCst) {
+                            debug!("Shutdown marker set, breaking proxy external -> self transfer");
+                            break;
+                        }
+
+                        match time::timeout(
+                            Duration::from_millis(args_read.wait_ms_before_testing_for_shutdown),
+                            ro.read(&mut buf),
                         )
+                        .await
+                        {
+                            Ok(read_result) => match read_result {
+                                Ok(0) => continue,
+                                Ok(n) => {
+                                    // TODO could transform the back-proxy data (conditionally) to e.g. rewrite picture timing
+                                    match comm_channel_packets_read
+                                        .outbound_take_in(buf[..n].into())
+                                        .await
+                                    {
+                                        Ok(()) => trace!(
+                                            "Proxy packet queued into internal communication"
+                                        ),
+                                        Err(e) => return Err(e.to_string()),
+                                    };
+                                }
+                                Err(e) => return Err(e.to_string()),
+                            },
+                            Err(_) => trace!("No TCP to proxy back during timeout interval"),
+                        }
                     }
-                };
-            };
 
-            tokio::select! {
-                r = tcp_inbound_source => {
-                    match r {
-                        Ok(Some(n)) => {
-                            trace!("Proxying TCP back to Timing Program");
-                            if args.hexdump_passthrough_communication {
-                                hex_log_bytes(&buf[..n]);
+                    Ok::<_, String>(())
+                };
+
+                let write_handler = async move {
+                    loop {
+                        if shutdown_marker_write.load(Ordering::SeqCst) {
+                            debug!("Shutdown marker set, breaking proxy self -> external transfer");
+                            break;
+                        }
+
+                        match comm_channel_packets_write.inbound_coming_in().await {
+                            Ok(Ok(data)) => {
+                                trace!("Proxying through packet from timing program to display program unaltered");
+                                if args_write.hexdump_passthrough_communication {
+                                    hex_log_bytes(&data);
+                                }
+
+                                wo.write_all(&data).await.map_err(|e| e.to_string())?;
                             }
-                            wi.write_all(&buf[..n])
-                                            .await
-                                            .map_err(|e| e.to_string())?
-                        },
-                        Ok(None) => continue,
-                        Err(e) => match e {
-                            TimeoutOrIoError::Timeout => {
-                                trace!("No Outgoing TCP or Command Connection during timeout interval");
+                            Ok(Err(e)) => return Err(e.to_string()),
+                            Err(_) => {
+                                trace!("Nothing to send out to proxy during timeout interval");
                                 continue;
-                            },
-                            TimeoutOrIoError::IoError(e) => {
-                                return Err(e.to_string());
-                            },
-                            TimeoutOrIoError::ReceiveError(e) => {
-                                return Err(e.to_string());
                             }
-                        }
+                        };
                     }
-                },
-                r = comm_channel_inbound_source => {
-                    match r {
-                        Ok(inst) => {
-                            trace!("Sending Bytes for custom command: {:?}", inst);
-                            let bytes_to_send = generate_response_bytes(inst);
-                            wi.write_all(&bytes_to_send)
-                                            .await
-                                            .map_err(|e| e.to_string())?
-                        }
-                        Err(e) => match e {
-                            TimeoutOrIoError::Timeout => {
-                                trace!("No Outgoing TCP or Command Connection during timeout interval");
-                                continue;
-                            },
-                            TimeoutOrIoError::IoError(e) => {
-                                return Err(e.to_string());
-                            },
-                            TimeoutOrIoError::ReceiveError(e) => {
-                                return Err(e.to_string());
-                            }
-                        }
-                    }
-                },
+
+                    Ok::<_, String>(())
+                };
+
+                match tokio::try_join!(read_handler, write_handler) {
+                    Err(e) => error!("Error in proxy read or write: {}", e),
+                    Ok(_) => info!("Proxy connection closed successfully"),
+                };
+            }
+            Ok(Err(e)) => error!("Proxy error: {}", e),
+            Err(_) => {
+                // expected on timeout, just loop
+                trace!("No TCP connection to proxy anything could be established within timeout interval");
             }
         }
-        Ok::<_, String>(())
-    };
-
-    tokio::select! {
-        r = client_to_server => r?,
-        r = server_to_client => r?,
     }
 
     Ok(())
