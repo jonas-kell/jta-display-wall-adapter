@@ -13,6 +13,7 @@ mod forwarding;
 mod instructions;
 mod nrbf;
 mod server;
+mod xml_serial;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {

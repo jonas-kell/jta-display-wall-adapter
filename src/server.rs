@@ -2,6 +2,7 @@ use crate::args::Args;
 use crate::forwarding::{PacketCommunicationChannel, PacketData};
 use crate::instructions::{InstructionCommunicationChannel, InstructionToTimingClient};
 use crate::nrbf::{generate_response_bytes, hex_log_bytes, BufferedParser};
+use crate::xml_serial::{BufferedParserSerial, BufferedParserXML};
 use async_channel::RecvError;
 use std::io::{self, Error, ErrorKind};
 use std::net::SocketAddr;
@@ -90,6 +91,7 @@ pub async fn run_server(args: &Args) -> () {
 
     let tcp_client_to_timing_and_data_exchange_instance = tcp_client_to_timing_and_data_exchange(
         args.clone(),
+        comm_channel.clone(),
         Arc::clone(&shutdown_marker),
         camera_program_timing_address,
         camera_program_data_address,
@@ -185,6 +187,7 @@ async fn client_communicator(
 
 async fn tcp_client_to_timing_and_data_exchange(
     args: Args,
+    comm_channel: InstructionCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
     timing_addr: SocketAddr,
     data_addr: SocketAddr,
@@ -192,6 +195,7 @@ async fn tcp_client_to_timing_and_data_exchange(
 ) -> io::Result<()> {
     let args_timing = args.clone();
     let shutdown_marker_timing = shutdown_marker.clone();
+    let comm_channel_timing = comm_channel.clone();
     let timing_task = async move {
         let mut buf = [0u8; 65536];
 
@@ -213,6 +217,7 @@ async fn tcp_client_to_timing_and_data_exchange(
             {
                 Ok(Ok(mut timing_stream)) => {
                     debug!("Connected to timing target {}", timing_addr);
+                    let mut parser = BufferedParserSerial::new();
 
                     loop {
                         if shutdown_marker_timing.load(Ordering::SeqCst) {
@@ -231,16 +236,29 @@ async fn tcp_client_to_timing_and_data_exchange(
                                 Ok(n) => {
                                     let bytes_from_timing_endpoint = &buf[..n];
 
-                                    match handle_communication_from_camera_program(
-                                        CameraProgramInfoType::Timing,
-                                        bytes_from_timing_endpoint,
-                                    )
-                                    .await
-                                    {
-                                        Ok(_) => (),
-                                        Err(e) => return Err(Error::new(ErrorKind::Other, e)),
-                                    };
-                                    continue;
+                                    match parser.feed_bytes(bytes_from_timing_endpoint) {
+                                        Some(Ok(inst)) => {
+                                            match comm_channel_timing
+                                                .take_in_command_from_camera_program(inst)
+                                                .await
+                                            {
+                                                Ok(()) => (),
+                                                Err(e) => {
+                                                    return Err(Error::new(
+                                                        ErrorKind::Other,
+                                                        e.to_string(),
+                                                    )); // bad error, internal, can not recover with TCP reconnect
+                                                }
+                                            }
+                                        }
+                                        Some(Err(e)) => {
+                                            error!(
+                                                "Could not parse data from camera program: {}",
+                                                e.to_string()
+                                            );
+                                        }
+                                        None => (),
+                                    }
                                 }
                                 Err(e) => {
                                     error!(
@@ -270,6 +288,7 @@ async fn tcp_client_to_timing_and_data_exchange(
 
     let args_xml = args.clone();
     let shutdown_marker_xml = shutdown_marker.clone();
+    let comm_channel_xml = comm_channel.clone();
     let xml_task = async move {
         let mut buf = [0u8; 65536];
 
@@ -291,6 +310,7 @@ async fn tcp_client_to_timing_and_data_exchange(
             {
                 Ok(Ok(mut xml_stream)) => {
                     debug!("Connected to xml target {}", xml_addr);
+                    let mut parser = BufferedParserXML::new();
 
                     loop {
                         if shutdown_marker_xml.load(Ordering::SeqCst) {
@@ -309,16 +329,29 @@ async fn tcp_client_to_timing_and_data_exchange(
                                 Ok(n) => {
                                     let bytes_from_xml_endpoint = &buf[..n];
 
-                                    match handle_communication_from_camera_program(
-                                        CameraProgramInfoType::XML,
-                                        bytes_from_xml_endpoint,
-                                    )
-                                    .await
-                                    {
-                                        Ok(_) => (),
-                                        Err(e) => return Err(Error::new(ErrorKind::Other, e)),
-                                    };
-                                    continue;
+                                    match parser.feed_bytes(bytes_from_xml_endpoint) {
+                                        Some(Ok(inst)) => {
+                                            match comm_channel_xml
+                                                .take_in_command_from_camera_program(inst)
+                                                .await
+                                            {
+                                                Ok(()) => (),
+                                                Err(e) => {
+                                                    return Err(Error::new(
+                                                        ErrorKind::Other,
+                                                        e.to_string(),
+                                                    )); // bad error, internal, can not recover with TCP reconnect
+                                                }
+                                            }
+                                        }
+                                        Some(Err(e)) => {
+                                            error!(
+                                                "Could not parse data from camera program: {}",
+                                                e.to_string()
+                                            );
+                                        }
+                                        None => (),
+                                    }
                                 }
                                 Err(e) => {
                                     error!("Error in xml channel communication: {}", e.to_string());
@@ -345,6 +378,7 @@ async fn tcp_client_to_timing_and_data_exchange(
 
     let args_data = args;
     let shutdown_marker_data = shutdown_marker;
+    let comm_channel_data = comm_channel;
     let data_task = async move {
         let mut buf = [0u8; 65536];
 
@@ -366,6 +400,7 @@ async fn tcp_client_to_timing_and_data_exchange(
             {
                 Ok(Ok(mut data_stream)) => {
                     debug!("Connected to data target {}", data_addr);
+                    let mut parser = BufferedParserXML::new();
 
                     loop {
                         if shutdown_marker_data.load(Ordering::SeqCst) {
@@ -384,15 +419,29 @@ async fn tcp_client_to_timing_and_data_exchange(
                                 Ok(n) => {
                                     let bytes_from_data_endpoint = &buf[..n];
 
-                                    match handle_communication_from_camera_program(
-                                        CameraProgramInfoType::Data,
-                                        bytes_from_data_endpoint,
-                                    )
-                                    .await
-                                    {
-                                        Ok(_) => (),
-                                        Err(e) => return Err(Error::new(ErrorKind::Other, e)),
-                                    };
+                                    match parser.feed_bytes(bytes_from_data_endpoint) {
+                                        Some(Ok(inst)) => {
+                                            match comm_channel_data
+                                                .take_in_command_from_camera_program(inst)
+                                                .await
+                                            {
+                                                Ok(()) => (),
+                                                Err(e) => {
+                                                    return Err(Error::new(
+                                                        ErrorKind::Other,
+                                                        e.to_string(),
+                                                    )); // bad error, internal, can not recover with TCP reconnect
+                                                }
+                                            }
+                                        }
+                                        Some(Err(e)) => {
+                                            error!(
+                                                "Could not parse data from camera program: {}",
+                                                e.to_string()
+                                            );
+                                        }
+                                        None => (),
+                                    }
 
                                     continue;
                                 }
@@ -429,25 +478,6 @@ async fn tcp_client_to_timing_and_data_exchange(
         }
         Ok(_) => info!("All camera program listeners closed successfully"),
     };
-
-    Ok(())
-}
-
-#[derive(Debug)]
-enum CameraProgramInfoType {
-    Timing,
-    Data,
-    XML,
-}
-
-async fn handle_communication_from_camera_program(
-    data_type: CameraProgramInfoType,
-    data: &[u8],
-) -> Result<(), String> {
-    info!("Data from camera program: {:?}", data_type);
-
-    let decoded: String = String::from_utf8_lossy(data).to_string();
-    info!("{}", decoded);
 
     Ok(())
 }
@@ -541,7 +571,10 @@ async fn tcp_listener_timing_program(
                                     }
                                     Ok(parsed) => {
                                         debug!("Decoded Inbound Communication: {:?}", parsed);
-                                        match comm_channel_read.take_in_command(parsed).await {
+                                        match comm_channel_read
+                                            .take_in_command_from_timing_client(parsed)
+                                            .await
+                                        {
                                             Ok(()) => (),
                                             Err(e) => return Err(e.to_string()),
                                         }
