@@ -167,6 +167,7 @@ impl Display for DayTime {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum InstructionFromCameraProgram {
+    ZeroTime,
     DayTime(DayTime),
     RaceTime(RaceTime),
     IntermediateTime(RaceTime),

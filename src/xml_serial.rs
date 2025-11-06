@@ -147,7 +147,7 @@ fn parse_clock_command(input: &[u8]) -> IResult<&[u8], InstructionFromCameraProg
     let (input, seconds) = parse_two_digits(input)?;
     let (input, _) = take_until_and_consume(&b"\x0D"[..], input)?;
 
-    // TODO what is the second line?
+    // TODO what is the second line? -> probably wind
 
     // 202020202020202031363A31323A32382020202020200D4220202020202020202020202020203220202033202020
 
@@ -159,6 +159,41 @@ fn parse_clock_command(input: &[u8]) -> IResult<&[u8], InstructionFromCameraProg
     };
 
     Ok((input, InstructionFromCameraProgram::DayTime(dt)))
+}
+
+fn parse_zero_time_command(input: &[u8]) -> IResult<&[u8], InstructionFromCameraProgram> {
+    const ZERO_TIME_START: [u8; 23] = [
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+        0x30, 0x2E, 0x30, 0x30, 0x30, 0x20, 0x20, 0x0D,
+    ];
+    const ZERO_TIME_START_ALTERNATIVE: [u8; 23] = [
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+        0x30, 0x2E, 0x30, 0x30, 0x20, 0x20, 0x20, 0x0D,
+    ];
+
+    alt((
+        tag(&ZERO_TIME_START[..]),
+        tag(&ZERO_TIME_START_ALTERNATIVE[..]),
+    ))
+    .parse(input)?;
+
+    // starts the same way, as clock... I hate it. What does the byte really mean? :shrug:
+    // 202020202020202020202020202020302E30303020200D4220202020202020202020202020203220202033202020
+    // 202020202020202020202020202020302E30302020200D4220202020202020202020202020203220202033202020 // AHHH multiple points of precision??
+
+    Ok((input, InstructionFromCameraProgram::ZeroTime))
+}
+
+fn parse_empty_time_command(input: &[u8]) -> IResult<&[u8], InstructionFromCameraProgram> {
+    const EMPTY_TIME_START: [u8; 23] = [
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x0D,
+    ];
+    let (input, _) = tag(&EMPTY_TIME_START[..])(input)?;
+
+    // 202020202020202020202020202020202020202020200D4220202020202020202020202020202020202020202020
+
+    Ok((input, InstructionFromCameraProgram::ZeroTime))
 }
 
 fn parse_intermediate_time_command(input: &[u8]) -> IResult<&[u8], InstructionFromCameraProgram> {
@@ -198,6 +233,8 @@ fn parse_time_command(input: &[u8]) -> IResult<&[u8], InstructionFromCameraProgr
 
 fn parse_any_known_serial_command(input: &[u8]) -> IResult<&[u8], InstructionFromCameraProgram> {
     alt((
+        |i| parse_empty_time_command(i),
+        |i| parse_zero_time_command(i),
         |i| parse_clock_command(i),
         |i| parse_intermediate_time_command(i),
         |i| parse_end_time_command(i),
