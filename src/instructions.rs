@@ -182,8 +182,7 @@ pub enum InstructionFromTimingClient {
     Clear,
     StartList,
     Timing,
-    Meta,
-    TimeText,
+    SetProperty,
     Results,
     ResultsUpdate,
 }
