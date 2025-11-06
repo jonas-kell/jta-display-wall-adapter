@@ -24,7 +24,7 @@ pub struct RaceTime {
     pub ten_thousands: Option<u16>,
 }
 impl RaceTime {
-    pub fn optimize_representation(&self) -> Self {
+    pub fn optimize_representation_for_display(&self) -> Self {
         let mut hours_out = self.hours;
         if let Some(hours_out_val) = hours_out {
             if hours_out_val == 0 {
@@ -41,14 +41,25 @@ impl RaceTime {
             }
         }
 
+        let mut hundrets_out = self.hundrets;
+        let mut thousands_out = self.thousands;
+        let mut ten_thousands_out = self.ten_thousands;
+        if hours_out.is_some() {
+            hundrets_out = None;
+        }
+        if minutes_out.is_some() {
+            thousands_out = None;
+            ten_thousands_out = None;
+        }
+
         Self {
             hours: hours_out,
             minutes: minutes_out,
             seconds: self.seconds,
             tenths: self.tenths,
-            hundrets: self.hundrets,
-            thousands: self.thousands,
-            ten_thousands: self.ten_thousands,
+            hundrets: hundrets_out,
+            thousands: thousands_out,
+            ten_thousands: ten_thousands_out,
         }
     }
 }
