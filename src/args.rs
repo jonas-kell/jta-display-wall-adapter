@@ -30,6 +30,9 @@ pub struct Args {
     /// Port where the camera program has their data endpoint
     #[arg(long, default_value_t = String::from("4446"))]
     pub camera_exchange_data_port: String,
+    /// Port where the camera program has their xml endpoint
+    #[arg(long, default_value_t = String::from("4447"))]
+    pub camera_exchange_xml_port: String,
     /// If the data that is incoming through should get hexdump-displayed
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub hexdump_incoming_communication: bool,

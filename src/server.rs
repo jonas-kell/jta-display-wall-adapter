@@ -51,9 +51,15 @@ pub async fn run_server(args: &Args) -> () {
     )
     .parse()
     .expect("Invalid camera program address for data");
+    let camera_program_xml_address: SocketAddr = format!(
+        "{}:{}",
+        args.address_camera_program, args.camera_exchange_xml_port
+    )
+    .parse()
+    .expect("Invalid camera program address for xml");
     info!(
-        "Talking to the camera program on {} and {}",
-        camera_program_timing_address, camera_program_data_address
+        "Talking to the camera program on {}, {} and {}",
+        camera_program_timing_address, camera_program_data_address, camera_program_xml_address
     );
 
     let comm_channel = InstructionCommunicationChannel::new(&args);
@@ -87,6 +93,7 @@ pub async fn run_server(args: &Args) -> () {
         Arc::clone(&shutdown_marker),
         camera_program_timing_address,
         camera_program_data_address,
+        camera_program_xml_address,
     );
 
     // spawn the async runtimes in parallel
@@ -181,6 +188,7 @@ async fn tcp_client_to_timing_and_data_exchange(
     shutdown_marker: Arc<AtomicBool>,
     timing_addr: SocketAddr,
     data_addr: SocketAddr,
+    xml_addr: SocketAddr,
 ) -> io::Result<()> {
     let args_timing = args.clone();
     let shutdown_marker_timing = shutdown_marker.clone();
@@ -242,6 +250,73 @@ async fn tcp_client_to_timing_and_data_exchange(
                 Err(_) => {
                     // expected on timeout, just loop
                     trace!("No TCP connection to timing exchange could be established within timeout interval");
+                }
+            }
+        }
+
+        Ok::<_, Error>(())
+    };
+
+    let args_xml = args.clone();
+    let shutdown_marker_xml = shutdown_marker.clone();
+    let xml_task = async move {
+        let mut buf = [0u8; 65536];
+
+        loop {
+            if shutdown_marker_xml.load(Ordering::SeqCst) {
+                debug!(
+                    "Shutdown requested, stopping trying to connect to {}",
+                    xml_addr
+                );
+                break;
+            }
+
+            // Wait for new connection with timeout so we can check shutdown flag periodically
+            match time::timeout(
+                Duration::from_millis(args_xml.wait_ms_before_testing_for_shutdown),
+                TcpStream::connect(xml_addr),
+            )
+            .await
+            {
+                Ok(Ok(mut xml_stream)) => {
+                    debug!("Connected to xml target {}", xml_addr);
+
+                    match time::timeout(
+                        Duration::from_millis(args_xml.wait_ms_before_testing_for_shutdown),
+                        xml_stream.read(&mut buf),
+                    )
+                    .await
+                    {
+                        Ok(read_result) => match read_result {
+                            Ok(0) => continue,
+                            Ok(n) => {
+                                let bytes_from_xml_endpoint = &buf[..n];
+
+                                match handle_communication_from_camera_program(
+                                    CameraProgramInfoType::XML,
+                                    bytes_from_xml_endpoint,
+                                )
+                                .await
+                                {
+                                    Ok(_) => (),
+                                    Err(e) => return Err(Error::new(ErrorKind::Other, e)),
+                                };
+                            }
+                            Err(e) => {
+                                error!("Error in xml channel communication: {}", e.to_string());
+                                continue; // try to reconnect
+                            }
+                        },
+                        Err(_) => {
+                            trace!("No TCP message on xml channel within timeout interval");
+                            continue;
+                        }
+                    };
+                }
+                Ok(Err(e)) => error!("XML exchange read error: {}", e),
+                Err(_) => {
+                    // expected on timeout, just loop
+                    trace!("No TCP connection to xml exchange could be established within timeout interval");
                 }
             }
         }
@@ -316,7 +391,7 @@ async fn tcp_client_to_timing_and_data_exchange(
         Ok::<_, Error>(())
     };
 
-    match tokio::try_join!(timing_task, data_task) {
+    match tokio::try_join!(timing_task, data_task, xml_task) {
         Err(e) => {
             error!("Error in a camera program listener task");
             return Err(e);
@@ -331,6 +406,7 @@ async fn tcp_client_to_timing_and_data_exchange(
 enum CameraProgramInfoType {
     Timing,
     Data,
+    XML,
 }
 
 async fn handle_communication_from_camera_program(
