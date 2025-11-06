@@ -214,37 +214,48 @@ async fn tcp_client_to_timing_and_data_exchange(
                 Ok(Ok(mut timing_stream)) => {
                     debug!("Connected to timing target {}", timing_addr);
 
-                    match time::timeout(
-                        Duration::from_millis(args_timing.wait_ms_before_testing_for_shutdown),
-                        timing_stream.read(&mut buf),
-                    )
-                    .await
-                    {
-                        Ok(read_result) => match read_result {
-                            Ok(0) => continue,
-                            Ok(n) => {
-                                let bytes_from_timing_endpoint = &buf[..n];
-
-                                match handle_communication_from_camera_program(
-                                    CameraProgramInfoType::Timing,
-                                    bytes_from_timing_endpoint,
-                                )
-                                .await
-                                {
-                                    Ok(_) => (),
-                                    Err(e) => return Err(Error::new(ErrorKind::Other, e)),
-                                };
-                            }
-                            Err(e) => {
-                                error!("Error in timing channel communication: {}", e.to_string());
-                                continue; // try to reconnect
-                            }
-                        },
-                        Err(_) => {
-                            trace!("No TCP message on timing channel within timeout interval");
-                            continue;
+                    loop {
+                        if shutdown_marker_timing.load(Ordering::SeqCst) {
+                            debug!("Shutdown marker set, breaking camera program timing reading");
+                            break;
                         }
-                    };
+
+                        match time::timeout(
+                            Duration::from_millis(args_timing.wait_ms_before_testing_for_shutdown),
+                            timing_stream.read(&mut buf),
+                        )
+                        .await
+                        {
+                            Ok(read_result) => match read_result {
+                                Ok(0) => continue,
+                                Ok(n) => {
+                                    let bytes_from_timing_endpoint = &buf[..n];
+
+                                    match handle_communication_from_camera_program(
+                                        CameraProgramInfoType::Timing,
+                                        bytes_from_timing_endpoint,
+                                    )
+                                    .await
+                                    {
+                                        Ok(_) => (),
+                                        Err(e) => return Err(Error::new(ErrorKind::Other, e)),
+                                    };
+                                    continue;
+                                }
+                                Err(e) => {
+                                    error!(
+                                        "Error in timing channel communication: {}",
+                                        e.to_string()
+                                    );
+                                    break; // try to reconnect
+                                }
+                            },
+                            Err(_) => {
+                                trace!("No TCP message on timing channel within timeout interval");
+                                continue;
+                            }
+                        };
+                    }
                 }
                 Ok(Err(e)) => error!("Timing exchange read error: {}", e),
                 Err(_) => {
@@ -281,37 +292,45 @@ async fn tcp_client_to_timing_and_data_exchange(
                 Ok(Ok(mut xml_stream)) => {
                     debug!("Connected to xml target {}", xml_addr);
 
-                    match time::timeout(
-                        Duration::from_millis(args_xml.wait_ms_before_testing_for_shutdown),
-                        xml_stream.read(&mut buf),
-                    )
-                    .await
-                    {
-                        Ok(read_result) => match read_result {
-                            Ok(0) => continue,
-                            Ok(n) => {
-                                let bytes_from_xml_endpoint = &buf[..n];
-
-                                match handle_communication_from_camera_program(
-                                    CameraProgramInfoType::XML,
-                                    bytes_from_xml_endpoint,
-                                )
-                                .await
-                                {
-                                    Ok(_) => (),
-                                    Err(e) => return Err(Error::new(ErrorKind::Other, e)),
-                                };
-                            }
-                            Err(e) => {
-                                error!("Error in xml channel communication: {}", e.to_string());
-                                continue; // try to reconnect
-                            }
-                        },
-                        Err(_) => {
-                            trace!("No TCP message on xml channel within timeout interval");
-                            continue;
+                    loop {
+                        if shutdown_marker_xml.load(Ordering::SeqCst) {
+                            debug!("Shutdown marker set, breaking camera program xml reading");
+                            break;
                         }
-                    };
+
+                        match time::timeout(
+                            Duration::from_millis(args_xml.wait_ms_before_testing_for_shutdown),
+                            xml_stream.read(&mut buf),
+                        )
+                        .await
+                        {
+                            Ok(read_result) => match read_result {
+                                Ok(0) => continue,
+                                Ok(n) => {
+                                    let bytes_from_xml_endpoint = &buf[..n];
+
+                                    match handle_communication_from_camera_program(
+                                        CameraProgramInfoType::XML,
+                                        bytes_from_xml_endpoint,
+                                    )
+                                    .await
+                                    {
+                                        Ok(_) => (),
+                                        Err(e) => return Err(Error::new(ErrorKind::Other, e)),
+                                    };
+                                    continue;
+                                }
+                                Err(e) => {
+                                    error!("Error in xml channel communication: {}", e.to_string());
+                                    break; // try to reconnect
+                                }
+                            },
+                            Err(_) => {
+                                trace!("No TCP message on xml channel within timeout interval");
+                                continue;
+                            }
+                        };
+                    }
                 }
                 Ok(Err(e)) => error!("XML exchange read error: {}", e),
                 Err(_) => {
@@ -348,37 +367,49 @@ async fn tcp_client_to_timing_and_data_exchange(
                 Ok(Ok(mut data_stream)) => {
                     debug!("Connected to data target {}", data_addr);
 
-                    match time::timeout(
-                        Duration::from_millis(args_data.wait_ms_before_testing_for_shutdown),
-                        data_stream.read(&mut buf),
-                    )
-                    .await
-                    {
-                        Ok(read_result) => match read_result {
-                            Ok(0) => continue,
-                            Ok(n) => {
-                                let bytes_from_data_endpoint = &buf[..n];
-
-                                match handle_communication_from_camera_program(
-                                    CameraProgramInfoType::Data,
-                                    bytes_from_data_endpoint,
-                                )
-                                .await
-                                {
-                                    Ok(_) => (),
-                                    Err(e) => return Err(Error::new(ErrorKind::Other, e)),
-                                };
-                            }
-                            Err(e) => {
-                                error!("Error in data channel communication: {}", e.to_string());
-                                continue; // try to reconnect
-                            }
-                        },
-                        Err(_) => {
-                            trace!("No TCP message on data channel within timeout interval");
-                            continue;
+                    loop {
+                        if shutdown_marker_data.load(Ordering::SeqCst) {
+                            debug!("Shutdown marker set, breaking camera program data reading");
+                            break;
                         }
-                    };
+
+                        match time::timeout(
+                            Duration::from_millis(args_data.wait_ms_before_testing_for_shutdown),
+                            data_stream.read(&mut buf),
+                        )
+                        .await
+                        {
+                            Ok(read_result) => match read_result {
+                                Ok(0) => continue,
+                                Ok(n) => {
+                                    let bytes_from_data_endpoint = &buf[..n];
+
+                                    match handle_communication_from_camera_program(
+                                        CameraProgramInfoType::Data,
+                                        bytes_from_data_endpoint,
+                                    )
+                                    .await
+                                    {
+                                        Ok(_) => (),
+                                        Err(e) => return Err(Error::new(ErrorKind::Other, e)),
+                                    };
+
+                                    continue;
+                                }
+                                Err(e) => {
+                                    error!(
+                                        "Error in data channel communication: {}",
+                                        e.to_string()
+                                    );
+                                    break; // try to reconnect
+                                }
+                            },
+                            Err(_) => {
+                                trace!("No TCP message on data channel within timeout interval");
+                                continue;
+                            }
+                        };
+                    }
                 }
                 Ok(Err(e)) => error!("Data exchange read error: {}", e),
                 Err(_) => {
