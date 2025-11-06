@@ -1,8 +1,6 @@
-use nom::bytes::complete::{tag, take, take_until};
-// use nom::combinator::peek as nom_peek;
-use nom::error::{Error as NomError, ErrorKind as NomErrorKind};
-use nom::sequence::terminated;
-use nom::Err::{Error as NomErr, Failure as NomFailure};
+use crate::hex::{get_hex_repr, hex_log_bytes, take_until_and_consume};
+use crate::hex::{NomErr, NomError, NomErrorKind, NomFailure};
+use nom::bytes::complete::{tag, take};
 use nom::Parser;
 use nom::{branch::alt, IResult};
 
@@ -151,14 +149,6 @@ fn leb128_u32(input: &[u8]) -> IResult<&[u8], u32> {
     Err(nom::Err::Incomplete(nom::Needed::new(1)))
 }
 
-fn take_until_and_consume<'a>(pattern: &[u8], input: &'a [u8]) -> IResult<&'a [u8], &'a [u8]> {
-    terminated(take_until(pattern), tag(pattern)).parse(input)
-}
-
-// fn peek(input: &[u8]) -> IResult<&[u8], &[u8]> {
-//     nom_peek(take(4usize)).parse(input)
-// }
-
 fn parse_failing_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingClient> {
     Err(NomErr(NomError::new(input, NomErrorKind::Tag))) // test, this can never be parsed
 }
@@ -260,7 +250,6 @@ fn parse_timing_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingCli
 }
 
 const META_MARKER: [u8; 274] = [
-    // TODO this is not enough -> not sure if this identifies this enough
     0x52, 0x44, 0x69, 0x73, 0x70, 0x6C, 0x61, 0x79, 0x42, 0x6F, 0x61, 0x72, 0x64, 0x2E, 0x43, 0x6F,
     0x6D, 0x6D, 0x75, 0x6E, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6F, 0x6E, 0x2C, 0x20, 0x56, 0x65, 0x72,
     0x73, 0x69, 0x6F, 0x6E, 0x3D, 0x31, 0x2E, 0x30, 0x2E, 0x30, 0x2E, 0x31, 0x37, 0x2C, 0x20, 0x43,
@@ -295,6 +284,7 @@ fn parse_meta_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingClien
 
 // this intersects with the meta above
 fn parse_time_text_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingClient> {
+    // TODO this is not enough -> not sure if this identifies this enough
     const TIME_TEXT_MARKER: [u8; 16] = [
         0x00, 0x04, 0x54, 0x69, 0x6D, 0x65, 0x06, 0x08, 0x00, 0x00, 0x00, 0x04, 0x54, 0x65, 0x78,
         0x74,
@@ -360,23 +350,6 @@ fn parse_any_known_command(input: &[u8]) -> IResult<&[u8], InstructionFromTiming
         |i| parse_results_update_command(i),
     ))
     .parse(input)
-}
-
-pub fn hex_log_bytes(buf: &[u8]) {
-    trace!("({} bytes) Hex: \n{}", buf.len(), get_hex_repr(buf),);
-}
-
-// https://hexed.it/
-fn get_hex_repr(buf: &[u8]) -> String {
-    format!(
-        // "\\x{}",
-        "{}",
-        buf.iter()
-            .map(|b| format!("{:02X}", b))
-            .collect::<Vec<_>>()
-            // .join("\\x")
-            .join("")
-    )
 }
 
 fn text_log_bytes(buf: &[u8]) {

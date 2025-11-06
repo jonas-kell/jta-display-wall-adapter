@@ -1,7 +1,8 @@
 use crate::args::Args;
 use crate::forwarding::{PacketCommunicationChannel, PacketData};
+use crate::hex::hex_log_bytes;
 use crate::instructions::{InstructionCommunicationChannel, InstructionToTimingClient};
-use crate::nrbf::{generate_response_bytes, hex_log_bytes, BufferedParser};
+use crate::nrbf::{generate_response_bytes, BufferedParser};
 use crate::xml_serial::{BufferedParserSerial, BufferedParserXML};
 use async_channel::RecvError;
 use std::io::{self, Error, ErrorKind};
@@ -217,7 +218,7 @@ async fn tcp_client_to_timing_and_data_exchange(
             {
                 Ok(Ok(mut timing_stream)) => {
                     debug!("Connected to timing target {}", timing_addr);
-                    let mut parser = BufferedParserSerial::new();
+                    let mut parser = BufferedParserSerial::new(&args_timing);
 
                     loop {
                         if shutdown_marker_timing.load(Ordering::SeqCst) {
