@@ -7,10 +7,22 @@ use tokio::time::{self, error::Elapsed};
 
 use crate::{args::Args, hex::parse_race_time};
 
-#[derive(Debug)]
 pub enum IncomingInstruction {
     FromTimingClient(InstructionFromTimingClient),
     FromCameraProgram(InstructionFromCameraProgram),
+}
+impl Display for IncomingInstruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                IncomingInstruction::FromTimingClient(tci) => format!("FromTimingClient: {}", tci),
+                IncomingInstruction::FromCameraProgram(cpi) =>
+                    format!("FromTimingClient: {:?}", cpi),
+            }
+        )
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -174,7 +186,7 @@ pub enum InstructionFromCameraProgram {
     EndTime(RaceTime),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub enum InstructionFromTimingClient {
     ClientInfo,
     Freetext(String),
@@ -185,12 +197,35 @@ pub enum InstructionFromTimingClient {
     SetProperty,
     Results,
     ResultsUpdate,
+    ServerInfo,
+    SendFrame(Vec<u8>),
+}
+impl Display for InstructionFromTimingClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                InstructionFromTimingClient::ClientInfo => String::from("ClientInfo"),
+                InstructionFromTimingClient::Freetext(text) => format!("Freetext: {}", text),
+                InstructionFromTimingClient::Advertisements => String::from("Advertisements"),
+                InstructionFromTimingClient::Clear => String::from("Clear"),
+                InstructionFromTimingClient::StartList => String::from("StartList"),
+                InstructionFromTimingClient::Timing => String::from("Timing"),
+                InstructionFromTimingClient::SetProperty => String::from("SetProperty"),
+                InstructionFromTimingClient::Results => String::from("Results"),
+                InstructionFromTimingClient::ResultsUpdate => String::from("ResultsUpdate"),
+                InstructionFromTimingClient::ServerInfo => String::from("ServerInfo"),
+                InstructionFromTimingClient::SendFrame(_) => String::from("SendFrame"),
+            }
+        )
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum InstructionToTimingClient {
-    SendBeforeFrameSetupInstruction,
-    SendFrame, // TODO needs to store the frame data
+    SendServerInfo,
+    SendFrame(Vec<u8>), // stores the frame data
 }
 
 #[derive(Clone)]

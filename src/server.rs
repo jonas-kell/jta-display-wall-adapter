@@ -1,8 +1,10 @@
 use crate::args::Args;
+use crate::bitmap::png_to_bmp_bytes;
 use crate::forwarding::{PacketCommunicationChannel, PacketData};
 use crate::hex::hex_log_bytes;
 use crate::instructions::{
-    DayTime, InstructionCommunicationChannel, InstructionToTimingClient, RaceTime,
+    DayTime, InstructionCommunicationChannel, InstructionFromTimingClient,
+    InstructionToTimingClient, RaceTime,
 };
 use crate::nrbf::{generate_response_bytes, BufferedParser};
 use crate::xml_serial::{BufferedParserSerial, BufferedParserXML};
@@ -81,6 +83,7 @@ pub async fn run_server(args: &Args) -> () {
 
     let tcp_forwarder_server_instance = tcp_forwarder_server(
         args.clone(),
+        comm_channel.clone(),
         comm_channel_packets.clone(),
         Arc::clone(&shutdown_marker),
         passthrough_address_display_program,
@@ -160,7 +163,7 @@ async fn client_communicator(
             match comm_channel_a.wait_for_incomming_command().await {
                 Ok(command_res) => match command_res {
                     Ok(comm) => {
-                        info!("Command received!!: {:?}", comm);
+                        info!("Command received!!: {}", comm);
                     }
                     Err(e) => return Err(Error::new(ErrorKind::Other, e.to_string())),
                 },
@@ -177,14 +180,16 @@ async fn client_communicator(
         sleep(Duration::from_secs(2)).await;
         debug!("Sending Frame...");
         match comm_channel
-            .send_out_command(InstructionToTimingClient::SendBeforeFrameSetupInstruction)
+            .send_out_command(InstructionToTimingClient::SendServerInfo)
             .await
         {
             Ok(()) => trace!("Command queued"),
             Err(e) => return Err(Error::new(ErrorKind::Other, e.to_string())),
         };
         match comm_channel
-            .send_out_command(InstructionToTimingClient::SendFrame)
+            .send_out_command(InstructionToTimingClient::SendFrame(png_to_bmp_bytes(
+                "imagebig.png",
+            )))
             .await
         {
             Ok(()) => trace!("Command queued"),
@@ -586,7 +591,7 @@ async fn tcp_listener_timing_program(
                                         error!("Error when Decoding Inbound Communication: {}", err)
                                     }
                                     Ok(parsed) => {
-                                        debug!("Decoded Inbound Communication: {:?}", parsed);
+                                        debug!("Decoded Inbound Communication: {}", parsed);
                                         match comm_channel_read
                                             .take_in_command_from_timing_client(parsed)
                                             .await
@@ -675,7 +680,10 @@ async fn tcp_listener_timing_program(
                                 r = comm_channel_command_outbound_source => {
                                     match r {
                                         Ok(inst) => {
-                                            trace!("Sending Bytes for custom command: {:?}", inst);
+                                            trace!("Sending Bytes for custom command: {}", match inst {
+                                                InstructionToTimingClient::SendFrame(_) => "SendFrame",
+                                                InstructionToTimingClient::SendServerInfo => "ServerInfo",
+                                            });
                                             let bytes_to_send = generate_response_bytes(inst);
                                             wi.write_all(&bytes_to_send)
                                                             .await
@@ -719,6 +727,7 @@ async fn tcp_listener_timing_program(
 
 async fn tcp_forwarder_server(
     args: Args,
+    comm_channel: InstructionCommunicationChannel,
     comm_channel_packets: PacketCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
     passthrough_target_addr: SocketAddr,
@@ -753,6 +762,7 @@ async fn tcp_forwarder_server(
 
                 // Connection is accepted. only one connection, while one is running
 
+                let comm_channel = comm_channel.clone();
                 let comm_channel_packets_read = comm_channel_packets.clone();
                 let comm_channel_packets_write = comm_channel_packets.clone();
                 let shutdown_marker_read = shutdown_marker.clone();
@@ -762,6 +772,8 @@ async fn tcp_forwarder_server(
 
                 let read_handler = async move {
                     let mut buf = [0u8; 65536];
+                    let mut parser = BufferedParser::new(args_read.clone());
+
                     loop {
                         if shutdown_marker_read.load(Ordering::SeqCst) {
                             debug!("Shutdown marker set, breaking proxy external -> self transfer");
@@ -774,22 +786,60 @@ async fn tcp_forwarder_server(
                         )
                         .await
                         {
-                            Ok(read_result) => match read_result {
-                                Ok(0) => continue,
-                                Ok(n) => {
-                                    // TODO could transform the back-proxy data (conditionally) to e.g. rewrite picture timing
-                                    match comm_channel_packets_read
-                                        .outbound_take_in(buf[..n].into())
-                                        .await
-                                    {
-                                        Ok(()) => trace!(
-                                            "Proxy packet queued into internal communication"
-                                        ),
-                                        Err(e) => return Err(e.to_string()),
-                                    };
+                            Ok(read_result) => {
+                                match read_result {
+                                    Ok(0) => continue,
+                                    Ok(n) => {
+                                        // Decoding takes care of logging if requested, as there the message is split up to provide more info!!
+                                        match parser.feed_bytes_return_owned_on_fail(&buf[..n]) {
+                                            Some(res) => match res {
+                                                Err((err, data_that_could_not_be_parsed)) => {
+                                                    error!("Error when Decoding Outbound Communication: {}", err);
+
+                                                    // proxy just like that if not successfully parsed
+                                                    match comm_channel_packets_read
+                                                        .outbound_take_in(data_that_could_not_be_parsed)
+                                                        .await
+                                                    {
+                                                        Ok(()) => trace!(
+                                                            "Proxy packet queued into internal communication"
+                                                        ),
+                                                        Err(e) => return Err(e.to_string()),
+                                                    };
+                                                }
+                                                Ok(parsed) => {
+                                                    debug!(
+                                                        "Decoded Outbound Communication: {}",
+                                                        parsed
+                                                    );
+
+                                                    match parsed {
+                                                        InstructionFromTimingClient::ServerInfo => {
+                                                            match comm_channel.send_out_command(InstructionToTimingClient::SendServerInfo).await {
+                                                                Ok(()) => trace!("Detected Packet and queued server-info for rewrite-proxy"),
+                                                                Err(e) => return Err(e.to_string()),
+                                                            }
+                                                        }
+                                                        InstructionFromTimingClient::SendFrame(frame_data) => {
+                                                            match comm_channel.send_out_command(InstructionToTimingClient::SendFrame(frame_data)).await {
+                                                                Ok(()) => trace!("Detected Packet and queued frame for rewrite-proxy"),
+                                                                Err(e) => return Err(e.to_string()),
+                                                            }
+                                                        },
+                                                        comm => {
+                                                            error!("Unexpected: got a command OUTBOUND that should not happen: {}", comm);
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            None => trace!(
+                                                "Received packet, but does not seeem to be end of communication"
+                                            ),
+                                        };
+                                    }
+                                    Err(e) => return Err(e.to_string()),
                                 }
-                                Err(e) => return Err(e.to_string()),
-                            },
+                            }
                             Err(_) => trace!("No TCP to proxy back during timeout interval"),
                         }
                     }

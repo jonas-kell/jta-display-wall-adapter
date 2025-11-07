@@ -1,13 +1,12 @@
-use crate::hex::{get_hex_repr, take_until_and_consume};
+use crate::hex::{get_hex_repr, hex_log_bytes, take_until_and_consume};
 use crate::hex::{NomErr, NomError, NomErrorKind, NomFailure};
-use nom::bytes::complete::{tag, take};
+use nom::bytes::complete::{tag, take, take_until};
 use nom::combinator::{not, peek};
 use nom::Parser;
 use nom::{branch::alt, IResult};
 
 use crate::{
     args::Args,
-    bitmap::png_to_bmp_bytes,
     instructions::{InstructionFromTimingClient, InstructionToTimingClient},
 };
 
@@ -42,13 +41,50 @@ impl BufferedParser {
             self.state.extend_from_slice(packet);
 
             if termination_res {
-                // self contained packet (never copy)
+                // packet ended
                 let res = decode_single_nrbf(&self.args, &self.state);
 
                 // clear internal buffer
                 self.state.clear();
 
                 return Some(res);
+            }
+        }
+
+        // Missing data
+        None
+    }
+
+    pub fn feed_bytes_return_owned_on_fail(
+        &mut self,
+        packet: &[u8],
+    ) -> Option<Result<InstructionFromTimingClient, (String, Vec<u8>)>> {
+        let header_res = check_nrbf_headers(&self.args, packet);
+        let termination_res = check_nrbf_termination_bytes(packet);
+
+        if let Some(body_data) = header_res {
+            if termination_res {
+                // self contained packet (never copy)
+                return Some(
+                    decode_single_nrbf(&self.args, body_data).map_err(|err| (err, packet.into())),
+                );
+            } else {
+                self.state.extend_from_slice(packet); // this version KEEPS the header stored (as it needs to return it possibly)
+            }
+        } else {
+            // append full packet
+            self.state.extend_from_slice(packet);
+
+            if termination_res {
+                // packet ended
+                // slice out header bytes here
+                let res =
+                    decode_single_nrbf(&self.args, &self.state[HEADER_BYTES_TEMPLATE.len()..]);
+
+                let copy = std::mem::take(&mut self.state);
+                self.state.clear(); // should not do anything now, as the operation above replaced the vec with default
+
+                return Some(res.map_err(|err| (err, copy)));
             }
         }
 
@@ -263,6 +299,8 @@ fn parse_set_property_command(input: &[u8]) -> IResult<&[u8], InstructionFromTim
         tag(&CLEAR_MARKER[..]),
         tag(&FREETEXT_MARKER[..]),
         tag(&CLIENT_INFO_MARKER[..]),
+        tag(&SERVER_INFO_MARKER[..]),
+        tag(&SEND_FRAME_MARKER[..]),
     ))))
     .parse(input)?;
 
@@ -298,6 +336,38 @@ fn parse_results_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingCl
     Ok((input, InstructionFromTimingClient::Results))
 }
 
+const SERVER_INFO_MARKER: [u8; 45] = [
+    0x44, 0x69, 0x73, 0x70, 0x6C, 0x61, 0x79, 0x42, 0x6F, 0x61, 0x72, 0x64, 0x2E, 0x43, 0x6F, 0x6D,
+    0x6D, 0x75, 0x6E, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6F, 0x6E, 0x2E, 0x50, 0x61, 0x63, 0x6B, 0x65,
+    0x74, 0x73, 0x2E, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x49, 0x6E, 0x66, 0x6F,
+];
+// yes, technically this is sent to the timing client
+fn parse_server_info_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingClient> {
+    let (input, _) = take_until_and_consume(&SERVER_INFO_MARKER[..], input)?;
+
+    // 0C0200000053446973706C6179426F6172642E436F6D6D756E69636174696F6E2C2056657273696F6E3D312E302E302E3132382C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D6E756C6C05010000002D446973706C6179426F6172642E436F6D6D756E69636174696F6E2E5061636B6574732E536572766572496E666F02000000233C41706C6C69636174696F6E56657273696F6E3E6B5F5F4261636B696E674669656C64193C4368616E6E656C733E6B5F5F4261636B696E674669656C640103BA0253797374656D2E436F6C6C656374696F6E732E47656E657269632E4C69737460315B5B53797374656D2E5475706C6560325B5B53797374656D2E496E7433322C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D2C5B53797374656D2E537472696E672C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D5D2C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D5D02000000060300000009312E302E302E31323809040000000404000000BA0253797374656D2E436F6C6C656374696F6E732E47656E657269632E4C69737460315B5B53797374656D2E5475706C6560325B5B53797374656D2E496E7433322C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D2C5B53797374656D2E537472696E672C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D5D2C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D5D03000000065F6974656D73055F73697A65085F76657273696F6E030000CA0153797374656D2E5475706C6560325B5B53797374656D2E496E7433322C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D2C5B53797374656D2E537472696E672C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D5D5B5D080809050000000100000001000000070500000000010000000400000003C80153797374656D2E5475706C6560325B5B53797374656D2E496E7433322C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D2C5B53797374656D2E537472696E672C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D5D09060000000D030406000000C80153797374656D2E5475706C6560325B5B53797374656D2E496E7433322C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D2C5B53797374656D2E537472696E672C206D73636F726C69622C2056657273696F6E3D342E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D623737613563353631393334653038395D5D02000000076D5F4974656D31076D5F4974656D32000108000000000607000000064F7574707574
+
+    Ok((input, InstructionFromTimingClient::Results))
+}
+
+const SEND_FRAME_MARKER: [u8; 46] = [
+    0x44, 0x69, 0x73, 0x70, 0x6C, 0x61, 0x79, 0x42, 0x6F, 0x61, 0x72, 0x64, 0x2E, 0x43, 0x6F, 0x6D,
+    0x6D, 0x75, 0x6E, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6F, 0x6E, 0x2E, 0x50, 0x61, 0x63, 0x6B, 0x65,
+    0x74, 0x73, 0x2E, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6E, 0x74, 0x56, 0x69, 0x65, 0x77,
+];
+// yes, technically this is sent to the timing client
+fn parse_send_frame_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingClient> {
+    let (input, _) = take_until_and_consume(&SEND_FRAME_MARKER[..], input)?;
+    let (input, _) = take_until_and_consume(&DATA_BEFORE_IMAGEA[..], input)?;
+    let (input, _) = take_until(&b"\x42\x4D"[..])(input)?;
+    let (input, image_data) = take_until(&END_OF_MESSAGE_MARKER_TEMPLATE[..])(input)?;
+
+    Ok((
+        input,
+        InstructionFromTimingClient::SendFrame(image_data.into()),
+    ))
+}
+
 fn parse_any_known_command(input: &[u8]) -> IResult<&[u8], InstructionFromTimingClient> {
     alt((
         |i| parse_failing_command(i),
@@ -308,6 +378,8 @@ fn parse_any_known_command(input: &[u8]) -> IResult<&[u8], InstructionFromTiming
         |i| parse_startlist_command(i),
         |i| parse_timing_command(i),
         |i| parse_results_command(i),
+        |i| parse_server_info_command(i),
+        |i| parse_send_frame_command(i),
         |i| parse_set_property_command(i),
     ))
     .parse(input)
@@ -331,7 +403,7 @@ const HEADER_BYTES_TEMPLATE: [u8; 17] = [
 const END_OF_MESSAGE_MARKER_TEMPLATE: [u8; 9] =
     [0x0B, 0x01, 0x01, 0x02, 0x02, 0x03, 0x03, 0x00, 0x00];
 
-fn pre_response() -> Vec<u8> {
+fn server_info() -> Vec<u8> {
     let content: [u8; 1587] = [
         0x0C, 0x02, 0x00, 0x00, 0x00, 0x53, 0x44, 0x69, 0x73, 0x70, 0x6C, 0x61, 0x79, 0x42, 0x6F,
         0x61, 0x72, 0x64, 0x2E, 0x43, 0x6F, 0x6D, 0x6D, 0x75, 0x6E, 0x69, 0x63, 0x61, 0x74, 0x69,
@@ -451,7 +523,11 @@ fn pre_response() -> Vec<u8> {
     combined
 }
 
-fn image_response() -> Vec<u8> {
+const DATA_BEFORE_IMAGEA: [u8; 5] = [0x0F, 0x03, 0x00, 0x00, 0x00];
+const DATA_BEFORE_IMAGEB: [u8; 1] = [0x02];
+
+/// image data is bytes of a .bmp image
+fn image_response(image_data: Vec<u8>) -> Vec<u8> {
     let start: [u8; 250] = [
         0x0C, 0x02, 0x00, 0x00, 0x00, 0x53, 0x44, 0x69, 0x73, 0x70, 0x6C, 0x61, 0x79, 0x42, 0x6F,
         0x61, 0x72, 0x64, 0x2E, 0x43, 0x6F, 0x6D, 0x6D, 0x75, 0x6E, 0x69, 0x63, 0x61, 0x74, 0x69,
@@ -475,21 +551,15 @@ fn image_response() -> Vec<u8> {
     // I assume date param. Must increment to update?
     let modifying = generate_timestamp_bytes();
 
-    let image_data = png_to_bmp_bytes("imagebig.png");
-
-    let data_before_imagea: [u8; 5] = [0x0F, 0x03, 0x00, 0x00, 0x00];
-
     let image_data_size: [u8; 4] = (image_data.len() as u32).to_le_bytes();
-
-    let data_before_imageb: [u8; 1] = [0x02];
 
     let combined: Vec<u8> = [
         HEADER_BYTES_TEMPLATE.as_slice(),
         start.as_slice(),
         modifying.as_slice(),
-        data_before_imagea.as_slice(),
+        DATA_BEFORE_IMAGEA.as_slice(),
         image_data_size.as_slice(),
-        data_before_imageb.as_slice(),
+        DATA_BEFORE_IMAGEB.as_slice(),
         image_data.as_slice(),
         END_OF_MESSAGE_MARKER_TEMPLATE.as_slice(),
     ]
@@ -500,8 +570,8 @@ fn image_response() -> Vec<u8> {
 
 pub fn generate_response_bytes(instruction: InstructionToTimingClient) -> Vec<u8> {
     match instruction {
-        InstructionToTimingClient::SendBeforeFrameSetupInstruction => pre_response(),
-        InstructionToTimingClient::SendFrame => image_response(),
+        InstructionToTimingClient::SendServerInfo => server_info(),
+        InstructionToTimingClient::SendFrame(frame_data) => image_response(frame_data),
     }
 }
 
