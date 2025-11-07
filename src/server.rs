@@ -3,7 +3,7 @@ use crate::bitmap::png_to_bmp_bytes;
 use crate::forwarding::{PacketCommunicationChannel, PacketData};
 use crate::hex::hex_log_bytes;
 use crate::instructions::{
-    DayTime, InstructionCommunicationChannel, InstructionFromTimingClient,
+    DayTime, IncomingInstruction, InstructionCommunicationChannel, InstructionFromTimingClient,
     InstructionToTimingClient, RaceTime,
 };
 use crate::nrbf::{generate_response_bytes, BufferedParser};
@@ -164,6 +164,26 @@ async fn client_communicator(
                 Ok(command_res) => match command_res {
                     Ok(comm) => {
                         info!("Command received!!: {}", comm);
+                        match comm {
+                            IncomingInstruction::FromTimingClient(inst) => match inst {
+                                InstructionFromTimingClient::Clear => {
+                                    sleep(Duration::from_secs(1)).await;
+                                    match comm_channel_a
+                                        .send_out_command(InstructionToTimingClient::SendFrame(
+                                            png_to_bmp_bytes("imagebig.png"),
+                                        ))
+                                        .await
+                                    {
+                                        Ok(()) => trace!("Command queued"),
+                                        Err(e) => {
+                                            return Err(Error::new(ErrorKind::Other, e.to_string()))
+                                        }
+                                    };
+                                }
+                                _ => (),
+                            },
+                            _ => (),
+                        }
                     }
                     Err(e) => return Err(Error::new(ErrorKind::Other, e.to_string())),
                 },
