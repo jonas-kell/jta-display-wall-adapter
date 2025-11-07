@@ -9,5 +9,20 @@ services:
       - ./:/app/
     command: cargo watch -x "run -- server --passthrough-address-display-program 192.168.8.199 -v --address-camera-program 192.168.8.119 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --passthrough-to-display-program"
 
+  client:
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - ${XAUTHORITY}:/root/.Xauthority:ro
+      - rust_build_cache:/usr/local/cargo/registry/
+      - ./:/app/
+    devices:
+      - /dev/dri:/dev/dri
+    build:
+      context: ./
+      dockerfile: ./docker/dev/Dockerfile
+    command: cargo watch -x "run -- client"
+
 volumes:
   rust_build_cache:
