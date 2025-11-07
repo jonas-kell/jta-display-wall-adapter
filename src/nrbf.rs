@@ -1,4 +1,4 @@
-use crate::hex::{get_hex_repr, hex_log_bytes, take_until_and_consume};
+use crate::hex::{get_hex_repr, take_until_and_consume};
 use crate::hex::{NomErr, NomError, NomErrorKind, NomFailure};
 use nom::bytes::complete::{tag, take, take_until};
 use nom::combinator::{not, peek};
