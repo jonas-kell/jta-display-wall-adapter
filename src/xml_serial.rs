@@ -1,4 +1,5 @@
 use crate::hex::{parse_race_time, parse_two_digits, take_until_and_consume};
+use chrono::{NaiveDateTime, NaiveTime};
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::multispace0;
@@ -8,6 +9,10 @@ use crate::args::Args;
 use crate::hex::hex_log_bytes;
 use crate::instructions::DayTime;
 use crate::instructions::InstructionFromCameraProgram;
+
+use quick_xml::de::from_str;
+use serde::{Deserialize, Deserializer, Serialize};
+use uuid::Uuid;
 
 pub struct BufferedParserXML {
     state: Vec<u8>,
@@ -57,10 +62,197 @@ fn check_xml_termination_bytes(possible_packet: &[u8]) -> bool {
     possible_packet.ends_with(b"\x0D")
 }
 
-fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, String> {
-    let decoded: String = String::from_utf8_lossy(packet).to_string();
+const DATETIME_FORMAT: &str = "%Y-%m-%d%H:%M:%S%.f";
 
-    debug!("XML message:\n{}", decoded);
+struct HeatDateTime(NaiveDateTime);
+
+impl<'de> Deserialize<'de> for HeatDateTime {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        NaiveDateTime::parse_from_str(&s, DATETIME_FORMAT)
+            .map(HeatDateTime)
+            .map_err(serde::de::Error::custom)
+    }
+}
+
+const STARTTIME_FORMAT: &str = "%H:%M:%S%.f";
+
+struct HeatStartTime(NaiveTime);
+
+impl<'de> Deserialize<'de> for HeatStartTime {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        NaiveTime::parse_from_str(&s, STARTTIME_FORMAT)
+            .map(HeatStartTime)
+            .map_err(serde::de::Error::custom)
+    }
+}
+
+const PLANNED_STARTTIME_FORMAT: &str = "%H:%M:%S";
+
+struct HeatPlannedStartTime(NaiveTime);
+
+impl<'de> Deserialize<'de> for HeatPlannedStartTime {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        NaiveTime::parse_from_str(&s, PLANNED_STARTTIME_FORMAT)
+            .map(HeatPlannedStartTime)
+            .map_err(serde::de::Error::custom)
+    }
+}
+
+#[derive(Deserialize)]
+struct HeatStartXML {
+    #[serde(rename = "@Application")]
+    application: String,
+    #[serde(rename = "@Version")]
+    version: String,
+    #[serde(rename = "@Generated")]
+    generated: HeatDateTime,
+    #[serde(rename = "@Id")]
+    id: Uuid,
+    #[serde(rename = "@HeatId")]
+    heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
+    #[serde(rename = "@Time")]
+    time: HeatStartTime,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeatStart {
+    pub application: String,
+    pub version: String,
+    pub generated: NaiveDateTime,
+    pub id: Uuid,
+    pub heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
+    pub time: NaiveTime,
+}
+impl From<HeatStartXML> for HeatStart {
+    fn from(value: HeatStartXML) -> Self {
+        Self {
+            application: value.application,
+            generated: value.generated.0,
+            heat_id: value.heat_id,
+            id: value.id,
+            time: value.time.0,
+            version: value.version,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct HeatFalseStartXML {
+    #[serde(rename = "@Application")]
+    application: String,
+    #[serde(rename = "@Version")]
+    version: String,
+    #[serde(rename = "@Generated")]
+    generated: HeatDateTime,
+    #[serde(rename = "@Id")]
+    id: Uuid,
+    #[serde(rename = "@HeatId")]
+    heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
+    #[serde(rename = "@IsFalseStart")]
+    #[allow(dead_code)] // needed for the deserealization
+    is_false_start: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeatFalseStart {
+    pub application: String,
+    pub version: String,
+    pub generated: NaiveDateTime,
+    pub id: Uuid,
+    pub heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
+}
+impl From<HeatFalseStartXML> for HeatFalseStart {
+    fn from(value: HeatFalseStartXML) -> Self {
+        Self {
+            application: value.application,
+            generated: value.generated.0,
+            heat_id: value.heat_id,
+            id: value.id,
+            version: value.version,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct HeatStartListXML {
+    #[serde(rename = "@Name")]
+    name: String,
+    #[serde(rename = "@Id")]
+    id: Uuid,
+    #[serde(rename = "@HeatId")]
+    heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
+    #[serde(rename = "@Nr")]
+    nr: u32,
+    #[serde(rename = "@SessionNr")]
+    session_nr: u32,
+    #[serde(rename = "@SessionId")]
+    session_id: String,
+    #[serde(rename = "@EventId")]
+    event_id: String,
+    #[serde(rename = "@DistanceMeters")]
+    distance_meters: u32,
+    #[serde(rename = "@ScheduledStarttime")]
+    scheduled_start_time: HeatPlannedStartTime,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeatStartList {
+    pub name: String,
+    pub id: Uuid,
+    pub heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
+    pub nr: u32,
+    pub session_nr: u32,
+    pub session_id: String,
+    pub event_id: String,
+    pub distance_meters: u32,
+    pub scheduled_start_time: NaiveTime,
+}
+impl From<HeatStartListXML> for HeatStartList {
+    fn from(value: HeatStartListXML) -> Self {
+        Self {
+            name: value.name,
+            id: value.id,
+            heat_id: value.heat_id,
+            nr: value.nr,
+            session_nr: value.session_nr,
+            session_id: value.session_id,
+            event_id: value.event_id,
+            distance_meters: value.distance_meters,
+            scheduled_start_time: value.scheduled_start_time.0,
+        }
+    }
+}
+
+// https://docs.rs/quick-xml/latest/quick_xml/de/index.html
+fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, String> {
+    let decoded_string: String = String::from_utf8_lossy(packet).to_string();
+
+    match from_str::<HeatStartXML>(&decoded_string) {
+        Ok(dec) => return Ok(InstructionFromCameraProgram::HeatStart(dec.into())),
+        Err(_) => (), // logging was here in the beginning. No not because of fallthrough
+    };
+
+    if let Ok(dec) = from_str::<HeatFalseStartXML>(&decoded_string) {
+        return Ok(InstructionFromCameraProgram::HeatFalseStart(dec.into()));
+    }
+
+    if let Ok(dec) = from_str::<HeatStartListXML>(&decoded_string) {
+        return Ok(InstructionFromCameraProgram::HeatStartList(dec.into()));
+    }
+
+    debug!("XML message:\n{}", decoded_string);
 
     Err("Could not decode".into())
 }

@@ -5,7 +5,11 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use tokio::time::{self, error::Elapsed};
 
-use crate::{args::Args, hex::parse_race_time};
+use crate::{
+    args::Args,
+    hex::parse_race_time,
+    xml_serial::{HeatFalseStart, HeatStart, HeatStartList},
+};
 
 pub enum IncomingInstruction {
     FromTimingClient(InstructionFromTimingClient),
@@ -184,6 +188,9 @@ pub enum InstructionFromCameraProgram {
     RaceTime(RaceTime),
     IntermediateTime(RaceTime),
     EndTime(RaceTime),
+    HeatStart(HeatStart),
+    HeatFalseStart(HeatFalseStart),
+    HeatStartList(HeatStartList),
 }
 
 #[derive(Serialize, Deserialize)]
