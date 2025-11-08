@@ -8,7 +8,9 @@ use tokio::time::{self, error::Elapsed};
 use crate::{
     args::Args,
     hex::parse_race_time,
-    xml_serial::{HeatFalseStart, HeatStart, HeatStartList},
+    xml_serial::{
+        HeatFalseStart, HeatFinish, HeatIntermediate, HeatStart, HeatStartList, HeatWind,
+    },
 };
 
 pub enum IncomingInstruction {
@@ -29,7 +31,7 @@ impl Display for IncomingInstruction {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RaceTime {
     pub hours: Option<u16>,
     pub minutes: Option<u16>,
@@ -182,6 +184,44 @@ impl Display for DayTime {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct RaceWind {
+    /// - is gegenwind, + is rückenwind aka back wind
+    pub back_wind: bool,
+    pub whole_number_part: u16,
+    pub fraction_part: u8, // 0-9
+}
+impl RaceWind {
+    pub fn parse_from_f32(input: f32) -> Self {
+        let mut is_back_wind = true;
+        if input < 0.0 {
+            // 0.0 should be +
+            is_back_wind = false;
+        }
+
+        let positive = input.abs();
+        let whole_part = positive.floor().clamp(0.0, u8::MAX as f32);
+        let fraction_part = ((((positive - whole_part) * 10.0).floor() as u32) % 10) as u8;
+
+        Self {
+            back_wind: is_back_wind,
+            whole_number_part: whole_part as u16,
+            fraction_part: fraction_part,
+        }
+    }
+}
+impl Display for RaceWind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}{}.{}",
+            if self.back_wind { "+" } else { "-" },
+            self.whole_number_part,
+            self.fraction_part
+        )
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum InstructionFromCameraProgram {
     ZeroTime,
     DayTime(DayTime),
@@ -191,6 +231,9 @@ pub enum InstructionFromCameraProgram {
     HeatStart(HeatStart),
     HeatFalseStart(HeatFalseStart),
     HeatStartList(HeatStartList),
+    HeatWind(HeatWind),
+    HeatIntermediate(HeatIntermediate),
+    HeatFinish(HeatFinish),
 }
 
 #[derive(Serialize, Deserialize)]
