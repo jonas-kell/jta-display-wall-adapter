@@ -285,6 +285,18 @@ struct StartlistXML {
     competitors: Vec<HeatCompetitorXML>,
 }
 
+fn default_str_val() -> String {
+    String::from("X")
+}
+
+fn default_str_empty() -> String {
+    String::from("")
+}
+
+fn default_str_nation() -> String {
+    String::from("GER")
+}
+
 #[derive(Deserialize, Clone)]
 struct HeatCompetitorXML {
     #[serde(rename = "@Id")]
@@ -294,16 +306,22 @@ struct HeatCompetitorXML {
     #[serde(rename = "@Bib")]
     bib: u32,
     #[serde(rename = "@Class")]
+    #[serde(default = "default_str_val")]
     class: String,
     #[serde(rename = "@Lastname")]
+    #[serde(default = "default_str_empty")]
     last_name: String,
     #[serde(rename = "@Firstname")]
+    #[serde(default = "default_str_empty")]
     first_name: String,
     #[serde(rename = "@Nation")]
+    #[serde(default = "default_str_nation")]
     nation: String,
     #[serde(rename = "@Club")]
+    #[serde(default = "default_str_empty")]
     club: String,
     #[serde(rename = "@Gender")]
+    #[serde(default = "default_str_val")]
     gender: String,
     // optional data: result data
     #[serde(rename = "@Distance")]
