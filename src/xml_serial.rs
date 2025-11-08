@@ -339,7 +339,8 @@ fn parse_clock_command(input: &[u8]) -> IResult<&[u8], InstructionFromCameraProg
     let (input, seconds) = parse_two_digits(input)?;
     let (input, _) = take_until_and_consume(&b"\x0D"[..], input)?;
 
-    // TODO what is the second line? -> probably wind
+    // TODO what is the second line?
+    // It is not wind, I have never gotten it to deviate from the base value....
 
     // 202020202020202031363A31323A32382020202020200D4220202020202020202020202020203220202033202020
 
@@ -415,9 +416,6 @@ fn parse_time_command(input: &[u8]) -> IResult<&[u8], InstructionFromCameraProgr
     let (input, _) = multispace0(input)?;
     let (input, rt) = parse_race_time(input)?;
     let (input, _) = take_until_and_consume(&b"\x0D"[..], input)?;
-
-    error!("NOW");
-    hex_log_bytes(input);
 
     // 2020202E2020202020202020202020372E34202020200D4220202020202020202020202020203220202033202020
     // 2020202E2020202020202020353A30332E38202020200D4220202020202020202020202020203220202033202020
