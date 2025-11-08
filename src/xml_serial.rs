@@ -510,7 +510,7 @@ struct CompetitorEvaluatedXML {
     difference_to_previous: String,
     #[serde(rename = "@Time")] // this is called differently in general Competitor parser
     finish_time: HeatTime,
-}
+} // TODO disqualification
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CompetitorEvaluated {
