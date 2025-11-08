@@ -9,7 +9,8 @@ use crate::{
     args::Args,
     hex::parse_race_time,
     xml_serial::{
-        HeatFalseStart, HeatFinish, HeatIntermediate, HeatStart, HeatStartList, HeatWind,
+        CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
+        HeatStartList, HeatWind,
     },
 };
 
@@ -132,7 +133,7 @@ impl Display for RaceTime {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DayTime {
     pub hours: u16,
     pub minutes: u16,
@@ -234,6 +235,8 @@ pub enum InstructionFromCameraProgram {
     HeatWind(HeatWind),
     HeatIntermediate(HeatIntermediate),
     HeatFinish(HeatFinish),
+    CompetitorEvaluated(CompetitorEvaluated),
+    HeatResult(HeatResult),
 }
 
 #[derive(Serialize, Deserialize)]

@@ -1,0 +1,117 @@
+<HeatResult 
+Id="87587287-451a-4004-9283-f949263fc73d" 
+HeatId="87587287-451a-4004-9283-f949263fc73d" 
+SessionId="2024-04-27" 
+EventId="b08b00b0-0133-49fc-97d3-a9c93884232f" 
+
+Name="100m Hürden W - Zeitlauf" 
+Starttime="14:45:29.7102"  <- we throw in competitors, as it is here
+Wind="0.0" 
+WindUnit="MetersPerSecond" 
+DistanceMeters="100"
+>
+<Results>
+
+<Competitor 
+Id="1" 
+Lane="3" 
+Bib="471" 
+Class="W" 
+Lastname="Nachname" 
+Firstname="Vorname" 
+Nation="GER" 
+Club="VfL Buchloe" 
+Gender="F" 
+Rank="1" 
+Runtime="23:12:32.760" 
+RuntimeFullPrecision="23:12:32.7593" 
+Starttime="14:45:29.7102"  <- we throw away 
+Finishtime="13:58:02.4695" 
+Distance="100" 
+DifferenceToWinner="Sieger" 
+DifferenceToPrevious="Sieger" 
+/>
+
+<Competitor 
+Id="2" 
+Lane="4" 
+Bib="469" 
+Class="W" 
+Lastname="Test" 
+Firstname="Menschin" 
+Nation="GER" 
+Club="TSV Schwabmünchen" 
+Gender="F" 
+
+Starttime="14:45:29.7102" <- we throw away 
+Finishtime="13:58:02.6081" 
+
+Distance="100" 
+Rank="2" 
+Runtime="23:12:32.898" 
+RuntimeFullPrecision="23:12:32.8979" 
+DifferenceToWinner="0.138" 
+DifferenceToPrevious="0.138"
+/>
+
+<Competitor 
+Id="3" 
+Lane="4" 
+Bib="469" 
+Class="W" 
+Lastname="Test" 
+Firstname="Menschin"
+Nation="GER"
+Club="TSV Schwabmünchen" 
+Gender="F" 
+
+Distance="100" 
+Starttime="14:45:29.7102" <- we throw away
+/>
+
+</Results>
+</HeatResult>
+
+
+
+
+
+###################################
+
+
+
+
+
+
+
+<CompetitorEvaluated 
+Application="OptiC3" 
+Version="1" 
+Generated="2025-11-0814:46:06.00" 
+
+Id="87587287-451a-4004-9283-f949263fc73d" 
+HeatId="87587287-451a-4004-9283-f949263fc73d" 
+SessionId="2024-04-27" 
+EventId="b08b00b0-0133-49fc-97d3-a9c93884232f" 
+
+
+Time="13:58:02.4695" # is same as finish time 
+
+# missing id of comp
+Lane="3" 
+Bib="471" 
+Class="W" 
+Lastname="Nachname" 
+Firstname="Vorname" 
+Nation="GER" 
+Club="VfL Buchloe" 
+Gender="F" 
+
+Distance="100" 
+Rank="1" 
+Runtime="23:12:32.760" 
+RuntimeFullPrecision="23:12:32.7593" 
+DifferenceToWinner="Sieger" 
+DifferenceToPrevious="Sieger" 
+
+/>

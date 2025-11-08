@@ -1,5 +1,5 @@
 use crate::hex::{parse_race_time, parse_two_digits, take_until_and_consume};
-use chrono::{NaiveDateTime, NaiveTime};
+use chrono::NaiveDateTime;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::multispace0;
@@ -78,38 +78,21 @@ impl<'de> Deserialize<'de> for HeatDateTime {
     }
 }
 
-const STARTTIME_FORMAT: &str = "%H:%M:%S%.f";
-
 #[derive(Clone)]
-struct HeatStartTime(NaiveTime);
+struct HeatTime(DayTime);
 
-impl<'de> Deserialize<'de> for HeatStartTime {
+impl<'de> Deserialize<'de> for HeatTime {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        NaiveTime::parse_from_str(&s, STARTTIME_FORMAT)
-            .map(HeatStartTime)
+        DayTime::parse_from_string(&s)
+            .map(HeatTime)
             .map_err(serde::de::Error::custom)
     }
 }
 
-const PLANNED_STARTTIME_FORMAT: &str = "%H:%M:%S";
-
-struct HeatPlannedStartTime(NaiveTime);
-
-impl<'de> Deserialize<'de> for HeatPlannedStartTime {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        NaiveTime::parse_from_str(&s, PLANNED_STARTTIME_FORMAT)
-            .map(HeatPlannedStartTime)
-            .map_err(serde::de::Error::custom)
-    }
-}
 #[derive(Clone)]
 struct HeatRaceTime(RaceTime);
 
@@ -138,9 +121,9 @@ struct HeatEventXML {
     #[serde(rename = "@HeatId")]
     heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
     #[serde(rename = "@Time")]
-    time: Option<HeatStartTime>,
+    time: Option<HeatTime>,
     #[serde(rename = "@Runtime")]
-    run_time: Option<HeatRaceTime>,
+    runtime: Option<HeatRaceTime>,
     #[serde(rename = "@IsFalseStart")]
     is_false_start: Option<bool>,
 }
@@ -152,7 +135,7 @@ pub struct HeatStart {
     pub generated: NaiveDateTime,
     pub id: Uuid,
     pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub time: NaiveTime,
+    pub time: DayTime,
 }
 impl TryFrom<HeatEventXML> for HeatStart {
     fn try_from(value: HeatEventXML) -> Result<Self, Self::Error> {
@@ -180,13 +163,13 @@ pub struct HeatFinish {
     pub generated: NaiveDateTime,
     pub id: Uuid,
     pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub time: NaiveTime,
+    pub time: DayTime,
     pub race_time: RaceTime,
 }
 impl TryFrom<HeatEventXML> for HeatFinish {
     fn try_from(value: HeatEventXML) -> Result<Self, Self::Error> {
         if let Some(time) = value.time {
-            if let Some(race_time) = value.run_time {
+            if let Some(race_time) = value.runtime {
                 Ok(Self {
                     application: value.application,
                     generated: value.generated.0,
@@ -214,13 +197,13 @@ pub struct HeatIntermediate {
     pub generated: NaiveDateTime,
     pub id: Uuid,
     pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub time: NaiveTime,
+    pub time: DayTime,
     pub intermediate_time_at: RaceTime,
 }
 impl TryFrom<HeatEventXML> for HeatIntermediate {
     fn try_from(value: HeatEventXML) -> Result<Self, Self::Error> {
         if let Some(time) = value.time {
-            if let Some(race_time) = value.run_time {
+            if let Some(race_time) = value.runtime {
                 Ok(Self {
                     application: value.application,
                     generated: value.generated.0,
@@ -290,7 +273,7 @@ struct HeatStartListXML {
     #[serde(rename = "@DistanceMeters")]
     distance_meters: u32,
     #[serde(rename = "@ScheduledStarttime")]
-    scheduled_start_time: HeatPlannedStartTime,
+    scheduled_start_time: HeatTime,
     #[serde(rename = "Startlist")]
     start_list: StartlistXML,
 }
@@ -302,7 +285,7 @@ struct StartlistXML {
     competitors: Vec<HeatCompetitorXML>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct HeatCompetitorXML {
     #[serde(rename = "@Id")]
     id: String,
@@ -322,6 +305,21 @@ struct HeatCompetitorXML {
     club: String,
     #[serde(rename = "@Gender")]
     gender: String,
+    // optional data: result data
+    #[serde(rename = "@Distance")]
+    distance: Option<u32>,
+    #[serde(rename = "@Rank")]
+    rank: Option<u32>,
+    #[serde(rename = "@Runtime")]
+    runtime: Option<HeatRaceTime>,
+    #[serde(rename = "@RuntimeFullPrecision")]
+    runtime_full_precision: Option<HeatRaceTime>,
+    #[serde(rename = "@DifferenceToWinner")]
+    difference_to_winner: Option<String>,
+    #[serde(rename = "@DifferenceToPrevious")]
+    difference_to_previous: Option<String>,
+    #[serde(rename = "@Finishtime")] // this is called differently in Evaluated!!
+    finish_time: Option<HeatTime>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -334,7 +332,7 @@ pub struct HeatStartList {
     pub useless_session_id: String, // this is sometimes a date, sometimes numerical -> I think we do not use this
     pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
     pub distance_meters: u32,
-    pub scheduled_start_time: NaiveTime,
+    pub scheduled_start_time: DayTime,
     pub competitors: Vec<HeatCompetitor>,
 }
 impl From<HeatStartListXML> for HeatStartList {
@@ -423,7 +421,7 @@ pub struct HeatWind {
 impl TryFrom<HeatWindXML> for HeatWind {
     fn try_from(value: HeatWindXML) -> Result<Self, Self::Error> {
         if value.wind_unit != "MetersPerSecond" {
-            return Err("Can only parse wind that is ins unit 'MetersPerSecond'".into());
+            return Err("Can only parse wind that is in unit 'MetersPerSecond'".into());
         }
 
         Ok(Self {
@@ -440,6 +438,271 @@ impl TryFrom<HeatWindXML> for HeatWind {
     type Error = String;
 }
 
+#[derive(Deserialize)]
+struct CompetitorEvaluatedXML {
+    #[serde(rename = "@Application")]
+    application: String,
+    #[serde(rename = "@Version")]
+    version: String,
+    #[serde(rename = "@Generated")]
+    generated: HeatDateTime,
+    #[serde(rename = "@Id")]
+    id: Uuid,
+    #[serde(rename = "@HeatId")]
+    heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
+    #[serde(rename = "@SessionId")]
+    session_id: String,
+    #[serde(rename = "@EventId")]
+    event_id: String,
+    // competitor data
+    #[serde(rename = "@Lane")]
+    lane: u32,
+    #[serde(rename = "@Bib")]
+    bib: u32,
+    #[serde(rename = "@Class")]
+    class: String,
+    #[serde(rename = "@Lastname")]
+    last_name: String,
+    #[serde(rename = "@Firstname")]
+    first_name: String,
+    #[serde(rename = "@Nation")]
+    nation: String,
+    #[serde(rename = "@Club")]
+    club: String,
+    #[serde(rename = "@Gender")]
+    gender: String,
+    // competitor result data (must be there, here)
+    #[serde(rename = "@Distance")]
+    distance: u32,
+    #[serde(rename = "@Rank")]
+    rank: u32,
+    #[serde(rename = "@Runtime")]
+    runtime: HeatRaceTime,
+    #[serde(rename = "@RuntimeFullPrecision")]
+    runtime_full_precision: HeatRaceTime,
+    #[serde(rename = "@DifferenceToWinner")]
+    difference_to_winner: String,
+    #[serde(rename = "@DifferenceToPrevious")]
+    difference_to_previous: String,
+    #[serde(rename = "@Time")] // this is called differently in general Competitor parser
+    finish_time: HeatTime,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CompetitorEvaluated {
+    pub application: String,
+    pub version: String,
+    pub generated: NaiveDateTime,
+    pub id: Uuid,
+    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
+    pub useless_session_id: String, // this is sometimes a date, sometimes numerical -> I think we do not use this
+    pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
+    pub competitor_result: HeatCompetitorResult,
+}
+impl TryFrom<CompetitorEvaluatedXML> for CompetitorEvaluated {
+    fn try_from(value: CompetitorEvaluatedXML) -> Result<Self, Self::Error> {
+        let competitor_result = HeatCompetitorResult {
+            competitor: HeatCompetitor {
+                id: String::from("0"), // this is in line with the obesrved values in Results list (here as events, we do not know the id)
+                lane: value.lane,
+                bib: value.bib,
+                class: value.class,
+                last_name: value.last_name,
+                first_name: value.first_name,
+                nation: value.nation,
+                club: value.club,
+                gender: value.gender,
+            },
+            difference_to_previous: DifferenceToCandidate::parse_from_string(
+                value.difference_to_previous,
+            )?,
+            difference_to_winner: DifferenceToCandidate::parse_from_string(
+                value.difference_to_winner,
+            )?,
+            distance: value.distance,
+            finish_time: value.finish_time.0,
+            rank: value.rank,
+            runtime: value.runtime.0,
+            runtime_full_precision: value.runtime_full_precision.0,
+        };
+
+        Ok(Self {
+            id: value.id,
+            useless_heat_id: value.heat_id,
+            useless_session_id: value.session_id,
+            useless_event_id: value.event_id,
+            application: value.application,
+            generated: value.generated.0,
+            version: value.version,
+            competitor_result: competitor_result,
+        })
+    }
+    type Error = String;
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum DifferenceToCandidate {
+    Winner,
+    Difference(RaceTime),
+}
+impl DifferenceToCandidate {
+    fn parse_from_string(input: String) -> Result<DifferenceToCandidate, String> {
+        if input == "Sieger" {
+            return Ok(DifferenceToCandidate::Winner);
+        } else {
+            return RaceTime::parse_from_string(&input)
+                .map(|i| DifferenceToCandidate::Difference(i));
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeatCompetitorResult {
+    competitor: HeatCompetitor,
+    distance: u32,
+    rank: u32,
+    runtime: RaceTime,
+    runtime_full_precision: RaceTime,
+    difference_to_winner: DifferenceToCandidate,
+    difference_to_previous: DifferenceToCandidate,
+    finish_time: DayTime,
+}
+impl TryFrom<HeatCompetitorXML> for HeatCompetitorResult {
+    fn try_from(value: HeatCompetitorXML) -> Result<Self, Self::Error> {
+        let heat_competitor: HeatCompetitor = value.clone().into();
+
+        if value.runtime_full_precision.is_none() {
+            // does not yet have results
+            return Err(Ok(heat_competitor));
+        }
+
+        // from here, we try to parse as with result!
+
+        Ok(Self {
+            competitor: heat_competitor,
+            difference_to_previous: DifferenceToCandidate::parse_from_string(
+                value
+                    .difference_to_previous
+                    .ok_or(Err(String::from("DifferenceToPrevious is not set")))?,
+            )
+            .map_err(|e| Err(e))?,
+            difference_to_winner: DifferenceToCandidate::parse_from_string(
+                value
+                    .difference_to_winner
+                    .ok_or(Err(String::from("DifferenceToWinner is not set")))?,
+            )
+            .map_err(|e| Err(e))?,
+            distance: value
+                .distance
+                .ok_or(String::from("Distance is not set"))
+                .map_err(|e| Err(e))?,
+            finish_time: value
+                .finish_time
+                .ok_or(String::from("Finishtime is not set"))
+                .map_err(|e| Err(e))?
+                .0,
+            rank: value
+                .rank
+                .ok_or(String::from("Rank is not set"))
+                .map_err(|e| Err(e))?,
+            runtime: value
+                .runtime
+                .ok_or(String::from("Runtime is not set"))
+                .map_err(|e| Err(e))?
+                .0,
+            runtime_full_precision: value
+                .runtime_full_precision
+                .ok_or(String::from("RuntimeFullPrecision is not set"))
+                .map_err(|e| Err(e))?
+                .0,
+        })
+    }
+
+    type Error = Result<HeatCompetitor, String>;
+}
+
+#[derive(Deserialize)]
+struct HeatResultXML {
+    #[serde(rename = "@Id")]
+    id: Uuid,
+    #[serde(rename = "@HeatId")]
+    heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
+    #[serde(rename = "@SessionId")]
+    session_id: String,
+    #[serde(rename = "@EventId")]
+    event_id: String,
+    // usefull props
+    #[serde(rename = "@Name")]
+    name: String,
+    #[serde(rename = "@Starttime")]
+    start_time: HeatTime,
+    #[serde(rename = "@DistanceMeters")]
+    distance_meters: u32,
+    #[serde(rename = "@Wind")]
+    wind: f32,
+    #[serde(rename = "@WindUnit")]
+    wind_unit: String,
+    // array
+    #[serde(rename = "Results")]
+    results: ResultsXML,
+}
+
+#[derive(Deserialize)]
+struct ResultsXML {
+    #[serde(default)]
+    #[serde(rename = "Competitor")]
+    competitors: Vec<HeatCompetitorXML>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeatResult {
+    pub id: Uuid,
+    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
+    pub useless_session_id: String, // this is sometimes a date, sometimes numerical -> I think we do not use this
+    pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
+    // usefull props
+    pub name: String,
+    pub distance_meters: u32,
+    pub start_time: DayTime,
+    pub wind: RaceWind,
+    // vec data
+    pub competitors_evaluated: Vec<HeatCompetitorResult>,
+    pub competitors_left_to_evaluate: Vec<HeatCompetitor>,
+}
+impl TryFrom<HeatResultXML> for HeatResult {
+    fn try_from(value: HeatResultXML) -> Result<Self, Self::Error> {
+        if value.wind_unit != "MetersPerSecond" {
+            return Err("Can only parse wind that is in unit 'MetersPerSecond'".into());
+        }
+
+        let mut already_evaluated: Vec<HeatCompetitorResult> = Vec::new();
+        let mut must_be_evaluated: Vec<HeatCompetitor> = Vec::new();
+
+        for parse_data in value.results.competitors {
+            match HeatCompetitorResult::try_from(parse_data) {
+                Ok(res) => already_evaluated.push(res),
+                Err(Err(e)) => return Err(e),
+                Err(Ok(not_evaluated)) => must_be_evaluated.push(not_evaluated),
+            }
+        }
+
+        Ok(Self {
+            id: value.id,
+            useless_heat_id: value.heat_id,
+            useless_session_id: value.session_id,
+            useless_event_id: value.event_id,
+            wind: RaceWind::parse_from_f32(value.wind),
+            distance_meters: value.distance_meters,
+            name: value.name,
+            start_time: value.start_time.0,
+            competitors_evaluated: already_evaluated,
+            competitors_left_to_evaluate: must_be_evaluated,
+        })
+    }
+
+    type Error = String;
+}
+
 // https://docs.rs/quick-xml/latest/quick_xml/de/index.html
 fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, String> {
     let decoded_string: String = String::from_utf8_lossy(packet).to_string();
@@ -449,38 +712,45 @@ fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, Stri
         || decoded_string.starts_with("<HeatFinish ")
         || decoded_string.starts_with("<HeatIntermediate ")
     {
-        if let Ok(event) = from_str::<HeatEventXML>(&decoded_string) {
-            if decoded_string.starts_with("<HeatStart ") {
-                if let Ok(converted) = HeatFalseStart::try_from(event.clone()) {
-                    return Ok(InstructionFromCameraProgram::HeatFalseStart(converted));
-                } else if let Ok(converted) = HeatStart::try_from(event) {
-                    return Ok(InstructionFromCameraProgram::HeatStart(converted));
+        match from_str::<HeatEventXML>(&decoded_string) {
+            Ok(event) => {
+                if decoded_string.starts_with("<HeatStart ") {
+                    if let Ok(converted) = HeatFalseStart::try_from(event.clone()) {
+                        return Ok(InstructionFromCameraProgram::HeatFalseStart(converted));
+                    } else {
+                        match HeatStart::try_from(event) {
+                            Ok(converted) => {
+                                return Ok(InstructionFromCameraProgram::HeatStart(converted))
+                            }
+                            Err(e) => return Err(format!("Must be start, could not parse: {}", e)),
+                        }
+                    }
+                } else if decoded_string.starts_with("<HeatFinish ") {
+                    match HeatFinish::try_from(event) {
+                        Ok(converted) => {
+                            return Ok(InstructionFromCameraProgram::HeatFinish(converted))
+                        }
+                        Err(e) => return Err(format!("Must be finish, could not parse: {}", e)),
+                    }
                 } else {
-                    return Err("Must be start, but required property missing".into());
-                }
-            } else if decoded_string.starts_with("<HeatFinish ") {
-                if let Ok(converted) = HeatFinish::try_from(event) {
-                    return Ok(InstructionFromCameraProgram::HeatFinish(converted));
-                } else {
-                    return Err("Must be finish, but required property missing".into());
-                }
-            } else {
-                if let Ok(converted) = HeatIntermediate::try_from(event) {
-                    return Ok(InstructionFromCameraProgram::HeatIntermediate(converted));
-                } else {
-                    return Err("Must be intermediated, but required property missing".into());
+                    match HeatIntermediate::try_from(event) {
+                        Ok(converted) => {
+                            return Ok(InstructionFromCameraProgram::HeatIntermediate(converted))
+                        }
+                        Err(e) => {
+                            return Err(format!("Must be intermediate, could not parse: {}", e))
+                        }
+                    }
                 }
             }
-        }
-
-        if let Err(asd) = from_str::<HeatEventXML>(&decoded_string) {
-            error!("Hello; {}", asd);
+            Err(e) => return Err(e.to_string()),
         }
     }
 
     if decoded_string.starts_with("<HeatStartlist ") {
-        if let Ok(dec) = from_str::<HeatStartListXML>(&decoded_string) {
-            return Ok(InstructionFromCameraProgram::HeatStartList(dec.into()));
+        match from_str::<HeatStartListXML>(&decoded_string) {
+            Ok(dec) => return Ok(InstructionFromCameraProgram::HeatStartList(dec.into())),
+            Err(e) => return Err(e.to_string()),
         }
     }
 
@@ -490,11 +760,51 @@ fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, Stri
                 Ok(dec) => return Ok(InstructionFromCameraProgram::HeatWind(dec)),
                 Err(err) => return Err(format!("Wind could not be decoded: {}", err.to_string())),
             },
-            Err(_) => (), // logging was here in the beginning. No not because of fallthrough
+            Err(e) => return Err(e.to_string()),
         };
     }
 
-    debug!("XML message:\n{}", decoded_string);
+    if decoded_string.starts_with("<HeatWind ") {
+        match from_str::<HeatWindXML>(&decoded_string) {
+            Ok(dec) => match HeatWind::try_from(dec) {
+                Ok(dec) => return Ok(InstructionFromCameraProgram::HeatWind(dec)),
+                Err(err) => return Err(format!("Wind could not be decoded: {}", err.to_string())),
+            },
+            Err(e) => return Err(e.to_string()),
+        };
+    }
+
+    if decoded_string.starts_with("<CompetitorEvaluated ") {
+        match from_str::<CompetitorEvaluatedXML>(&decoded_string) {
+            Ok(dec) => match CompetitorEvaluated::try_from(dec) {
+                Ok(dec) => return Ok(InstructionFromCameraProgram::CompetitorEvaluated(dec)),
+                Err(err) => {
+                    return Err(format!(
+                        "Competitor Evaluation could not be decoded: {}",
+                        err.to_string()
+                    ))
+                }
+            },
+            Err(e) => return Err(e.to_string()),
+        };
+    }
+
+    if decoded_string.starts_with("<HeatResult ") {
+        match from_str::<HeatResultXML>(&decoded_string) {
+            Ok(dec) => match HeatResult::try_from(dec) {
+                Ok(dec) => return Ok(InstructionFromCameraProgram::HeatResult(dec)),
+                Err(err) => {
+                    return Err(format!(
+                        "Heat Result cloud not be decoded: {}",
+                        err.to_string()
+                    ))
+                }
+            },
+            Err(e) => return Err(e.to_string()),
+        };
+    }
+
+    error!("XML message fell through:\n{}", decoded_string);
 
     Err("Could not decode".into())
 }
