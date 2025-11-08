@@ -291,6 +291,37 @@ struct HeatStartListXML {
     distance_meters: u32,
     #[serde(rename = "@ScheduledStarttime")]
     scheduled_start_time: HeatPlannedStartTime,
+    #[serde(rename = "Startlist")]
+    start_list: StartlistXML,
+}
+
+#[derive(Deserialize)]
+struct StartlistXML {
+    #[serde(default)]
+    #[serde(rename = "Competitor")]
+    competitors: Vec<HeatCompetitorXML>,
+}
+
+#[derive(Deserialize)]
+struct HeatCompetitorXML {
+    #[serde(rename = "@Id")]
+    id: String,
+    #[serde(rename = "@Lane")]
+    lane: u32,
+    #[serde(rename = "@Bib")]
+    bib: u32,
+    #[serde(rename = "@Class")]
+    class: String,
+    #[serde(rename = "@Lastname")]
+    last_name: String,
+    #[serde(rename = "@Firstname")]
+    first_name: String,
+    #[serde(rename = "@Nation")]
+    nation: String,
+    #[serde(rename = "@Club")]
+    club: String,
+    #[serde(rename = "@Gender")]
+    gender: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -304,6 +335,7 @@ pub struct HeatStartList {
     pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
     pub distance_meters: u32,
     pub scheduled_start_time: NaiveTime,
+    pub competitors: Vec<HeatCompetitor>,
 }
 impl From<HeatStartListXML> for HeatStartList {
     fn from(value: HeatStartListXML) -> Self {
@@ -317,6 +349,40 @@ impl From<HeatStartListXML> for HeatStartList {
             useless_event_id: value.event_id,
             distance_meters: value.distance_meters,
             scheduled_start_time: value.scheduled_start_time.0,
+            competitors: value
+                .start_list
+                .competitors
+                .into_iter()
+                .map(|c| c.into())
+                .collect(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeatCompetitor {
+    id: String,
+    lane: u32,
+    bib: u32,
+    class: String,
+    last_name: String,
+    first_name: String,
+    nation: String,
+    club: String,
+    gender: String,
+}
+impl From<HeatCompetitorXML> for HeatCompetitor {
+    fn from(value: HeatCompetitorXML) -> Self {
+        Self {
+            id: value.id,
+            lane: value.lane,
+            bib: value.bib,
+            class: value.class,
+            last_name: value.last_name,
+            first_name: value.first_name,
+            nation: value.nation,
+            club: value.club,
+            gender: value.gender,
         }
     }
 }
