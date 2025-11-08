@@ -23,7 +23,7 @@ impl Display for IncomingInstruction {
             match self {
                 IncomingInstruction::FromTimingClient(tci) => format!("FromTimingClient: {}", tci),
                 IncomingInstruction::FromCameraProgram(cpi) =>
-                    format!("FromTimingClient: {:?}", cpi),
+                    format!("FromCameraProgram: {:?}", cpi),
             }
         )
     }
