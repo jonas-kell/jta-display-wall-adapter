@@ -478,16 +478,22 @@ struct CompetitorEvaluatedXML {
     #[serde(rename = "@Bib")]
     bib: u32,
     #[serde(rename = "@Class")]
+    #[serde(default = "default_str_val")]
     class: String,
     #[serde(rename = "@Lastname")]
+    #[serde(default = "default_str_empty")]
     last_name: String,
     #[serde(rename = "@Firstname")]
+    #[serde(default = "default_str_empty")]
     first_name: String,
     #[serde(rename = "@Nation")]
+    #[serde(default = "default_str_nation")]
     nation: String,
     #[serde(rename = "@Club")]
+    #[serde(default = "default_str_empty")]
     club: String,
     #[serde(rename = "@Gender")]
+    #[serde(default = "default_str_val")]
     gender: String,
     // competitor result data (must be there, here)
     #[serde(rename = "@Distance")]
@@ -657,9 +663,9 @@ struct HeatResultXML {
     #[serde(rename = "@DistanceMeters")]
     distance_meters: u32,
     #[serde(rename = "@Wind")]
-    wind: f32,
+    wind: Option<f32>,
     #[serde(rename = "@WindUnit")]
-    wind_unit: String,
+    wind_unit: Option<String>,
     // array
     #[serde(rename = "Results")]
     results: ResultsXML,
@@ -682,15 +688,17 @@ pub struct HeatResult {
     pub name: String,
     pub distance_meters: u32,
     pub start_time: DayTime,
-    pub wind: RaceWind,
+    pub wind: Option<RaceWind>,
     // vec data
     pub competitors_evaluated: Vec<HeatCompetitorResult>,
     pub competitors_left_to_evaluate: Vec<HeatCompetitor>,
 }
 impl TryFrom<HeatResultXML> for HeatResult {
     fn try_from(value: HeatResultXML) -> Result<Self, Self::Error> {
-        if value.wind_unit != "MetersPerSecond" {
-            return Err("Can only parse wind that is in unit 'MetersPerSecond'".into());
+        if let Some(wind_unit) = value.wind_unit {
+            if wind_unit != "MetersPerSecond" {
+                return Err("Can only parse wind that is in unit 'MetersPerSecond'".into());
+            }
         }
 
         let mut already_evaluated: Vec<HeatCompetitorResult> = Vec::new();
@@ -709,7 +717,7 @@ impl TryFrom<HeatResultXML> for HeatResult {
             useless_heat_id: value.heat_id,
             useless_session_id: value.session_id,
             useless_event_id: value.event_id,
-            wind: RaceWind::parse_from_f32(value.wind),
+            wind: value.wind.map(|w| RaceWind::parse_from_f32(w)),
             distance_meters: value.distance_meters,
             name: value.name,
             start_time: value.start_time.0,
