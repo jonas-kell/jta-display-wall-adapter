@@ -17,9 +17,9 @@ docker compose -f docker-compose.buildrun.yml up
 ## Build and push to docker hub
 
 ```cmd
-docker build -t kellehorreur/jta-display-wall-adapter-client:latest -f docker/run/Dockerfile .
+docker build -t kellehorreur/jta-display-wall-adapter:latest -f docker/run/Dockerfile .
 docker login
-docker push kellehorreur/jta-display-wall-adapter-client:latest
+docker push kellehorreur/jta-display-wall-adapter:latest
 ```
 
 ## Cross compile Windows executable on Linux
