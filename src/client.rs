@@ -34,25 +34,30 @@ pub async fn run_client(args: &Args) -> () {
         rx_from_ui,
         Arc::clone(&shutdown_marker),
     ));
-    let display_task = tokio::spawn(run_display_task(
-        args.clone(),
-        rx_to_ui,
-        tx_from_ui,
-        Arc::clone(&shutdown_marker),
-    ));
+    let shutdown_marker_sdt = Arc::clone(&shutdown_marker);
     let shutdown_task = tokio::spawn(async move {
         // listen for ctrl-c
         tokio::signal::ctrl_c().await?;
 
-        shutdown_marker.store(true, Ordering::SeqCst);
+        shutdown_marker_sdt.store(true, Ordering::SeqCst);
 
         Ok::<_, Error>(())
     });
 
-    match tokio::try_join!(network_task, display_task, shutdown_task) {
-        Err(_) => error!("Error in at least one client task"),
-        Ok(_) => info!("All client tasks closed successfully"),
-    };
+    // async runtime stuff started, the display task doesn't like being inside tokio, so it comes after and takes shutdown orders via Arc
+    tokio::spawn(async move {
+        match tokio::try_join!(network_task, shutdown_task) {
+            Err(_) => error!("Error in at least one client task"),
+            Ok(_) => info!("All client tasks closed successfully"),
+        };
+    });
+
+    run_display_task(
+        args.clone(),
+        rx_to_ui,
+        tx_from_ui,
+        Arc::clone(&shutdown_marker),
+    );
 }
 
 pub async fn run_network_task(
@@ -182,41 +187,35 @@ pub async fn run_network_task(
     Ok(())
 }
 
-pub async fn run_display_task(
+pub fn run_display_task(
     args: Args,
     rx_to_ui: Receiver<MessageFromServerToClient>,
     tx_from_ui: Sender<MessageFromClientToServer>,
     shutdown_marker: Arc<AtomicBool>,
-) -> Result<(), Error> {
-    tokio::task::spawn_blocking(move || {
-        // setup event loop
-        let event_loop = EventLoop::new().unwrap();
-        event_loop.set_control_flow(ControlFlow::WaitUntil(
-            Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
-        ));
+) -> () {
+    // setup event loop
+    let event_loop = EventLoop::new().unwrap();
+    event_loop.set_control_flow(ControlFlow::WaitUntil(
+        Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
+    ));
 
-        // font setup
-        let font_data =
-            include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") as &[u8];
-        let font = Font::from_bytes(font_data, FontSettings::default()).unwrap();
-        let font_layout = Layout::new(CoordinateSystem::PositiveYDown);
+    // font setup
+    let font_data = include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") as &[u8];
+    let font = Font::from_bytes(font_data, FontSettings::default()).unwrap();
+    let font_layout = Layout::new(CoordinateSystem::PositiveYDown);
 
-        // run app
-        let mut app = App {
-            args: args,
-            font: font,
-            font_layout: font_layout,
-            pixels: None,
-            window: None,
-            incoming: rx_to_ui,
-            outgoing: tx_from_ui,
-            shutdown_marker: shutdown_marker,
-        };
-        let _ = event_loop.run_app(&mut app);
-    })
-    .await?;
-
-    Ok(())
+    // run app
+    let mut app = App {
+        args: args,
+        font: font,
+        font_layout: font_layout,
+        pixels: None,
+        window: None,
+        incoming: rx_to_ui,
+        outgoing: tx_from_ui,
+        shutdown_marker: shutdown_marker,
+    };
+    let _ = event_loop.run_app(&mut app);
 }
 
 struct App {
