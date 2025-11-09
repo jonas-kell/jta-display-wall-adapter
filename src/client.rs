@@ -11,6 +11,29 @@ use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Window, WindowId};
 
+pub async fn run_client(args: &Args) -> () {
+    // setup event loop
+    let event_loop = EventLoop::new().unwrap();
+    event_loop.set_control_flow(ControlFlow::WaitUntil(
+        Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
+    ));
+
+    // font setup
+    let font_data = include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") as &[u8];
+    let font = Font::from_bytes(font_data, FontSettings::default()).unwrap();
+    let font_layout = Layout::new(CoordinateSystem::PositiveYDown);
+
+    // run app
+    let mut app = App {
+        args: args.clone(),
+        font: font,
+        font_layout: font_layout,
+        pixels: None,
+        window: None,
+    };
+    let _ = event_loop.run_app(&mut app);
+}
+
 struct App {
     window: Option<Arc<Window>>,
     pixels: Option<Pixels<'static>>,
@@ -102,27 +125,4 @@ impl ApplicationHandler for App {
             _ => (),
         }
     }
-}
-
-pub async fn run_client(args: &Args) -> () {
-    // setup event loop
-    let event_loop = EventLoop::new().unwrap();
-    event_loop.set_control_flow(ControlFlow::WaitUntil(
-        Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
-    ));
-
-    // font setup
-    let font_data = include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") as &[u8];
-    let font = Font::from_bytes(font_data, FontSettings::default()).unwrap();
-    let font_layout = Layout::new(CoordinateSystem::PositiveYDown);
-
-    // run app
-    let mut app = App {
-        args: args.clone(),
-        font: font,
-        font_layout: font_layout,
-        pixels: None,
-        window: None,
-    };
-    let _ = event_loop.run_app(&mut app);
 }
