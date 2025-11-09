@@ -2,12 +2,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::instructions::{
     ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
-    InstructionToTimingClient,
+    InstructionFromTimingClient, InstructionToTimingClient,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum MessageFromServerToClient {
     DisplayText(String),
+    RequestVersion,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -38,14 +39,32 @@ impl ServerStateMachine {
     }
 
     pub async fn parse_client_command(&mut self, msg: MessageFromClientToServer) {
-        info!("Message received from Client: {:?}", msg);
+        // handle all messages
+        match msg {
+            MessageFromClientToServer::Version(version) => {
+                error!("Client reported to have version: '{}'", version); // TODO compare and error if not compatible
+
+                // report the timing client our fake version
+                self.send_message_to_timing_client(InstructionToTimingClient::SendServerInfo)
+                    .await;
+            }
+        }
     }
 
     pub async fn parse_incoming_command(&mut self, msg: IncomingInstruction) {
-        trace!(
-            "Incoming message from timing client or camera program: {}",
-            msg
-        );
+        // handle all messages
+        match msg {
+            IncomingInstruction::FromTimingClient(inst) => match inst {
+                InstructionFromTimingClient::Freetext(text) => {
+                    self.send_message_to_client(MessageFromServerToClient::DisplayText(text))
+                        .await
+                }
+                inst => error!("Unhandled instruction from timing client: {}", inst),
+            },
+            IncomingInstruction::FromCameraProgram(inst) => match inst {
+                inst => error!("Unhandled instruction from camera program: {:?}", inst),
+            },
+        }
     }
 
     async fn send_message_to_timing_client(&mut self, inst: InstructionToTimingClient) {
@@ -53,6 +72,11 @@ impl ServerStateMachine {
             Ok(()) => (),
             Err(e) => error!("Failed to send out instruction: {}", e.to_string()),
         }
+    }
+
+    pub async fn make_server_request_client_version(&mut self) {
+        self.send_message_to_client(MessageFromServerToClient::RequestVersion)
+            .await
     }
 
     async fn send_message_to_client(&mut self, inst: MessageFromServerToClient) {
@@ -88,14 +112,19 @@ impl ClientStateMachine {
     }
 
     pub fn parse_server_command(&mut self, msg: MessageFromServerToClient) {
-        if self.state == ClientState::Created {
-            self.state = ClientState::Idle;
-            self.push_new_message(MessageFromClientToServer::Version(String::from(
-                "TODO: THIS SHOULD BE COMPUTED",
-            )));
+        match msg {
+            MessageFromServerToClient::RequestVersion => {
+                if self.state == ClientState::Created {
+                    self.state = ClientState::Idle;
+                }
+                self.push_new_message(MessageFromClientToServer::Version(String::from(
+                    "TODO: THIS SHOULD BE COMPUTED",
+                )))
+            }
+            MessageFromServerToClient::DisplayText(text) => {
+                self.state = ClientState::DisplayText(text)
+            }
         }
-
-        info!("Message received from Server: {:?}", msg);
     }
 
     fn push_new_message(&mut self, msg: MessageFromClientToServer) {

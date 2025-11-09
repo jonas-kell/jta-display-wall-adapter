@@ -183,6 +183,13 @@ async fn client_communicator(
                 Ok(Ok(client_stream)) => {
                     debug!("Connected to client at {}", client_addr);
 
+                    // on connection first request version to initiate communication
+                    {
+                        let mut guard = server_state_exchange.lock().await;
+                        guard.make_server_request_client_version().await;
+                    }
+
+                    // handle messaging
                     let (read_half, write_half) = client_stream.into_split();
                     let mut deserializer: Framed<
                         _,
@@ -306,7 +313,7 @@ async fn client_communicator(
                 Ok(command_res) => match command_res {
                     Ok(comm) => {
                         let mut guard = server_state_intake.lock().await;
-                        guard.parse_incoming_command(comm);
+                        guard.parse_incoming_command(comm).await;
                     }
                     Err(e) => return Err(Error::new(ErrorKind::Other, e.to_string())),
                 },

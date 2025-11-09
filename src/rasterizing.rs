@@ -12,6 +12,8 @@ pub struct RasterizerMeta<'a> {
 }
 
 pub fn draw_text(text: &str, x: f32, y: f32, script_size: f32, meta: &mut RasterizerMeta) {
+    let filtered: String = text.replace('\n', "\r").replace("\r\r", "\r");
+
     meta.font_layout.reset(&LayoutSettings {
         x: x,
         y: y,
@@ -20,7 +22,7 @@ pub fn draw_text(text: &str, x: f32, y: f32, script_size: f32, meta: &mut Raster
     });
 
     meta.font_layout
-        .append(&[meta.font], &TextStyle::new(text, script_size, 0));
+        .append(&[meta.font], &TextStyle::new(&filtered, script_size, 0));
 
     for glyph in meta.font_layout.glyphs() {
         // Rasterize the glyph at the specified font size
