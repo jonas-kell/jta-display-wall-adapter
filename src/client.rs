@@ -334,7 +334,7 @@ impl ApplicationHandler for App {
             WindowEvent::Resized(new_size) => {
                 info!("The Window was resized: {:?}", new_size);
 
-                // pixels setup needs to be redone
+                // pixels setup needs to be redone (only here!!)
                 if let Some(pixels) = &mut self.pixels {
                     if let Err(e) = pixels.resize_surface(new_size.width, new_size.height) {
                         error!("Failed to resize pixels surface: {}", e);

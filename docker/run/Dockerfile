@@ -4,11 +4,14 @@ FROM rust:1.89 AS builder
 WORKDIR /app
 COPY . .
 
+ARG TARGETARCH
+ENV CARGO_HOME=/usr/local/cargo-${TARGETARCH}
+ENV CARGO_TARGET_DIR=/app/target-${TARGETARCH}
+
 # Build the client in release mode
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,target=/app/target \
-    cargo build --release --bin jta-display-wall-adapter
+RUN --mount=type=cache,target=/usr/local/cargo-${TARGETARCH} \
+    --mount=type=cache,target=/app/target-${TARGETARCH} \
+    cargo build --release --bin jta-display-wall-adapter && mv /app/target-${TARGETARCH}/release/jta-display-wall-adapter /app
 
 # ===== Stage 2: Runtime =====
 FROM debian:trixie
@@ -31,4 +34,4 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy the built executable from builder stage
-COPY --from=builder /app/target/release/jta-display-wall-adapter /app/client
+COPY --from=builder /app/jta-display-wall-adapter /app/client
