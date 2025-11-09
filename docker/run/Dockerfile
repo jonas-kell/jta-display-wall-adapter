@@ -5,7 +5,10 @@ WORKDIR /app
 COPY . .
 
 # Build the client in release mode
-RUN cargo build --release --bin jta-display-wall-adapter
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/app/target \
+    cargo build --release --bin jta-display-wall-adapter
 
 # ===== Stage 2: Runtime =====
 FROM debian:trixie
