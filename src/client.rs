@@ -80,34 +80,36 @@ impl ApplicationHandler for App {
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
-                if let Some(font) = &self.font {
-                    if let Some(pixels) = &mut self.pixels {
-                        let tex_size = pixels.texture().size();
-                        let frame = pixels.frame_mut();
-                        frame.fill(0);
+                if let (Some(font), Some(pixels)) = (&self.font, &mut self.pixels) {
+                    let tex_size = pixels.texture().size();
+                    let frame = pixels.frame_mut();
+                    frame.fill(0);
 
-                        let (metrics, bitmap) = font.rasterize('H', 32.0);
-                        let x0 = 20;
-                        let y0 = 40;
-                        let tex_width = tex_size.width as usize;
-                        // let tex_height = tex_size.height as usize;
-                        let tex_width = tex_width as usize;
+                    let text = "Hello, world!";
+                    let mut x_cursor = 20;
+                    let y0 = 40;
+                    let tex_width = tex_size.width as usize;
+
+                    for ch in text.chars() {
+                        let (metrics, bitmap) = font.rasterize(ch, 32.0);
 
                         for y in 0..metrics.height {
                             for x in 0..metrics.width {
                                 let px = bitmap[y * metrics.width + x];
-                                let i = ((y0 + y) * tex_width + (x0 + x)) * 4;
+                                let i = ((y0 + y) * tex_width + (x_cursor + x)) * 4;
                                 if i + 3 < frame.len() {
-                                    frame[i] = 255;
-                                    frame[i + 1] = 255;
-                                    frame[i + 2] = 255;
-                                    frame[i + 3] = px;
+                                    frame[i] = 255; // R
+                                    frame[i + 1] = 255; // G
+                                    frame[i + 2] = 255; // B
+                                    frame[i + 3] = px; // alpha
                                 }
                             }
                         }
 
-                        pixels.render().unwrap();
+                        x_cursor += metrics.advance_width as usize; // move cursor for next char
                     }
+
+                    pixels.render().unwrap();
                 }
             }
             _ => (),
