@@ -15,6 +15,7 @@ mod instructions;
 mod interface;
 mod nrbf;
 mod rasterizing;
+mod rendering;
 mod server;
 mod xml_serial;
 

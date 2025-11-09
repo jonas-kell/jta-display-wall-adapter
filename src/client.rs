@@ -1,6 +1,7 @@
 use crate::args::Args;
-use crate::interface::{MessageFromClientToServer, MessageFromServerToClient};
-use crate::rasterizing::{clear, draw_text, RasterizerMeta};
+use crate::interface::{ClientStateMachine, MessageFromClientToServer, MessageFromServerToClient};
+use crate::rasterizing::RasterizerMeta;
+use crate::rendering::render_client_frame;
 use async_channel::{Receiver, Sender, TryRecvError};
 use fontdue::layout::{CoordinateSystem, Layout};
 use fontdue::{Font, FontSettings};
@@ -134,7 +135,7 @@ pub async fn run_network_task(
                             .await
                             {
                                 Err(_) => {
-                                    trace!("No new TCP connection within timeout interval");
+                                    trace!("No new TCP traffic within timeout interval");
                                     continue;
                                 }
                                 Ok(None) => return Err("TCP stream went away".into()),
@@ -214,6 +215,7 @@ pub fn run_display_task(
         incoming: rx_to_ui,
         outgoing: tx_from_ui,
         shutdown_marker: shutdown_marker,
+        state_machine: ClientStateMachine::new(),
     };
     let _ = event_loop.run_app(&mut app);
 }
@@ -227,6 +229,7 @@ struct App {
     incoming: Receiver<MessageFromServerToClient>,
     outgoing: Sender<MessageFromClientToServer>,
     shutdown_marker: Arc<AtomicBool>,
+    state_machine: ClientStateMachine,
 }
 
 const TARGET_FPS_DELAY_MS: u64 = 16;
@@ -239,7 +242,7 @@ impl ApplicationHandler for App {
         let width = 640u32;
         let height = 360u32;
         let pos_x = 800i32;
-        let pos_y = 400i32;
+        let pos_y = 400i32; // TODO make dynamic
 
         let attrs = Window::default_attributes()
             .with_title("Display Window")
@@ -275,40 +278,45 @@ impl ApplicationHandler for App {
             event_loop.exit();
         }
 
-        // read incoming messages
-        loop {
-            match self.incoming.try_recv() {
-                Ok(msg) => {
-                    let _ = msg;
-                    error!("WE GOT A MESSAGE!!"); // TODO
-
-                    match self.outgoing.try_send(MessageFromClientToServer::Unknown) {
-                        Ok(()) => (),
-                        Err(e) => {
-                            error!(
-                                "Error in outbound client internal communication: {}",
-                                e.to_string()
-                            )
-                        }
-                    };
+        // read incoming messages (we do not need to loop, as this is running at 60 fps anyway)
+        match self.incoming.try_recv() {
+            Ok(msg) => {
+                self.state_machine.parse_server_command(msg);
+            }
+            Err(e) => match e {
+                TryRecvError::Empty => (),
+                e => {
+                    error!(
+                        "Error in inbound client internal communication: {}",
+                        e.to_string()
+                    );
+                    event_loop.exit();
                 }
-                Err(e) => match e {
-                    TryRecvError::Empty => break,
-                    e => {
+            },
+        };
+        // send away outgoing messages (we do not need to loop, as this is running at 60 fps anyway)
+        match self.state_machine.get_one_message_to_send() {
+            Some(msg) => {
+                match self.outgoing.try_send(msg) {
+                    Ok(()) => (),
+                    Err(e) => {
                         error!(
-                            "Error in inbound client internal communication: {}",
+                            "Error in outbound client internal communication: {}",
                             e.to_string()
                         );
                         event_loop.exit();
                     }
-                },
+                };
             }
-        }
+            None => (),
+        };
 
         // called just before the event loop sleeps
         if let Some(window) = &self.window {
             window.request_redraw();
         }
+
+        self.state_machine.advance_counters();
 
         // schedule next wakeup after we just finished a redraw session
         event_loop.set_control_flow(ControlFlow::WaitUntil(
@@ -331,10 +339,10 @@ impl ApplicationHandler for App {
                         texture_width: texture_size.width as usize,
                         texture_height: texture_size.height as usize,
                     };
-                    // Draw area
 
-                    clear(&mut meta);
-                    draw_text("Hello world", 55.0, 22.0, 20.0, &mut meta);
+                    render_client_frame(&mut meta, &self.state_machine);
+
+                    // TODO send frame back (uses counter)
 
                     // Render
                     match pixels.render() {

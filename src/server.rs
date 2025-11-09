@@ -1,14 +1,15 @@
 use crate::args::Args;
-use crate::bitmap::png_to_bmp_bytes;
 use crate::forwarding::{PacketCommunicationChannel, PacketData};
 use crate::hex::hex_log_bytes;
 use crate::instructions::{
-    DayTime, IncomingInstruction, InstructionCommunicationChannel, InstructionFromTimingClient,
-    InstructionToTimingClient, RaceTime,
+    ClientCommunicationChannelOutbound, InstructionCommunicationChannel,
+    InstructionFromTimingClient, InstructionToTimingClient,
 };
+use crate::interface::{MessageFromClientToServer, MessageFromServerToClient, ServerStateMachine};
 use crate::nrbf::{generate_response_bytes, BufferedParser};
 use crate::xml_serial::{BufferedParserSerial, BufferedParserXML};
 use async_channel::RecvError;
+use futures::prelude::*;
 use std::io::{self, Error, ErrorKind};
 use std::net::SocketAddr;
 use std::sync::{
@@ -19,7 +20,11 @@ use std::time::Duration;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpListener, TcpStream};
-use tokio::time::{self, sleep};
+use tokio::sync::Mutex;
+use tokio::time::{self};
+use tokio_serde::formats::Bincode;
+use tokio_serde::Framed;
+use tokio_util::codec::{FramedRead, FramedWrite, LengthDelimitedCodec};
 
 /// Start server
 pub async fn run_server(args: &Args) -> () {
@@ -68,9 +73,25 @@ pub async fn run_server(args: &Args) -> () {
         camera_program_timing_address, camera_program_data_address, camera_program_xml_address
     );
 
+    let internal_communication_address: SocketAddr = format!(
+        "{}:{}",
+        args.address_internal_communication, args.internal_communication_port
+    )
+    .parse()
+    .expect("Invalid internal address");
+
+    info!(
+        "Talking to {} for internal communication to display client",
+        passthrough_address_display_program
+    );
+
     let comm_channel = InstructionCommunicationChannel::new(&args);
     let comm_channel_packets = PacketCommunicationChannel::new(&args);
-
+    let comm_channel_client_outbound = ClientCommunicationChannelOutbound::new(&args);
+    let server_state = Arc::new(Mutex::new(ServerStateMachine::new(
+        comm_channel.clone(),
+        comm_channel_client_outbound.clone(),
+    )));
     let shutdown_marker = Arc::new(AtomicBool::new(false));
 
     let tcp_listener_server_instance = tcp_listener_timing_program(
@@ -91,8 +112,11 @@ pub async fn run_server(args: &Args) -> () {
 
     let client_communicator_instance = client_communicator(
         args.clone(),
+        server_state,
         comm_channel.clone(),
+        comm_channel_client_outbound.clone(),
         Arc::clone(&shutdown_marker),
+        internal_communication_address,
     );
 
     let tcp_client_to_timing_and_data_exchange_instance = tcp_client_to_timing_and_data_exchange(
@@ -134,61 +158,160 @@ pub async fn run_server(args: &Args) -> () {
 
 async fn client_communicator(
     args: Args,
+    server_state: Arc<Mutex<ServerStateMachine>>,
     comm_channel: InstructionCommunicationChannel,
+    comm_channel_client_outbound: ClientCommunicationChannelOutbound,
     shutdown_marker: Arc<AtomicBool>,
+    client_addr: SocketAddr,
 ) -> io::Result<()> {
-    let _ = args;
-
-    // TEST
-    let dt = DayTime::parse_from_string("01:13:14").unwrap();
-    trace!("{:?}: {}", dt, dt.to_string());
-    let dt2 = DayTime::parse_from_string("12:13:14.1234").unwrap();
-    trace!("{:?}: {}", dt2, dt2.to_exact_string());
-    let rt = RaceTime::parse_from_string("0:0:13").unwrap();
-    trace!(
-        "{:?}: {} {}",
-        rt,
-        rt.to_string(),
-        rt.optimize_representation_for_display().to_string()
-    );
-
-    let comm_channel_a = comm_channel.clone();
-    let print_commands_task = tokio::spawn(async move {
+    let server_state_exchange = server_state.clone();
+    let shutdown_marker_exchange = shutdown_marker.clone();
+    let client_exchange_task = tokio::spawn(async move {
         loop {
-            if shutdown_marker.load(Ordering::SeqCst) {
+            if shutdown_marker_exchange.load(Ordering::SeqCst) {
+                debug!("Shutdown requested, stopping listener on {}", client_addr);
+                break;
+            }
+
+            // Wait for new connection with timeout so we can check shutdown flag periodically
+            match time::timeout(
+                Duration::from_millis(args.wait_ms_before_testing_for_shutdown),
+                TcpStream::connect(client_addr),
+            )
+            .await
+            {
+                Ok(Ok(client_stream)) => {
+                    debug!("Connected to client at {}", client_addr);
+
+                    let (read_half, write_half) = client_stream.into_split();
+                    let mut deserializer: Framed<
+                        _,
+                        MessageFromClientToServer,
+                        MessageFromServerToClient,
+                        _,
+                    > = Framed::new(
+                        FramedRead::new(read_half, LengthDelimitedCodec::new()),
+                        Bincode::<MessageFromClientToServer, MessageFromServerToClient>::default(),
+                    );
+                    let mut serializer: Framed<
+                        _,
+                        MessageFromClientToServer,
+                        MessageFromServerToClient,
+                        _,
+                    > = Framed::new(
+                        FramedWrite::new(write_half, LengthDelimitedCodec::new()),
+                        Bincode::<MessageFromClientToServer, MessageFromServerToClient>::default(),
+                    );
+
+                    let shutdown_marker_read = shutdown_marker_exchange.clone();
+                    let server_state_read = server_state_exchange.clone();
+
+                    let read_handler = async move {
+                        loop {
+                            if shutdown_marker_read.load(Ordering::SeqCst) {
+                                debug!(
+                                    "Shutdown marker set, breaking main client -> self transfer"
+                                );
+                                break;
+                            }
+
+                            match time::timeout(
+                                Duration::from_millis(args.wait_ms_before_testing_for_shutdown),
+                                deserializer.next(),
+                            )
+                            .await
+                            {
+                                Err(_) => {
+                                    trace!(
+                                        "No new TCP traffic from client within timeout interval"
+                                    );
+                                    continue;
+                                }
+                                Ok(None) => return Err("Client TCP stream went away".into()),
+                                Ok(Some(Err(e))) => return Err(e.to_string()),
+                                Ok(Some(Ok(mes))) => {
+                                    // message from server
+                                    let mut guard = server_state_read.lock().await;
+                                    guard.parse_client_command(mes).await;
+                                }
+                            }
+                        }
+                        Ok::<_, String>(())
+                    };
+
+                    let shutdown_marker_write = shutdown_marker_exchange.clone();
+                    let comm_channel_client_outbound_write = comm_channel_client_outbound.clone();
+
+                    let write_handler = async move {
+                        loop {
+                            if shutdown_marker_write.load(Ordering::SeqCst) {
+                                debug!(
+                                    "Shutdown marker set, breaking main self -> client transfer"
+                                );
+                                break;
+                            }
+
+                            match comm_channel_client_outbound_write
+                                .wait_for_message_to_send()
+                                .await
+                            {
+                                Err(_) => {
+                                    trace!(
+                                        "No new command to send to client within timeout interval"
+                                    );
+                                    continue;
+                                }
+                                Ok(Err(e)) => return Err(e.to_string()),
+                                Ok(Ok(msg)) => match serializer.send(msg).await {
+                                    Ok(()) => continue,
+                                    Err(e) => return Err(e.to_string()),
+                                },
+                            }
+                        }
+
+                        Ok::<_, String>(())
+                    };
+
+                    match tokio::try_join!(read_handler, write_handler) {
+                        Ok(_) => (),
+                        Err(e) => {
+                            error!("Client connection gone away: {}", e);
+                        }
+                    }
+                }
+                Ok(Err(e)) => error!("Client exchange read error: {}", e),
+                Err(_) => {
+                    // expected on timeout, just loop
+                    trace!(
+                        "No TCP connection to client could be established within timeout interval"
+                    );
+                }
+            }
+        }
+
+        Ok::<_, Error>(())
+    });
+
+    let server_state_intake = server_state;
+    let comm_channel = comm_channel;
+    let shutdown_marker_intake = shutdown_marker;
+    let intake_commands_task = tokio::spawn(async move {
+        loop {
+            if shutdown_marker_intake.load(Ordering::SeqCst) {
                 debug!("Shutdown requested, stopping client communicator");
                 break;
             }
 
-            match comm_channel_a.wait_for_incomming_command().await {
+            match comm_channel.wait_for_incomming_command().await {
                 Ok(command_res) => match command_res {
                     Ok(comm) => {
-                        info!("Command received!!: {}", comm);
-                        match comm {
-                            IncomingInstruction::FromTimingClient(inst) => match inst {
-                                InstructionFromTimingClient::Clear => {
-                                    sleep(Duration::from_secs(1)).await;
-                                    match comm_channel_a
-                                        .send_out_command(InstructionToTimingClient::SendFrame(
-                                            png_to_bmp_bytes("imagebig.png"),
-                                        ))
-                                        .await
-                                    {
-                                        Ok(()) => trace!("Command queued"),
-                                        Err(e) => {
-                                            return Err(Error::new(ErrorKind::Other, e.to_string()))
-                                        }
-                                    };
-                                }
-                                _ => (),
-                            },
-                            _ => (),
-                        }
+                        let mut guard = server_state_intake.lock().await;
+                        guard.parse_incoming_command(comm);
                     }
                     Err(e) => return Err(Error::new(ErrorKind::Other, e.to_string())),
                 },
                 Err(_) => {
-                    trace!("No incoming command to report");
+                    trace!("No incoming command to report in timeout interval");
                     continue;
                 }
             };
@@ -196,30 +319,7 @@ async fn client_communicator(
         Ok::<_, Error>(())
     });
 
-    let send_test_commands_task = tokio::spawn(async move {
-        sleep(Duration::from_secs(2)).await;
-        debug!("Sending Frame...");
-        match comm_channel
-            .send_out_command(InstructionToTimingClient::SendServerInfo)
-            .await
-        {
-            Ok(()) => trace!("Command queued"),
-            Err(e) => return Err(Error::new(ErrorKind::Other, e.to_string())),
-        };
-        match comm_channel
-            .send_out_command(InstructionToTimingClient::SendFrame(png_to_bmp_bytes(
-                "imagebig.png",
-            )))
-            .await
-        {
-            Ok(()) => trace!("Command queued"),
-            Err(e) => return Err(Error::new(ErrorKind::Other, e.to_string())),
-        };
-
-        Ok::<_, Error>(())
-    });
-
-    let (a, b) = tokio::try_join!(print_commands_task, send_test_commands_task)?;
+    let (a, b) = tokio::try_join!(client_exchange_task, intake_commands_task)?;
     a?;
     b?;
 

@@ -8,6 +8,7 @@ use tokio::time::{self, error::Elapsed};
 use crate::{
     args::Args,
     hex::parse_race_time,
+    interface::MessageFromServerToClient,
     xml_serial::{
         CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
         HeatStartList, HeatWind,
@@ -344,6 +345,41 @@ impl InstructionCommunicationChannel {
         time::timeout(
             Duration::from_millis(self.args.wait_ms_before_testing_for_shutdown),
             self.outbound_receiver.recv(),
+        )
+        .await
+    }
+}
+
+#[derive(Clone)]
+pub struct ClientCommunicationChannelOutbound {
+    args: Args,
+    sender: Sender<MessageFromServerToClient>,
+    receiver: Receiver<MessageFromServerToClient>,
+}
+impl ClientCommunicationChannelOutbound {
+    pub fn new(args: &Args) -> Self {
+        let (s, r) = async_channel::unbounded::<MessageFromServerToClient>();
+
+        Self {
+            args: args.clone(),
+            sender: s,
+            receiver: r,
+        }
+    }
+
+    pub async fn send_away(
+        &self,
+        inst: MessageFromServerToClient,
+    ) -> Result<(), SendError<MessageFromServerToClient>> {
+        self.sender.send(inst).await
+    }
+
+    pub async fn wait_for_message_to_send(
+        &self,
+    ) -> Result<Result<MessageFromServerToClient, RecvError>, Elapsed> {
+        time::timeout(
+            Duration::from_millis(self.args.wait_ms_before_testing_for_shutdown),
+            self.receiver.recv(),
         )
         .await
     }
