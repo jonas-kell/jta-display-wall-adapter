@@ -13,6 +13,7 @@ mod forwarding;
 mod hex;
 mod instructions;
 mod nrbf;
+mod rasterizing;
 mod server;
 mod xml_serial;
 

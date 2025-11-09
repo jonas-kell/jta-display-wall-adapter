@@ -1,4 +1,6 @@
 use crate::args::Args;
+use crate::rasterizing::{clear, draw_text, RasterizerMeta};
+use fontdue::layout::{CoordinateSystem, Layout};
 use fontdue::{Font, FontSettings};
 use pixels::{Pixels, SurfaceTexture};
 use std::sync::Arc;
@@ -9,17 +11,20 @@ use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Window, WindowId};
 
-#[derive(Default)]
 struct App {
     window: Option<Arc<Window>>,
     pixels: Option<Pixels<'static>>,
-    font: Option<Font>,
+    font: Font,
+    font_layout: Layout,
+    args: Args,
 }
 
 const TARGET_FPS_DELAY_MS: u64 = 16;
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        let _ = &self.args;
+
         // Desired size (pixels) and position (pixels from top-left of screen)
         let width = 640u32;
         let height = 360u32;
@@ -47,14 +52,6 @@ impl ApplicationHandler for App {
         };
         self.pixels = Some(pixels);
 
-        // font setup
-        let font_data =
-            include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") as &[u8];
-        let font = Font::from_bytes(font_data, FontSettings::default()).unwrap();
-
-        // store everything
-        self.font = Some(font);
-
         // trigger the first re-awakening of the event loop
         event_loop.set_control_flow(ControlFlow::WaitUntil(
             Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
@@ -73,43 +70,33 @@ impl ApplicationHandler for App {
         ));
     }
 
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
+    fn window_event(&mut self, _event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => {
-                println!("The close button was pressed; stopping");
-                event_loop.exit();
+                info!("The close button was pressed; Sadly that is not how this works");
             }
             WindowEvent::RedrawRequested => {
-                if let (Some(font), Some(pixels)) = (&self.font, &mut self.pixels) {
-                    let tex_size = pixels.texture().size();
-                    let frame = pixels.frame_mut();
-                    frame.fill(0);
+                if let Some(pixels) = &mut self.pixels {
+                    let texture_size = pixels.texture().size();
+                    let mut meta = RasterizerMeta {
+                        font: &self.font,
+                        font_layout: &mut self.font_layout,
+                        frame: pixels.frame_mut(),
+                        texture_width: texture_size.width as usize,
+                        texture_height: texture_size.height as usize,
+                    };
+                    // Draw area
 
-                    let text = "Hello, world!";
-                    let mut x_cursor = 20;
-                    let y0 = 40;
-                    let tex_width = tex_size.width as usize;
+                    clear(&mut meta);
+                    draw_text("Hello world", 55.0, 22.0, 20.0, &mut meta);
 
-                    for ch in text.chars() {
-                        let (metrics, bitmap) = font.rasterize(ch, 32.0);
-
-                        for y in 0..metrics.height {
-                            for x in 0..metrics.width {
-                                let px = bitmap[y * metrics.width + x];
-                                let i = ((y0 + y) * tex_width + (x_cursor + x)) * 4;
-                                if i + 3 < frame.len() {
-                                    frame[i] = 255; // R
-                                    frame[i + 1] = 255; // G
-                                    frame[i + 2] = 255; // B
-                                    frame[i + 3] = px; // alpha
-                                }
-                            }
-                        }
-
-                        x_cursor += metrics.advance_width as usize; // move cursor for next char
+                    // Render
+                    match pixels.render() {
+                        Ok(()) => (),
+                        Err(e) => error!("Error while rendering: {}", e.to_string()),
                     }
-
-                    pixels.render().unwrap();
+                } else {
+                    error!("The pixels element of the App context is not initialized")
                 }
             }
             _ => (),
@@ -118,14 +105,24 @@ impl ApplicationHandler for App {
 }
 
 pub async fn run_client(args: &Args) -> () {
-    let _ = args;
-
+    // setup event loop
     let event_loop = EventLoop::new().unwrap();
-
     event_loop.set_control_flow(ControlFlow::WaitUntil(
         Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
     ));
 
-    let mut app = App::default();
+    // font setup
+    let font_data = include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") as &[u8];
+    let font = Font::from_bytes(font_data, FontSettings::default()).unwrap();
+    let font_layout = Layout::new(CoordinateSystem::PositiveYDown);
+
+    // run app
+    let mut app = App {
+        args: args.clone(),
+        font: font,
+        font_layout: font_layout,
+        pixels: None,
+        window: None,
+    };
     let _ = event_loop.run_app(&mut app);
 }
