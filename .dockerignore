@@ -1,0 +1,8 @@
+/.git
+/target
+*.txt
+/docker
+*.yml
+*.md
+*.sh
+*.bat
