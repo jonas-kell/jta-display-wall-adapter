@@ -89,6 +89,7 @@ pub async fn run_server(args: &Args) -> () {
     let comm_channel_packets = PacketCommunicationChannel::new(&args);
     let comm_channel_client_outbound = ClientCommunicationChannelOutbound::new(&args);
     let server_state = Arc::new(Mutex::new(ServerStateMachine::new(
+        &args,
         comm_channel.clone(),
         comm_channel_client_outbound.clone(),
     )));

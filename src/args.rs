@@ -48,6 +48,18 @@ pub struct Args {
     /// Wait for connection until checking for shutdown in ms
     #[arg(long, default_value_t = 1000)]
     pub wait_ms_before_testing_for_shutdown: u64,
+    /// Position of client window (initial for client, will get sent from server to client)
+    #[arg(long, default_value_t = 200)]
+    pub dp_pos_x: u32,
+    /// Position of client window (initial for client, will get sent from server to client)
+    #[arg(long, default_value_t = 200)]
+    pub dp_pos_y: u32,
+    /// Width of client window (initial for client, will get sent from server to client)
+    #[arg(long, default_value_t = 720)]
+    pub dp_width: u32,
+    /// Height of client window (initial for client, will get sent from server to client)
+    #[arg(long, default_value_t = 240)]
+    pub dp_height: u32,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]

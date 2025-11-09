@@ -236,23 +236,19 @@ const TARGET_FPS_DELAY_MS: u64 = 16;
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        let _ = &self.args;
-
         // Desired size (pixels) and position (pixels from top-left of screen)
-        let width = 640u32;
-        let height = 360u32;
-        let pos_x = 800i32;
-        let pos_y = 400i32; // TODO make dynamic
-
         let attrs = Window::default_attributes()
-            .with_title("Display Window")
+            .with_title("JTA Display Window")
             // initial inner size
-            .with_inner_size(PhysicalSize::new(width, height))
+            .with_inner_size(PhysicalSize::new(self.args.dp_width, self.args.dp_height))
             // prevent user resizing by setting min and max to same size
-            .with_min_inner_size(PhysicalSize::new(width, height))
-            .with_max_inner_size(PhysicalSize::new(width, height))
+            .with_min_inner_size(PhysicalSize::new(self.args.dp_width, self.args.dp_height))
+            .with_max_inner_size(PhysicalSize::new(self.args.dp_width, self.args.dp_height))
             .with_decorations(false)
-            .with_position(PhysicalPosition::new(pos_x, pos_y));
+            .with_position(PhysicalPosition::new(
+                self.args.dp_pos_x,
+                self.args.dp_pos_y,
+            ));
 
         self.window = Some(Arc::new(event_loop.create_window(attrs).unwrap()));
 
@@ -276,6 +272,21 @@ impl ApplicationHandler for App {
         if self.shutdown_marker.load(Ordering::SeqCst) {
             debug!("Shutdown requested, stopping display app");
             event_loop.exit();
+        }
+
+        if let Some((x, y, w, h)) = self.state_machine.window_state_needs_update {
+            if let Some(window) = &self.window {
+                info!("Repositioning window: {} {}", x, y);
+                window.set_outer_position(PhysicalPosition::new(x, y));
+                info!("Setting window size: {} {}", w, h);
+                window.set_max_inner_size(Some(PhysicalSize::new(w, h)));
+                window.set_min_inner_size(Some(PhysicalSize::new(w, h)));
+                match window.request_inner_size(PhysicalSize::new(w, h)) {
+                    None => info!("Window resizing request went to the display system"),
+                    Some(size) => info!("Window resizing request: {:?}", size),
+                }
+                self.state_machine.window_state_needs_update = None;
+            }
         }
 
         // read incoming messages (we do not need to loop, as this is running at 60 fps anyway)
@@ -328,6 +339,21 @@ impl ApplicationHandler for App {
         match event {
             WindowEvent::CloseRequested => {
                 info!("The close button was pressed; Sadly that is not how this works");
+            }
+            WindowEvent::Resized(r) => {
+                info!("The Window was resized: {:?}", r);
+
+                // pixels setup needs to be redone
+                let pixels = {
+                    let window = self.window.clone().unwrap();
+                    let size = window.inner_size();
+                    let surface_texture = SurfaceTexture::new(size.width, size.height, window);
+                    Pixels::new(size.width, size.height, surface_texture).unwrap()
+                };
+                self.pixels = Some(pixels);
+            }
+            WindowEvent::Moved(p) => {
+                info!("The window was moved: {:?}", p);
             }
             WindowEvent::RedrawRequested => {
                 if let Some(pixels) = &mut self.pixels {

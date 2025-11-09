@@ -1,14 +1,18 @@
 use serde::{Deserialize, Serialize};
 
-use crate::instructions::{
-    ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
-    InstructionFromTimingClient, InstructionToTimingClient,
+use crate::{
+    args::Args,
+    instructions::{
+        ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
+        InstructionFromTimingClient, InstructionToTimingClient,
+    },
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum MessageFromServerToClient {
     DisplayText(String),
     RequestVersion,
+    MoveWindow(u32, u32, u32, u32),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -22,16 +26,19 @@ enum ServerState {
 }
 
 pub struct ServerStateMachine {
+    args: Args,
     state: ServerState,
     comm_channel: InstructionCommunicationChannel,
     comm_channel_client_outbound: ClientCommunicationChannelOutbound,
 }
 impl ServerStateMachine {
     pub fn new(
+        args: &Args,
         comm_channel: InstructionCommunicationChannel,
         comm_channel_client_outbound: ClientCommunicationChannelOutbound,
     ) -> Self {
         Self {
+            args: args.clone(),
             state: ServerState::Idle,
             comm_channel_client_outbound, // per design, this can only be used to send
             comm_channel, // only used to send instructions to the timing client. Rest is done via incoming commands
@@ -47,6 +54,15 @@ impl ServerStateMachine {
                 // report the timing client our fake version
                 self.send_message_to_timing_client(InstructionToTimingClient::SendServerInfo)
                     .await;
+
+                // get client to respect window position and size
+                self.send_message_to_client(MessageFromServerToClient::MoveWindow(
+                    self.args.dp_pos_x,
+                    self.args.dp_pos_y,
+                    self.args.dp_width,
+                    self.args.dp_height,
+                ))
+                .await;
             }
         }
     }
@@ -101,6 +117,7 @@ pub struct ClientStateMachine {
     pub state: ClientState,
     messages_to_send_out_to_server: Vec<MessageFromClientToServer>,
     frame_counter: u64,
+    pub window_state_needs_update: Option<(u32, u32, u32, u32)>,
 }
 impl ClientStateMachine {
     pub fn new() -> Self {
@@ -108,6 +125,7 @@ impl ClientStateMachine {
             state: ClientState::Created,
             messages_to_send_out_to_server: Vec::new(),
             frame_counter: 0,
+            window_state_needs_update: None,
         }
     }
 
@@ -123,6 +141,9 @@ impl ClientStateMachine {
             }
             MessageFromServerToClient::DisplayText(text) => {
                 self.state = ClientState::DisplayText(text)
+            }
+            MessageFromServerToClient::MoveWindow(x, y, w, h) => {
+                self.window_state_needs_update = Some((x, y, w, h));
             }
         }
     }
