@@ -23,3 +23,6 @@ uuid = { version = "1.18.1", features = ["serde"] }
 winit = "0.30"
 pixels = "0.15.0"
 fontdue = "0.9.3"
+tokio-util = { version = "0.7.17", features = ["codec"] }
+tokio-serde = { version = "0.9.0" , features = ["bincode"] } 
+futures = "0.3.31"

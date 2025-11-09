@@ -12,6 +12,7 @@ mod client;
 mod forwarding;
 mod hex;
 mod instructions;
+mod interface;
 mod nrbf;
 mod rasterizing;
 mod server;

@@ -33,6 +33,12 @@ pub struct Args {
     /// Port where the camera program has their xml endpoint
     #[arg(long, default_value_t = String::from("4447"))]
     pub camera_exchange_xml_port: String,
+    /// Port where the internal communication between server and diplay client takes place
+    #[arg(long, default_value_t = String::from("5678"))]
+    pub internal_communication_port: String,
+    /// Address of where display client lives (for the server to talk to) (like "127.0.0.1")
+    #[arg(long, default_value_t = String::from("128.0.0.1"))]
+    pub adress_internal_communication: String,
     /// If the data that is incoming through should get hexdump-displayed
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub hexdump_incoming_communication: bool,

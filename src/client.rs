@@ -1,10 +1,21 @@
 use crate::args::Args;
+use crate::interface::{MessageFromClientToServer, MessageFromServerToClient};
 use crate::rasterizing::{clear, draw_text, RasterizerMeta};
+use async_channel::{Receiver, Sender, TryRecvError};
 use fontdue::layout::{CoordinateSystem, Layout};
 use fontdue::{Font, FontSettings};
+use futures::prelude::*;
 use pixels::{Pixels, SurfaceTexture};
+use std::io::Error;
+use std::net::SocketAddr;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::net::TcpListener;
+use tokio::time;
+use tokio_serde::formats::*;
+use tokio_serde::Framed;
+use tokio_util::codec::{FramedRead, FramedWrite, LengthDelimitedCodec};
 use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::WindowEvent;
@@ -12,26 +23,200 @@ use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::window::{Window, WindowId};
 
 pub async fn run_client(args: &Args) -> () {
-    // setup event loop
-    let event_loop = EventLoop::new().unwrap();
-    event_loop.set_control_flow(ControlFlow::WaitUntil(
-        Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
+    let (tx_to_ui, rx_to_ui) = async_channel::unbounded::<MessageFromServerToClient>();
+    let (tx_from_ui, rx_from_ui) = async_channel::unbounded::<MessageFromClientToServer>();
+
+    let shutdown_marker = Arc::new(AtomicBool::new(false));
+
+    let network_task = tokio::spawn(run_network_task(
+        args.clone(),
+        tx_to_ui,
+        rx_from_ui,
+        Arc::clone(&shutdown_marker),
     ));
+    let display_task = tokio::spawn(run_display_task(
+        args.clone(),
+        rx_to_ui,
+        tx_from_ui,
+        Arc::clone(&shutdown_marker),
+    ));
+    let shutdown_task = tokio::spawn(async move {
+        // listen for ctrl-c
+        tokio::signal::ctrl_c().await?;
 
-    // font setup
-    let font_data = include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") as &[u8];
-    let font = Font::from_bytes(font_data, FontSettings::default()).unwrap();
-    let font_layout = Layout::new(CoordinateSystem::PositiveYDown);
+        shutdown_marker.store(true, Ordering::SeqCst);
 
-    // run app
-    let mut app = App {
-        args: args.clone(),
-        font: font,
-        font_layout: font_layout,
-        pixels: None,
-        window: None,
+        Ok::<_, Error>(())
+    });
+
+    match tokio::try_join!(network_task, display_task, shutdown_task) {
+        Err(_) => error!("Error in at least one client task"),
+        Ok(_) => info!("All client tasks closed successfully"),
     };
-    let _ = event_loop.run_app(&mut app);
+}
+
+pub async fn run_network_task(
+    args: Args,
+    tx_to_ui: Sender<MessageFromServerToClient>,
+    rx_from_ui: Receiver<MessageFromClientToServer>,
+    shutdown_marker: Arc<AtomicBool>,
+) -> Result<(), Error> {
+    let listen_addr: SocketAddr = format!("0.0.0.0:{}", args.internal_communication_port)
+        .parse()
+        .expect("Invalid internal communication address");
+
+    let listener = TcpListener::bind(listen_addr).await?;
+    debug!("TCP listener started on {}", listen_addr);
+
+    loop {
+        if shutdown_marker.load(Ordering::SeqCst) {
+            debug!("Shutdown requested, stopping listener on {}", listen_addr);
+            break;
+        }
+
+        // Wait for new connection with timeout so we can check shutdown flag periodically
+        match time::timeout(
+            Duration::from_millis(args.wait_ms_before_testing_for_shutdown),
+            listener.accept(),
+        )
+        .await
+        {
+            Ok(Ok((inbound, client_addr))) => {
+                debug!("Accepted connection from {}", client_addr);
+
+                let (read_half, write_half) = inbound.into_split();
+                let mut deserializer: Framed<
+                    _,
+                    MessageFromServerToClient,
+                    MessageFromClientToServer,
+                    _,
+                > = Framed::new(
+                    FramedRead::new(read_half, LengthDelimitedCodec::new()),
+                    Bincode::<MessageFromServerToClient, MessageFromClientToServer>::default(),
+                );
+                let mut serializer: Framed<
+                    _,
+                    MessageFromServerToClient,
+                    MessageFromClientToServer,
+                    _,
+                > = Framed::new(
+                    FramedWrite::new(write_half, LengthDelimitedCodec::new()),
+                    Bincode::<MessageFromServerToClient, MessageFromClientToServer>::default(),
+                );
+
+                // Connection is accepted. Handle all further in own task
+
+                let shutdown_marker = shutdown_marker.clone();
+                let tx_to_ui = tx_to_ui.clone();
+                let rx_from_ui = rx_from_ui.clone();
+
+                tokio::spawn(async move {
+                    let shutdown_marker_read = shutdown_marker.clone();
+
+                    let read_handler = async move {
+                        loop {
+                            if shutdown_marker_read.load(Ordering::SeqCst) {
+                                debug!(
+                                    "Shutdown marker set, breaking main external -> self transfer"
+                                );
+                                break;
+                            }
+
+                            match time::timeout(
+                                Duration::from_millis(args.wait_ms_before_testing_for_shutdown),
+                                deserializer.next(),
+                            )
+                            .await
+                            {
+                                Err(_) => {
+                                    trace!("No new TCP connection within timeout interval");
+                                    continue;
+                                }
+                                Ok(None) => return Err("TCP stream went away".into()),
+                                Ok(Some(Err(e))) => return Err(e.to_string()),
+                                Ok(Some(Ok(mes))) => match tx_to_ui.send(mes).await {
+                                    Ok(()) => (),
+                                    Err(e) => return Err(e.to_string()),
+                                },
+                            }
+                        }
+                        Ok::<_, String>(())
+                    };
+
+                    let shutdown_marker_write = shutdown_marker;
+
+                    let write_handler = async move {
+                        loop {
+                            if shutdown_marker_write.load(Ordering::SeqCst) {
+                                debug!(
+                                    "Shutdown marker set, breaking main self -> external transfer"
+                                );
+                                break;
+                            }
+
+                            match rx_from_ui.recv().await {
+                                Ok(mes) => match serializer.send(mes).await {
+                                    Ok(()) => continue,
+                                    Err(e) => return Err(e.to_string()),
+                                },
+                                Err(e) => return Err(e.to_string()),
+                            }
+                        }
+
+                        Ok::<_, String>(())
+                    };
+
+                    tokio::try_join!(read_handler, write_handler)?;
+
+                    Ok::<_, String>(())
+                });
+            }
+            Ok(Err(e)) => error!("Accept error: {}", e),
+            Err(_) => {
+                // expected on timeout, just loop
+                trace!("No new TCP connection within timeout interval");
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub async fn run_display_task(
+    args: Args,
+    rx_to_ui: Receiver<MessageFromServerToClient>,
+    tx_from_ui: Sender<MessageFromClientToServer>,
+    shutdown_marker: Arc<AtomicBool>,
+) -> Result<(), Error> {
+    tokio::task::spawn_blocking(move || {
+        // setup event loop
+        let event_loop = EventLoop::new().unwrap();
+        event_loop.set_control_flow(ControlFlow::WaitUntil(
+            Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
+        ));
+
+        // font setup
+        let font_data =
+            include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") as &[u8];
+        let font = Font::from_bytes(font_data, FontSettings::default()).unwrap();
+        let font_layout = Layout::new(CoordinateSystem::PositiveYDown);
+
+        // run app
+        let mut app = App {
+            args: args,
+            font: font,
+            font_layout: font_layout,
+            pixels: None,
+            window: None,
+            incoming: rx_to_ui,
+            outgoing: tx_from_ui,
+            shutdown_marker: shutdown_marker,
+        };
+        let _ = event_loop.run_app(&mut app);
+    })
+    .await?;
+
+    Ok(())
 }
 
 struct App {
@@ -40,6 +225,9 @@ struct App {
     font: Font,
     font_layout: Layout,
     args: Args,
+    incoming: Receiver<MessageFromServerToClient>,
+    outgoing: Sender<MessageFromClientToServer>,
+    shutdown_marker: Arc<AtomicBool>,
 }
 
 const TARGET_FPS_DELAY_MS: u64 = 16;
@@ -82,6 +270,42 @@ impl ApplicationHandler for App {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        // check for shutdown
+        if self.shutdown_marker.load(Ordering::SeqCst) {
+            debug!("Shutdown requested, stopping display app");
+            event_loop.exit();
+        }
+
+        // read incoming messages
+        loop {
+            match self.incoming.try_recv() {
+                Ok(msg) => {
+                    let _ = msg;
+                    error!("WE GOT A MESSAGE!!"); // TODO
+
+                    match self.outgoing.try_send(MessageFromClientToServer::Unknown) {
+                        Ok(()) => (),
+                        Err(e) => {
+                            error!(
+                                "Error in outbound client internal communication: {}",
+                                e.to_string()
+                            )
+                        }
+                    };
+                }
+                Err(e) => match e {
+                    TryRecvError::Empty => break,
+                    e => {
+                        error!(
+                            "Error in inbound client internal communication: {}",
+                            e.to_string()
+                        );
+                        event_loop.exit();
+                    }
+                },
+            }
+        }
+
         // called just before the event loop sleeps
         if let Some(window) = &self.window {
             window.request_redraw();
