@@ -32,3 +32,11 @@ cd "$COMPOSE_DIR" || {
   exit 1
 }
 docker compose -f docker-compose.run.yml up 2>&1 | tee -a "$LOGFILE"
+
+echo "This should not be reached"
+echo "$(date '+%Y-%m-%d %H:%M:%S') This should not be reached." >> "$LOGFILE"
+{  
+  echo "Command failed. Press Enter to close."
+  read
+  exit 1
+}
