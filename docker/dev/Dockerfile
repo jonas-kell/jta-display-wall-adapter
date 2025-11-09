@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
     libxi-dev \
     libgl1-mesa-dev \
     libwayland-dev \
-    libxkbcommon-dev \
+    libxkbcommon0 \
+    libxkbcommon-x11-0 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/
