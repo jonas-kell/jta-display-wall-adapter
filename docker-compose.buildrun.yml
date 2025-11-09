@@ -1,6 +1,8 @@
 services:
   client-run:
-    image: kellehorreur/jta-display-wall-adapter-client:latest
+    build:
+      context: ./
+      dockerfile: ./docker/run/Dockerfile
     environment:
       - DISPLAY=${DISPLAY}
     volumes:
