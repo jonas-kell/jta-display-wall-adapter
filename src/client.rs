@@ -252,15 +252,6 @@ impl ApplicationHandler for App {
 
         self.window = Some(Arc::new(event_loop.create_window(attrs).unwrap()));
 
-        // pixels setup
-        let pixels = {
-            let window = self.window.clone().unwrap();
-            let size = window.inner_size();
-            let surface_texture = SurfaceTexture::new(size.width, size.height, window);
-            Pixels::new(size.width, size.height, surface_texture).unwrap()
-        };
-        self.pixels = Some(pixels);
-
         // trigger the first re-awakening of the event loop
         event_loop.set_control_flow(ControlFlow::WaitUntil(
             Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
@@ -340,17 +331,24 @@ impl ApplicationHandler for App {
             WindowEvent::CloseRequested => {
                 info!("The close button was pressed; Sadly that is not how this works");
             }
-            WindowEvent::Resized(r) => {
-                info!("The Window was resized: {:?}", r);
+            WindowEvent::Resized(new_size) => {
+                info!("The Window was resized: {:?}", new_size);
 
                 // pixels setup needs to be redone
-                let pixels = {
-                    let window = self.window.clone().unwrap();
-                    let size = window.inner_size();
-                    let surface_texture = SurfaceTexture::new(size.width, size.height, window);
-                    Pixels::new(size.width, size.height, surface_texture).unwrap()
-                };
-                self.pixels = Some(pixels);
+                if let Some(pixels) = &mut self.pixels {
+                    if let Err(e) = pixels.resize_surface(new_size.width, new_size.height) {
+                        error!("Failed to resize pixels surface: {}", e);
+                    }
+                } else {
+                    // first-time creation (defer until window mapped)
+                    if let Some(window) = &self.window {
+                        let surface_texture =
+                            SurfaceTexture::new(new_size.width, new_size.height, window.clone());
+                        self.pixels = Some(
+                            Pixels::new(new_size.width, new_size.height, surface_texture).unwrap(),
+                        );
+                    }
+                }
             }
             WindowEvent::Moved(p) => {
                 info!("The window was moved: {:?}", p);
