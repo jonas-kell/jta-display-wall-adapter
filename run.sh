@@ -32,7 +32,7 @@ xhost +local:docker
 (
   while true; do
     if [[ -f "move_container/coords.txt" ]]; then
-      CONTENT=$(<coords.txt)
+      CONTENT=$(<move_container/coords.txt)
       if swaymsg "[title=\"JTA Display Window\"]" move position "$CONTENT"; then
         rm -f move_container/coords.txt
       else
