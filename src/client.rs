@@ -141,7 +141,9 @@ pub async fn run_network_task(
                                 Ok(None) => return Err("TCP stream went away".into()),
                                 Ok(Some(Err(e))) => return Err(e.to_string()),
                                 Ok(Some(Ok(mes))) => match tx_to_ui.send(mes).await {
-                                    Ok(()) => (),
+                                    Ok(()) => trace!(
+                                        "Message taken in and forwarded into internal comm channel"
+                                    ),
                                     Err(e) => return Err(e.to_string()),
                                 },
                             }
@@ -160,12 +162,23 @@ pub async fn run_network_task(
                                 break;
                             }
 
-                            match rx_from_ui.recv().await {
-                                Ok(mes) => match serializer.send(mes).await {
-                                    Ok(()) => continue,
+                            match time::timeout(
+                                Duration::from_millis(args.wait_ms_before_testing_for_shutdown),
+                                rx_from_ui.recv(),
+                            )
+                            .await
+                            {
+                                Err(_) => {
+                                    trace!("No new Messages to send out within timeout interval");
+                                    continue;
+                                }
+                                Ok(Err(e)) => return Err(e.to_string()),
+                                Ok(Ok(mes)) => match serializer.send(mes).await {
+                                    Ok(()) => trace!(
+                                        "TCP sender forwarded message from internal comm channel"
+                                    ),
                                     Err(e) => return Err(e.to_string()),
                                 },
-                                Err(e) => return Err(e.to_string()),
                             }
                         }
 
