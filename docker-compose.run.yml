@@ -10,4 +10,4 @@ services:
       - /dev/dri:/dev/dri
     ports:
       - "5678:5678"
-    command: /app/client client -v --internal-communication-port 5678
+    command: /app/client client -v --internal-communication-port 5678 --wait-ms-before-testing-for-shutdown=5000
