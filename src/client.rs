@@ -391,7 +391,10 @@ impl ApplicationHandler for App {
                         Err(e) => error!("Error while rendering: {}", e.to_string()),
                     }
                 } else {
-                    warn!("The pixels element of the App context is not initialized")
+                    if self.state_machine.log_pixels_not_initialized {
+                        warn!("The pixels element of the App context is not initialized");
+                        self.state_machine.log_pixels_not_initialized = false;
+                    }
                 }
             }
             _ => (),

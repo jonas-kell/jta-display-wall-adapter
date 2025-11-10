@@ -122,6 +122,7 @@ pub struct ClientStateMachine {
     messages_to_send_out_to_server: Vec<MessageFromClientToServer>,
     frame_counter: u64,
     pub window_state_needs_update: Option<(u32, u32, u32, u32)>,
+    pub log_pixels_not_initialized: bool,
 }
 impl ClientStateMachine {
     pub fn new() -> Self {
@@ -130,6 +131,7 @@ impl ClientStateMachine {
             messages_to_send_out_to_server: Vec::new(),
             frame_counter: 0,
             window_state_needs_update: None,
+            log_pixels_not_initialized: true,
         }
     }
 
