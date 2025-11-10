@@ -28,6 +28,18 @@ fi
 # setting the xhost because this might reset it seems
 xhost +local:docker
 
+# Background loop to move the window on wayland sway
+(
+  while true; do
+    if [[ -f "coords.txt" ]]; then
+      CONTENT=$(<coords.txt)  # read the file content
+      swaymsg "[title=\"JTA Display Window\"]" move position "$CONTENT"
+      rm -f coords.txt
+    fi
+    sleep 1
+  done
+) &
+
 echo "Starting docker compose in $COMPOSE_DIR"
 echo "$(date '+%Y-%m-%d %H:%M:%S') Starting docker compose in $COMPOSE_DIR" >> "$LOGFILE"
 cd "$COMPOSE_DIR" || {  
