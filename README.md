@@ -100,6 +100,7 @@ autologin-user-timeout=0
 
 ```cmd
 mkdir ~/.config/sway
+sudo nano ~/.config/sway/config
 ```
 
 ```config
@@ -126,6 +127,9 @@ bindsym $mod+Shift+q kill
 bar {
     position bottom
 }
+
+# hide cursor
+seat * hide_cursor 1000
 
 exec foot -e sh -c "cd /home/wall/Desktop/jta-display-wall-adapter && ./run.sh"
 ```
