@@ -97,6 +97,13 @@ Save, then the command `echo $XDG_SESSION_TYPE` should produce `wayland`.
 And `echo $DESKTOP_SESSION` should yield `rpd-labwc`.
 On re-log you should also immediately boot into desktop now.
 
+We use XWayland though, because wayland compositor does not allow us to reposition windows...
+
+```cmd
+Xwayland -version
+ps aux | grep Xwayland # should tell something like "-auth /home/wall/.Xauthority :0 -rootless"
+```
+
 Setup the program to auto-start:
 
 ```cmd

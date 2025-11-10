@@ -2,10 +2,10 @@ services:
   client-run:
     image: kellehorreur/jta-display-wall-adapter:latest
     environment:
-      - WAYLAND_DISPLAY=${WAYLAND_DISPLAY}
-      - XDG_RUNTIME_DIR=/tmp/xdg
+      - DISPLAY=${DISPLAY} # point to XWayland display (should be integrated on the same display)
     volumes:
-      - ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}:/tmp/xdg/${WAYLAND_DISPLAY}:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY}:/root/.Xauthority:ro
     devices:
       - /dev/dri:/dev/dri
     ports:
