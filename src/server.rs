@@ -82,7 +82,7 @@ pub async fn run_server(args: &Args) -> () {
 
     info!(
         "Talking to {} for internal communication to display client",
-        passthrough_address_display_program
+        internal_communication_address
     );
 
     let comm_channel = InstructionCommunicationChannel::new(&args);

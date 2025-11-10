@@ -56,6 +56,10 @@ impl ServerStateMachine {
                     .await;
 
                 // get client to respect window position and size
+                debug!(
+                    "Requesting window change on client: {} {} {} {}",
+                    self.args.dp_pos_x, self.args.dp_pos_y, self.args.dp_width, self.args.dp_height,
+                );
                 self.send_message_to_client(MessageFromServerToClient::MoveWindow(
                     self.args.dp_pos_x,
                     self.args.dp_pos_y,
