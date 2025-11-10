@@ -60,6 +60,9 @@ pub struct Args {
     /// Height of client window (initial for client, will get sent from server to client)
     #[arg(long, default_value_t = 240)]
     pub dp_height: u32,
+    /// The client will place a file in the running folder with coordinates where the window should be moved to (wayland sway script uses this to move window)
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub emit_file_on_location_update: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]

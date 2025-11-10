@@ -8,7 +8,9 @@ use fontdue::{Font, FontSettings};
 use futures::prelude::*;
 use pixels::{Pixels, SurfaceTexture};
 use std::io::Error;
+use std::io::Write;
 use std::net::SocketAddr;
+use std::os::unix::fs::PermissionsExt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -285,6 +287,19 @@ impl ApplicationHandler for App {
             if let Some(window) = &self.window {
                 info!("Repositioning window: {} {}", x, y);
                 window.set_outer_position(PhysicalPosition::new(x, y));
+                if self.args.emit_file_on_location_update {
+                    let path = std::path::Path::new("coords.txt");
+                    match std::fs::File::create(path) {
+                        Err(e) => error!("Could not create file: {}", e.to_string()),
+                        Ok(mut file) => match write!(file, "{} {}", x, y) {
+                            Ok(()) => (),
+                            Err(e) => error!("Could not write to file: {}", e.to_string()),
+                        },
+                    }
+                    let perms = std::fs::Permissions::from_mode(0o777);
+                    let _ = std::fs::set_permissions(path, perms);
+                    trace!("Position written to file");
+                }
                 info!("Setting window size: {} {}", w, h);
                 window.set_max_inner_size(Some(PhysicalSize::new(w, h)));
                 window.set_min_inner_size(Some(PhysicalSize::new(w, h)));
