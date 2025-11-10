@@ -188,6 +188,7 @@ async fn client_communicator(
                     {
                         let mut guard = server_state_exchange.lock().await;
                         guard.make_server_request_client_version().await;
+                        debug!("Requested server version from client {}", client_addr);
                     }
 
                     // handle messaging
@@ -271,7 +272,10 @@ async fn client_communicator(
                                 }
                                 Ok(Err(e)) => return Err(e.to_string()),
                                 Ok(Ok(msg)) => match serializer.send(msg).await {
-                                    Ok(()) => continue,
+                                    Ok(()) => {
+                                        trace!("Communication to client was sent out");
+                                        continue;
+                                    }
                                     Err(e) => return Err(e.to_string()),
                                 },
                             }

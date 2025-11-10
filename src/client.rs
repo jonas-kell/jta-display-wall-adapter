@@ -336,8 +336,9 @@ impl ApplicationHandler for App {
 
                 // pixels setup needs to be redone (only here!!)
                 if let Some(pixels) = &mut self.pixels {
-                    if let Err(e) = pixels.resize_surface(new_size.width, new_size.height) {
-                        error!("Failed to resize pixels surface: {}", e);
+                    match pixels.resize_surface(new_size.width, new_size.height) {
+                        Ok(()) => debug!("Pixels were resized"),
+                        Err(e) => error!("Failed to resize pixels surface: {}", e),
                     }
                 } else {
                     // first-time creation (defer until window mapped)
@@ -347,6 +348,9 @@ impl ApplicationHandler for App {
                         self.pixels = Some(
                             Pixels::new(new_size.width, new_size.height, surface_texture).unwrap(),
                         );
+                        debug!("Pixels were initialized");
+                    } else {
+                        error!("Window should be mapped by now. This is not possible...");
                     }
                 }
             }
@@ -374,7 +378,7 @@ impl ApplicationHandler for App {
                         Err(e) => error!("Error while rendering: {}", e.to_string()),
                     }
                 } else {
-                    error!("The pixels element of the App context is not initialized")
+                    warn!("The pixels element of the App context is not initialized")
                 }
             }
             _ => (),
