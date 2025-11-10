@@ -102,6 +102,7 @@ We use XWayland though, because wayland compositor does not allow us to repositi
 ```cmd
 Xwayland -version
 ps aux | grep Xwayland # should tell something like "-auth /home/wall/.Xauthority :0 -rootless"
+sudo apt-get install -y x11-utils x11-apps
 ```
 
 Setup the program to auto-start:

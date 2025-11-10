@@ -21,6 +21,7 @@ use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::platform::x11::{WindowAttributesExtX11, WindowType};
 use winit::window::{Window, WindowId};
 
 pub async fn run_client(args: &Args) -> () {
@@ -258,6 +259,8 @@ impl ApplicationHandler for App {
             .with_min_inner_size(PhysicalSize::new(self.args.dp_width, self.args.dp_height))
             .with_max_inner_size(PhysicalSize::new(self.args.dp_width, self.args.dp_height))
             .with_decorations(false)
+            .with_window_level(winit::window::WindowLevel::AlwaysOnTop)
+            .with_x11_window_type([WindowType::Dialog].into())
             .with_position(PhysicalPosition::new(
                 self.args.dp_pos_x,
                 self.args.dp_pos_y,
