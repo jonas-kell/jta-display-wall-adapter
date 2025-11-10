@@ -47,7 +47,6 @@ cargo build --release --target x86_64-pc-windows-gnu
 ## Install display client on a Raspberry Pi
 
 Generally, to run this you require an installation of [Docker](https://www.docker.com/) with [Docker compose](https://docs.docker.com/compose/).
-Furthermore, the window system should be Wayland.
 
 In the case of this all being available, you only need to run the following command inside the main folder of this repository.
 
@@ -100,10 +99,19 @@ On re-log you should also immediately boot into desktop now.
 We use XWayland though, because wayland compositor does not allow us to reposition windows...
 
 ```cmd
-Xwayland -version
-ps aux | grep Xwayland # should tell something like "-auth /home/wall/.Xauthority :0 -rootless"
+sudo raspi-config
+# under Advanced switch from Wayland to X11 -> reboot
+# Also under Display Options -> Screen Blanking -> Disable (Woudl you like to enable -> no)
 sudo apt-get install -y x11-utils x11-apps
 ```
+
+Now the variables from above `sudo nano /etc/lightdm/lightdm.conf` should read `rpd-x`, the `echo $XDG_SESSION_TYPE` should produce `x11` and `echo $DESKTOP_SESSION` should yield `rpd-x`.
+
+<!--
+Previously tried to use Xwayland
+Xwayland -version
+ps aux | grep Xwayland # should tell something like "-auth /home/wall/.Xauthority :0 -rootless"
+-->
 
 Setup the program to auto-start:
 

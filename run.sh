@@ -20,6 +20,11 @@ if [[ ! -f "$COMPOSE_DIR/docker-compose.run.yml" ]]; then
   exit 1
 fi
 
+# Disable X11 screen blank
+xset s off      || echo "Blanking Screen disable not supported"     # Disable screen saver
+xset -dpms      || echo "Blanking Screen disable not supported"     # Disable DPMS (Energy Star) features
+xset s noblank  || echo "Blanking Screen disable not supported"     # Disable screen blanking
+
 # setting the xhost because this might reset it seems
 xhost +local:docker
 
