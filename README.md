@@ -79,6 +79,12 @@ chmod +x ~/.docker/cli-plugins/docker-compose
 Set the session to Wayland (should be already) and make the user auto-login on boot:
 
 ```cmd
+sudo raspi-config # check that is set to wayland -> screen blank can be also dissable there, but I do not think it does anything after switching to sway
+sudo apt install sway foot
+sudo nano /usr/share/wayland-sessions/sway.desktop # check if it is there and filled
+```
+
+```cmd
 sudo nano /etc/lightdm/lightdm.conf
 ```
 
@@ -86,60 +92,63 @@ Modify the config file that opens.
 At the Part `[Seat:*]` (probably it reads `rpd-labwc` -> keep that) replace with the following settings
 
 ```config
-user-session=rpd-labwc
-autologin-session=rpd-labwc
+user-session=sway
+autologin-session=sway
 autologin.user=wall # the user of the pi is called wall
 autologin-user-timeout=0
 ```
 
-Save, then the command `echo $XDG_SESSION_TYPE` should produce `wayland`.
-And `echo $DESKTOP_SESSION` should yield `rpd-labwc`.
-On re-log you should also immediately boot into desktop now.
-
-We use XWayland though, because wayland compositor does not allow us to reposition windows...
-
 ```cmd
-sudo raspi-config
-# under Advanced switch from Wayland to X11 -> reboot
-# Also under Display Options -> Screen Blanking -> Disable (Woudl you like to enable -> no)
-sudo apt-get install -y x11-utils x11-apps
+mkdir ~/.config/sway
 ```
-
-Now the variables from above `sudo nano /etc/lightdm/lightdm.conf` should read `rpd-x`, the `echo $XDG_SESSION_TYPE` should produce `x11` and `echo $DESKTOP_SESSION` should yield `rpd-x`.
-
-<!--
-Previously tried to use Xwayland
-Xwayland -version
-ps aux | grep Xwayland # should tell something like "-auth /home/wall/.Xauthority :0 -rootless"
--->
-
-Setup the program to auto-start:
-
-```cmd
-sudo apt-get install dex
-mkdir -p ~/.config/autostart
-nano ~/.config/autostart/jta-adapter.desktop
-```
-
-Fill the new file with the following configuration (this assumes, that the repo was cloned to `home/wall/Desktop/jta-display-wall-adapter`).
 
 ```config
-[Desktop Entry]
-Type=Application
-Name=JTA Wall Adapter
-Exec=lxterminal -e bash -c "cd /home/wall/Desktop/jta-display-wall-adapter/ && ./run.sh"
-Path=/home/wall/Desktop/jta-display-wall-adapter/
-X-GNOME-Autostart-enabled=true
+# Set mod key (Super/Windows key)
+set $mod Mod4
+
+# Basic keybindings
+bindsym $mod+Return exec foot
+
+# Move focus
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+# Close window
+bindsym $mod+Shift+q kill
+
+# Bar (status bar) at the bottom
+bar {
+    position bottom
+}
+
+exec foot -e sh -c "cd /home/wall/Desktop/jta-display-wall-adapter && ./run.sh"
 ```
 
-Save and run the following commands to activate
+On Sway you can open a console with `Windows + Enter`.
 
 ```cmd
-chmod +x ~/.config/autostart/jta-adapter.desktop
-dex ~/.config/autostart/jta-adapter.desktop
+swaymsg reload
+
+swaymsg -t get_tree
+swaymsg "[title=\"JTA Display Window\"]" move position 100 200
 ```
 
-Setup a static IP on VLAN11 and DHCP on VLAN12:
+Save, then the command `echo $XDG_SESSION_TYPE` should produce `wayland`.
+And `echo $DESKTOP_SESSION` should yield `sway`.
+On re-log you should also immediately boot into sway tiling window manager now.
+
+### Setup the program to auto-start
+
+Is already achieved with the last line of the sway config.
+Fill the new file with the correct folder location (this assumes, that the repo was cloned to `home/wall/Desktop/jta-display-wall-adapter`).
+
+### Setup a static IP on VLAN11 and DHCP on VLAN12:
 
 The following command shows the name of the wired connection (use any other interface you want to target).
 We assume, that the system uses `NetworkManager`.
