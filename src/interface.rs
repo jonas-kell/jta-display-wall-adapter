@@ -132,6 +132,7 @@ impl ClientStateMachine {
     pub fn parse_server_command(&mut self, msg: MessageFromServerToClient) {
         match msg {
             MessageFromServerToClient::RequestVersion => {
+                info!("Version was requested. Communication established!!");
                 if self.state == ClientState::Created {
                     self.state = ClientState::Idle;
                 }
@@ -140,9 +141,11 @@ impl ClientStateMachine {
                 )))
             }
             MessageFromServerToClient::DisplayText(text) => {
+                debug!("Server requested display mode to be switched to text");
                 self.state = ClientState::DisplayText(text)
             }
             MessageFromServerToClient::MoveWindow(x, y, w, h) => {
+                debug!("Server requested an update of the window position/size");
                 self.window_state_needs_update = Some((x, y, w, h));
             }
         }
