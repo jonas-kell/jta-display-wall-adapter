@@ -335,6 +335,9 @@ impl ApplicationHandler for App {
         }
 
         self.state_machine.advance_counters();
+        if self.state_machine.frame_counter % 1200 == 0 {
+            trace!("State was processed (reports all 20s as per frame count)");
+        }
 
         // schedule next wakeup after we just finished a redraw session
         event_loop.set_control_flow(ControlFlow::WaitUntil(
@@ -390,13 +393,18 @@ impl ApplicationHandler for App {
 
                     // Render
                     match pixels.render() {
-                        Ok(()) => (),
+                        Ok(()) => {
+                            if self.state_machine.frame_counter % 1200 == 0 {
+                                trace!(
+                                    "Pixels were re-rendered (reports all 20s as per frame count)"
+                                );
+                            }
+                        }
                         Err(e) => error!("Error while rendering: {}", e.to_string()),
                     }
                 } else {
-                    if self.state_machine.log_pixels_not_initialized {
+                    if self.state_machine.frame_counter % 60 == 0 {
                         warn!("The pixels element of the App context is not initialized");
-                        self.state_machine.log_pixels_not_initialized = false;
                     }
                 }
             }
