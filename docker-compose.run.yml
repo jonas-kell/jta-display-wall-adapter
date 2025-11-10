@@ -5,6 +5,7 @@ services:
       - WAYLAND_DISPLAY=${WAYLAND_DISPLAY}
       - XDG_RUNTIME_DIR=/tmp/xdg
     volumes:
+      - ./move_container/:/app/move_container/
       - ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}:/tmp/xdg/${WAYLAND_DISPLAY}:rw
     devices:
       - /dev/dri:/dev/dri

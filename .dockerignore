@@ -6,3 +6,4 @@
 *.md
 *.sh
 *.bat
+/move_container

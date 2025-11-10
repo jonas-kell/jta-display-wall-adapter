@@ -288,7 +288,7 @@ impl ApplicationHandler for App {
                 info!("Repositioning window: {} {}", x, y);
                 window.set_outer_position(PhysicalPosition::new(x, y));
                 if self.args.emit_file_on_location_update {
-                    let path = std::path::Path::new("coords.txt");
+                    let path = std::path::Path::new("move_container/coords.txt");
                     match std::fs::File::create(path) {
                         Err(e) => error!("Could not create file: {}", e.to_string()),
                         Ok(mut file) => match write!(file, "{} {}", x, y) {

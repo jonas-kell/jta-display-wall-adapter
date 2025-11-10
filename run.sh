@@ -31,12 +31,15 @@ xhost +local:docker
 # Background loop to move the window on wayland sway
 (
   while true; do
-    if [[ -f "coords.txt" ]]; then
-      CONTENT=$(<coords.txt)  # read the file content
-      swaymsg "[title=\"JTA Display Window\"]" move position "$CONTENT"
-      rm -f coords.txt
+    if [[ -f "move_container/coords.txt" ]]; then
+      CONTENT=$(<coords.txt)
+      if swaymsg "[title=\"JTA Display Window\"]" move position "$CONTENT"; then
+        rm -f move_container/coords.txt
+      else
+        echo "Failed to move window — keeping coords.txt for retry."
+      fi
     fi
-    sleep 1
+    sleep 5
   done
 ) &
 
