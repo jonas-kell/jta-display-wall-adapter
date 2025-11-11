@@ -390,6 +390,10 @@ impl ApplicationHandler for App {
                             }
                         }
 
+                        // used in a log later (otherwise a mut-borrow problem)
+                        let texture_width = meta.texture_width;
+                        let texture_height = meta.texture_height;
+
                         // Render
                         match pixels.render() {
                             Ok(()) => {
@@ -407,6 +411,17 @@ impl ApplicationHandler for App {
                                         "Pixels were re-rendered (reports all {}s as per frame count)",
                                         REPORT_FRAME_LOGS_EVERY_SECONDS
                                     );
+                                    if let Some((sm_x, sm_y)) =
+                                        self.state_machine.current_frame_dimensions
+                                    {
+                                        trace!(
+                                            "Rendered a size of {}x{} - texture: {}x{}",
+                                            sm_x,
+                                            sm_y,
+                                            texture_width,
+                                            texture_height
+                                        );
+                                    }
                                     trace!(
                                         "Rendering a frame takes {}% of the max time to reach {}fps",
                                         percent,
