@@ -212,9 +212,7 @@ pub fn run_display_task(
 ) -> () {
     // setup event loop
     let event_loop = EventLoop::new().unwrap();
-    event_loop.set_control_flow(ControlFlow::WaitUntil(
-        Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
-    ));
+    event_loop.set_control_flow(ControlFlow::Poll); // as fast as possible, wil get overwritten to achieve stable fps
 
     // font setup
     let font_data = include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") as &[u8];
@@ -232,6 +230,7 @@ pub fn run_display_task(
         outgoing: tx_from_ui,
         shutdown_marker: shutdown_marker,
         state_machine: ClientStateMachine::new(),
+        last_draw_call: Instant::now(),
     };
     let _ = event_loop.run_app(&mut app);
 }
@@ -246,9 +245,11 @@ struct App {
     outgoing: Sender<MessageFromClientToServer>,
     shutdown_marker: Arc<AtomicBool>,
     state_machine: ClientStateMachine,
+    last_draw_call: Instant,
 }
 
-const TARGET_FPS_DELAY_MS: u64 = 16;
+const TARGET_FPS: u64 = 60;
+const REPORT_FRAME_LOGS_EVERY_SECONDS: u64 = 20;
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
@@ -272,7 +273,7 @@ impl ApplicationHandler for App {
 
         // trigger the first re-awakening of the event loop
         event_loop.set_control_flow(ControlFlow::WaitUntil(
-            Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
+            Instant::now() + Duration::from_millis(20), // hardcoded first frame delay, that seems to work good until stuff is initialized
         ));
     }
 
@@ -349,14 +350,28 @@ impl ApplicationHandler for App {
             window.request_redraw();
         }
 
-        self.state_machine.advance_counters();
-        if self.state_machine.frame_counter % 1200 == 0 {
-            trace!("State was processed (reports all 20s as per frame count)");
+        if self.state_machine.frame_counter % (TARGET_FPS * REPORT_FRAME_LOGS_EVERY_SECONDS) == 0 {
+            trace!(
+                "State was processed (reports all {}s as per frame count)",
+                REPORT_FRAME_LOGS_EVERY_SECONDS
+            );
         }
 
         // schedule next wakeup after we just finished a redraw session
+        let now = Instant::now();
+        let elapsed = now.duration_since(self.last_draw_call);
+        let nano_since = elapsed.as_nanos() as u64;
+        let frame_time_ns = 1_000_000_000 / TARGET_FPS as u64;
+        let remaining_nanos = frame_time_ns.saturating_sub(nano_since);
+        if self.state_machine.frame_counter % (TARGET_FPS * REPORT_FRAME_LOGS_EVERY_SECONDS) == 0 {
+            trace!(
+                "Rendering a frame takes {}% of the max time to reach {}fps",
+                (nano_since * 100) / frame_time_ns,
+                TARGET_FPS
+            );
+        }
         event_loop.set_control_flow(ControlFlow::WaitUntil(
-            Instant::now() + Duration::from_millis(TARGET_FPS_DELAY_MS),
+            Instant::now() + Duration::from_nanos(remaining_nanos),
         ));
     }
 
@@ -385,6 +400,9 @@ impl ApplicationHandler for App {
             }
             WindowEvent::RedrawRequested => {
                 if let Some(pixels) = &mut self.pixels {
+                    // track at the start of the renderer (as there could be more requests for redrawing, than is actually redrawn)
+                    self.last_draw_call = Instant::now();
+
                     let texture_size = pixels.texture().size();
                     let mut meta = RasterizerMeta {
                         font: &self.font,
@@ -401,16 +419,24 @@ impl ApplicationHandler for App {
                     // Render
                     match pixels.render() {
                         Ok(()) => {
-                            if self.state_machine.frame_counter % 1200 == 0 {
+                            // handle the frame counter of the state machine
+                            self.state_machine.advance_counters();
+                            error!("Advance");
+
+                            if self.state_machine.frame_counter
+                                % (TARGET_FPS * REPORT_FRAME_LOGS_EVERY_SECONDS)
+                                == 0
+                            {
                                 trace!(
-                                    "Pixels were re-rendered (reports all 20s as per frame count)"
+                                    "Pixels were re-rendered (reports all {}s as per frame count)",
+                                    REPORT_FRAME_LOGS_EVERY_SECONDS
                                 );
                             }
                         }
                         Err(e) => error!("Error while rendering: {}", e.to_string()),
                     }
                 } else {
-                    if self.state_machine.frame_counter % 60 == 0 {
+                    if self.state_machine.frame_counter % TARGET_FPS == 0 {
                         warn!("The pixels element of the App context is not initialized");
                     }
                 }

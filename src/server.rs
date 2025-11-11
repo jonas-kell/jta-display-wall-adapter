@@ -21,7 +21,7 @@ use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::Mutex;
-use tokio::time::{self};
+use tokio::time::{self, sleep};
 use tokio_serde::formats::Bincode;
 use tokio_serde::Framed;
 use tokio_util::codec::{FramedRead, FramedWrite, LengthDelimitedCodec};
@@ -288,6 +288,7 @@ async fn client_communicator(
                         Ok(_) => (),
                         Err(e) => {
                             error!("Client connection gone away: {}", e);
+                            sleep(Duration::from_millis(1000)).await; // on dev the communication goes into docker, so it connects, then fails. but this spams logs. Slow down retry a bit
                         }
                     }
                 }
