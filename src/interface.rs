@@ -15,6 +15,7 @@ pub enum MessageFromServerToClient {
     RequestVersion,
     MoveWindow(u32, u32, u32, u32),
     Clear,
+    DisplayExternalFrame(Vec<u8>),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -26,7 +27,7 @@ pub enum MessageFromClientToServer {
 #[derive(PartialEq, Eq, Clone)]
 pub enum ServerState {
     PassthroughClient,
-    PassthroughDisplayProgram,
+    PassthroughDisplayBoard,
 }
 
 pub struct ServerStateMachine {
@@ -73,7 +74,6 @@ impl ServerStateMachine {
                 .await;
             }
             MessageFromClientToServer::CurrentWindow(data) => {
-                // Comment to link to other location where this is relevant COMPAREWITHTHIS1
                 if self.state == ServerState::PassthroughClient {
                     self.send_message_to_timing_client(InstructionToTimingClient::SendFrame(data))
                         .await;
@@ -97,9 +97,9 @@ impl ServerStateMachine {
                         match self.state {
                             ServerState::PassthroughClient => {
                                 info!("Now passing through client");
-                                self.state = ServerState::PassthroughDisplayProgram
+                                self.state = ServerState::PassthroughDisplayBoard
                             }
-                            ServerState::PassthroughDisplayProgram => {
+                            ServerState::PassthroughDisplayBoard => {
                                 info!("Now passing through external display program");
                                 self.state = ServerState::PassthroughClient
                             }
@@ -108,6 +108,15 @@ impl ServerStateMachine {
                             .await;
                     } else {
                         self.state = ServerState::PassthroughClient;
+                    }
+                }
+                InstructionFromTimingClient::SendFrame(data) => {
+                    trace!("Got command to send a frame inbound (should be from external display board program to send back and possibly proxy to our client)");
+                    if self.state == ServerState::PassthroughDisplayBoard {
+                        self.send_message_to_client(
+                            MessageFromServerToClient::DisplayExternalFrame(data),
+                        )
+                        .await;
                     }
                 }
                 inst => error!("Unhandled instruction from timing client: {}", inst),
@@ -141,11 +150,11 @@ impl ServerStateMachine {
     }
 }
 
-#[derive(PartialEq, Eq)]
 pub enum ClientState {
     Created,
     Idle,
     DisplayText(String),
+    DisplayExternalFrame(ImageMeta),
 }
 
 pub struct ImagesStorage {
@@ -160,6 +169,7 @@ pub struct ClientStateMachine {
     pub frame_counter: u64,
     pub window_state_needs_update: Option<(u32, u32, u32, u32)>,
     pub permanent_images_storage: ImagesStorage,
+    pub current_frame_dimensions: Option<(u32, u32)>,
 }
 impl ClientStateMachine {
     pub fn new() -> Self {
@@ -174,6 +184,7 @@ impl ClientStateMachine {
                 jta_logo: jta_image,
                 cached_rescaler: CachedImageScaler::new(),
             },
+            current_frame_dimensions: None,
         }
     }
 
@@ -181,7 +192,7 @@ impl ClientStateMachine {
         match msg {
             MessageFromServerToClient::RequestVersion => {
                 info!("Version was requested. Communication established!!");
-                if self.state == ClientState::Created {
+                if matches!(self.state, ClientState::Created) {
                     self.state = ClientState::Idle;
                 }
                 self.push_new_message(MessageFromClientToServer::Version(String::from(
@@ -198,6 +209,23 @@ impl ClientStateMachine {
             }
             MessageFromServerToClient::Clear => {
                 self.state = ClientState::Idle;
+            }
+            MessageFromServerToClient::DisplayExternalFrame(data) => {
+                // data is bmp file data
+                let image = match ImageMeta::from_image_bytes(&data) {
+                    Err(e) => {
+                        error!("Could not decode external frame: {}", e);
+                        return;
+                    }
+                    Ok(image) => image,
+                };
+
+                if let Some((w, h)) = self.current_frame_dimensions {
+                    // store rescaled to dynamically cache
+                    self.state = ClientState::DisplayExternalFrame(image.get_rescaled(w, h));
+                } else {
+                    self.state = ClientState::DisplayExternalFrame(image);
+                }
             }
         }
     }

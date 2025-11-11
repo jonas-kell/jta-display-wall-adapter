@@ -99,6 +99,7 @@ pub async fn run_server(args: &Args) -> () {
 
     let tcp_listener_server_instance = tcp_listener_timing_program(
         args.clone(),
+        server_state.clone(),
         comm_channel.clone(),
         comm_channel_packets.clone(),
         Arc::clone(&shutdown_marker),
@@ -638,11 +639,13 @@ async fn tcp_client_to_timing_and_data_exchange(
 
 enum TimeoutOrIoError {
     Timeout,
+    SendingBlocked,
     ReceiveError(RecvError),
 }
 
 async fn tcp_listener_timing_program(
     args: Args,
+    state: Arc<Mutex<ServerStateMachine>>, // does not require read, but our main reference is in a mutex // TODO could use RWLock
     comm_channel: InstructionCommunicationChannel,
     comm_channel_packets: PacketCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
@@ -676,6 +679,7 @@ async fn tcp_listener_timing_program(
                 let comm_channel_packets = comm_channel_packets.clone();
                 let shutdown_marker = shutdown_marker.clone();
                 let args = args.clone();
+                let state = state.clone();
 
                 tokio::spawn(async move {
                     let comm_channel_read = comm_channel.clone();
@@ -686,6 +690,7 @@ async fn tcp_listener_timing_program(
                     let shutdown_marker_write = shutdown_marker;
                     let args_read = args.clone();
                     let args_write = args;
+                    let state_write = state;
 
                     let read_handler = async move {
                         let mut parser = BufferedParser::new(args_read.clone());
@@ -740,9 +745,7 @@ async fn tcp_listener_timing_program(
 
                             // all messages get forwarded unbuffered. Reader needs to take care of it themself
                             if args_read.passthrough_to_display_program {
-                                match comm_channel_packets_read
-                                    .inbound_take_in(buf[..n].into())
-                                {
+                                match comm_channel_packets_read.inbound_take_in(buf[..n].into()) {
                                     Ok(_) => (),
                                     Err(e) => return Err(e.to_string()),
                                 };
@@ -762,9 +765,21 @@ async fn tcp_listener_timing_program(
 
                             // wait on the tcp stream from passthrough
                             let comm_channel_tcp_outbound_source = async {
-                                // these get only written INTO the internal command channel (and subsequently the packets channel), if server mode is correct see TOKEN: COMPAREWITHTHIS1
                                 match comm_channel_packets_write.outbound_coming_out().await {
-                                    Ok(Ok(data)) => return Ok(data),
+                                    Ok(Ok(data)) => {
+                                        let current_state: ServerState;
+                                        {
+                                            let guard = state_write.lock().await;
+                                            current_state = guard.state.clone();
+                                        }
+
+                                        if current_state == ServerState::PassthroughDisplayBoard {
+                                            trace!("Display Program sent frame");
+                                            return Ok(data);
+                                        } else {
+                                            return Err(TimeoutOrIoError::SendingBlocked);
+                                        }
+                                    }
                                     Ok(Err(e)) => return Err(TimeoutOrIoError::ReceiveError(e)),
                                     Err(_) => {
                                         return Err::<PacketData, TimeoutOrIoError>(
@@ -803,6 +818,10 @@ async fn tcp_listener_timing_program(
                                                 trace!("No Outgoing TCP or Command to send during timeout interval");
                                                 continue;
                                             },
+                                            TimeoutOrIoError::SendingBlocked => {
+                                                trace!("Data was not proxied back, because we are currently in OUR client mode");
+                                                continue;
+                                            },
                                             TimeoutOrIoError::ReceiveError(e) => {
                                                 return Err(e.to_string());
                                             }
@@ -824,6 +843,10 @@ async fn tcp_listener_timing_program(
                                         Err(e) => match e {
                                             TimeoutOrIoError::Timeout => {
                                                 trace!("No Outgoing TCP or Command Connection during timeout interval");
+                                                continue;
+                                            },
+                                            TimeoutOrIoError::SendingBlocked => {
+                                                trace!("Data was not proxied back, because we are currently in OUR client mode");
                                                 continue;
                                             },
                                             TimeoutOrIoError::ReceiveError(e) => {
@@ -928,47 +951,63 @@ async fn tcp_forwarder_server(
                                                 Err((err, data_that_could_not_be_parsed)) => {
                                                     error!("Error when Decoding Outbound Communication: {}", err);
 
-                                                    // proxy just like that if not successfully parsed
-                                                    match comm_channel_packets_read
-                                                        .outbound_take_in(data_that_could_not_be_parsed)
-                                                    {
-                                                        Ok(()) => trace!(
-                                                            "Proxy packet queued into internal communication"
-                                                        ),
-                                                        Err(e) => return Err(e.to_string()),
-                                                    };
-                                                }
-                                                Ok(parsed) => {
-                                                    trace!(
-                                                        "Decoded Outbound Communication: {}",
-                                                        parsed
-                                                    );
-                                                    
                                                     let current_state: ServerState;
                                                     {
                                                         let guard = state.lock().await;
                                                         current_state = guard.state.clone();
                                                     }
 
-                                                    // Comment to link to other location where this is relevant COMPAREWITHTHIS1
-                                                    if current_state == ServerState::PassthroughDisplayProgram {
-                                                        // only queue, if it actually should be sent
-                                                        match parsed {
-                                                            InstructionFromTimingClient::ServerInfo => {
-                                                                match comm_channel.send_out_command(InstructionToTimingClient::SendServerInfo) {
-                                                                    Ok(()) => trace!("Detected Packet and queued server-info for rewrite-proxy"),
-                                                                    Err(e) => return Err(e.to_string()),
+                                                    if current_state == ServerState::PassthroughDisplayBoard {
+                                                        // proxy just like that if not successfully parsed
+                                                        match comm_channel_packets_read
+                                                            .outbound_take_in(data_that_could_not_be_parsed)
+                                                        {
+                                                            Ok(()) => trace!(
+                                                                "Sending onwards a Packet that could not be decoded (proxy back)"
+                                                            ),
+                                                            Err(e) => return Err(e.to_string()),
+                                                        };
+                                                    }
+                                                }
+                                                Ok(parsed) => {
+                                                    trace!(
+                                                        "Decoded Outbound Communication: {}",
+                                                        parsed
+                                                    );
+
+                                                    let current_state: ServerState;
+                                                    {
+                                                        let guard = state.lock().await;
+                                                        current_state = guard.state.clone();
+                                                    }
+
+                                                    match current_state {
+                                                        ServerState::PassthroughDisplayBoard => {
+                                                            match parsed {
+                                                                // THIS IS A BIT OF A HACK -> the "SendFrame" and "SendServerInfo" flow over the "command_from_timing_client" channel, even though they flow in the opposite direction!
+                                                                InstructionFromTimingClient::ServerInfo => {
+                                                                    match comm_channel.send_out_command(InstructionToTimingClient::SendServerInfo) {
+                                                                        Ok(()) => trace!("Detected Packet and queued server-info for rewrite-proxy"),
+                                                                        Err(e) => return Err(e.to_string()),
+                                                                    }
+                                                                }
+                                                                InstructionFromTimingClient::SendFrame(frame_data) => {
+                                                                    match comm_channel.send_out_command(InstructionToTimingClient::SendFrame(frame_data.clone())) {
+                                                                        Ok(()) => trace!("Detected Packet and queued frame for rewrite-proxy"),
+                                                                        Err(e) => return Err(e.to_string()),
+                                                                    }
+                                                                    match comm_channel.take_in_command_from_timing_client(InstructionFromTimingClient::SendFrame(frame_data)) {
+                                                                        Ok(()) => trace!("Detected Packet and queued frame into communication interface"),
+                                                                        Err(e) => return Err(e.to_string()),
+                                                                    }
+                                                                },
+                                                                comm => {
+                                                                    error!("Unexpected: got a command OUTBOUND that should not happen: {}", comm);
                                                                 }
                                                             }
-                                                            InstructionFromTimingClient::SendFrame(frame_data) => {
-                                                                match comm_channel.send_out_command(InstructionToTimingClient::SendFrame(frame_data)) {
-                                                                    Ok(()) => trace!("Detected Packet and queued frame for rewrite-proxy"),
-                                                                    Err(e) => return Err(e.to_string()),
-                                                                }
-                                                            },
-                                                            comm => {
-                                                                error!("Unexpected: got a command OUTBOUND that should not happen: {}", comm);
-                                                            }
+                                                        }
+                                                        ServerState::PassthroughClient => {
+                                                            trace!("Outwards flowing data blocked");
                                                         }
                                                     }
                                                 }

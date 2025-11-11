@@ -4,10 +4,10 @@ use crate::{
 };
 
 pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMachine) {
-    clear(meta);
-
     match &state.state {
-        ClientState::Created => (),
+        ClientState::Created => {
+            clear(meta);
+        }
         ClientState::Idle => {
             fill_with_color(JTA_COLOR, meta);
 
@@ -42,7 +42,11 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
             );
         }
         ClientState::DisplayText(text) => {
+            clear(meta);
             draw_text(&text, 55.0, 22.0, 20.0, meta);
+        }
+        ClientState::DisplayExternalFrame(image) => {
+            draw_image(0, 0, &image, meta);
         }
     }
 }

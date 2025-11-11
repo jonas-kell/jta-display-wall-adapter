@@ -368,16 +368,22 @@ impl ApplicationHandler for App {
                             1,
                         );
 
-                        if self.state_machine.frame_counter % frame_count_to_emit == 0 {
-                            trace!("Sending back frame to the server");
-                            match meta.get_buffer_as_image() {
-                                Ok(img) => {
-                                    let bytes = png_to_bmp_bytes(img);
-                                    self.state_machine.push_new_message(
-                                        MessageFromClientToServer::CurrentWindow(bytes),
-                                    );
+                        if !matches!(
+                            self.state_machine.state,
+                            crate::interface::ClientState::DisplayExternalFrame(_)
+                        ) {
+                            // if the frame is external, why bother sending it back
+                            if self.state_machine.frame_counter % frame_count_to_emit == 0 {
+                                trace!("Sending back frame to the server");
+                                match meta.get_buffer_as_image() {
+                                    Ok(img) => {
+                                        let bytes = png_to_bmp_bytes(img);
+                                        self.state_machine.push_new_message(
+                                            MessageFromClientToServer::CurrentWindow(bytes),
+                                        );
+                                    }
+                                    Err(e) => error!("Conversion error: {}", e),
                                 }
-                                Err(e) => error!("Conversion error: {}", e),
                             }
                         }
 
@@ -433,6 +439,7 @@ impl App {
         // handle the frame counter of the state machine
         self.state_machine.advance_counters();
 
+        // write out file to reposition window externally on wayland
         if let Some((x, y, w, h)) = self.state_machine.window_state_needs_update {
             if let Some(window) = &self.window {
                 info!("Repositioning window: {} {}", x, y);
