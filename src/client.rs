@@ -249,7 +249,7 @@ struct App {
 }
 
 const TARGET_FPS: u64 = 60;
-const REPORT_FRAME_LOGS_EVERY_SECONDS: u64 = 20;
+const REPORT_FRAME_LOGS_EVERY_SECONDS: u64 = 5;
 const FRAME_TIME_NS: u64 = 1_000_000_000 / TARGET_FPS as u64;
 
 impl ApplicationHandler for App {
