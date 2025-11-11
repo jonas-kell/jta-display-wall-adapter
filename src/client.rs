@@ -250,6 +250,7 @@ struct App {
 
 const TARGET_FPS: u64 = 60;
 const REPORT_FRAME_LOGS_EVERY_SECONDS: u64 = 20;
+const FRAME_TIME_NS: u64 = 1_000_000_000 / TARGET_FPS as u64;
 
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
@@ -278,11 +279,109 @@ impl ApplicationHandler for App {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        // make sure to fire a redraw event, as that is where the delta time calculation is done
+        if let Some(window) = &self.window {
+            window.request_redraw();
+        }
+
+        event_loop.set_control_flow(ControlFlow::WaitUntil(
+            Instant::now() + Duration::from_nanos(FRAME_TIME_NS / 100), // make sure, the application does not go to sleep full as the application will not get mouse events
+        ));
+    }
+
+    fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
+        match event {
+            WindowEvent::CloseRequested => {
+                info!("The close button was pressed; Sadly that is not how this works");
+            }
+            WindowEvent::Resized(new_size) => {
+                info!("The Window was resized: {:?}", new_size);
+
+                // first-time creation (defer until window mapped)
+                if let Some(window) = &self.window {
+                    let surface_texture =
+                        SurfaceTexture::new(new_size.width, new_size.height, window.clone());
+                    self.pixels = Some(
+                        Pixels::new(new_size.width, new_size.height, surface_texture).unwrap(),
+                    );
+                    debug!("Pixels were initialized");
+                } else {
+                    error!("Window should be mapped by now. This is not possible...");
+                }
+            }
+            WindowEvent::Moved(p) => {
+                info!("The window was moved: {:?}", p);
+            }
+            WindowEvent::RedrawRequested => {
+                // schedule next wakeup after we just finished a redraw session
+                let now = Instant::now();
+                let nano_since_last_draw_start =
+                    now.duration_since(self.last_draw_call).as_nanos() as u64;
+                let remaining_nanos = FRAME_TIME_NS.saturating_sub(nano_since_last_draw_start);
+
+                if remaining_nanos == 0 {
+                    // track at the start of the renderer and IO process (as there could be more requests for redrawing, than is actually redrawn)
+                    self.last_draw_call = Instant::now();
+
+                    // IO and state machine
+                    self.process_state(event_loop);
+
+                    if let Some(pixels) = &mut self.pixels {
+                        let texture_size = pixels.texture().size();
+                        let mut meta = RasterizerMeta {
+                            font: &self.font,
+                            font_layout: &mut self.font_layout,
+                            frame: pixels.frame_mut(),
+                            texture_width: texture_size.width as usize,
+                            texture_height: texture_size.height as usize,
+                        };
+
+                        render_client_frame(&mut meta, &mut self.state_machine);
+
+                        // TODO send frame back (uses counter)
+
+                        // Render
+                        match pixels.render() {
+                            Ok(()) => {
+                                if self.state_machine.frame_counter
+                                    % (TARGET_FPS * REPORT_FRAME_LOGS_EVERY_SECONDS)
+                                    == 0
+                                {
+                                    trace!(
+                                        "Pixels were re-rendered (reports all {}s as per frame count)",
+                                        REPORT_FRAME_LOGS_EVERY_SECONDS
+                                    );
+                                    trace!(
+                                        "Rendering a frame takes {}% of the max time to reach {}fps",
+                                        (Instant::now().duration_since(self.last_draw_call).as_nanos() as u64 * 100) / FRAME_TIME_NS,
+                                        TARGET_FPS
+                                    );
+                                }
+                            }
+                            Err(e) => error!("Error while rendering: {}", e.to_string()),
+                        }
+                    } else {
+                        if self.state_machine.frame_counter % TARGET_FPS == 0 {
+                            warn!("The pixels element of the App context is not initialized");
+                        }
+                    }
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
+impl App {
+    fn process_state(&mut self, event_loop: &ActiveEventLoop) {
         // check for shutdown
         if self.shutdown_marker.load(Ordering::SeqCst) {
             debug!("Shutdown requested, stopping display app");
             event_loop.exit();
         }
+
+        // handle the frame counter of the state machine
+        self.state_machine.advance_counters();
 
         if let Some((x, y, w, h)) = self.state_machine.window_state_needs_update {
             if let Some(window) = &self.window {
@@ -345,103 +444,11 @@ impl ApplicationHandler for App {
             None => (),
         };
 
-        // called just before the event loop sleeps
-        if let Some(window) = &self.window {
-            window.request_redraw();
-        }
-
         if self.state_machine.frame_counter % (TARGET_FPS * REPORT_FRAME_LOGS_EVERY_SECONDS) == 0 {
             trace!(
                 "State was processed (reports all {}s as per frame count)",
                 REPORT_FRAME_LOGS_EVERY_SECONDS
             );
-        }
-
-        // schedule next wakeup after we just finished a redraw session
-        let now = Instant::now();
-        let elapsed = now.duration_since(self.last_draw_call);
-        let nano_since = elapsed.as_nanos() as u64;
-        let frame_time_ns = 1_000_000_000 / TARGET_FPS as u64;
-        let remaining_nanos = frame_time_ns.saturating_sub(nano_since);
-        if self.state_machine.frame_counter % (TARGET_FPS * REPORT_FRAME_LOGS_EVERY_SECONDS) == 0 {
-            trace!(
-                "Rendering a frame takes {}% of the max time to reach {}fps",
-                (nano_since * 100) / frame_time_ns,
-                TARGET_FPS
-            );
-        }
-        event_loop.set_control_flow(ControlFlow::WaitUntil(
-            Instant::now() + Duration::from_nanos(remaining_nanos),
-        ));
-    }
-
-    fn window_event(&mut self, _event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
-        match event {
-            WindowEvent::CloseRequested => {
-                info!("The close button was pressed; Sadly that is not how this works");
-            }
-            WindowEvent::Resized(new_size) => {
-                info!("The Window was resized: {:?}", new_size);
-
-                // first-time creation (defer until window mapped)
-                if let Some(window) = &self.window {
-                    let surface_texture =
-                        SurfaceTexture::new(new_size.width, new_size.height, window.clone());
-                    self.pixels = Some(
-                        Pixels::new(new_size.width, new_size.height, surface_texture).unwrap(),
-                    );
-                    debug!("Pixels were initialized");
-                } else {
-                    error!("Window should be mapped by now. This is not possible...");
-                }
-            }
-            WindowEvent::Moved(p) => {
-                info!("The window was moved: {:?}", p);
-            }
-            WindowEvent::RedrawRequested => {
-                if let Some(pixels) = &mut self.pixels {
-                    // track at the start of the renderer (as there could be more requests for redrawing, than is actually redrawn)
-                    self.last_draw_call = Instant::now();
-
-                    let texture_size = pixels.texture().size();
-                    let mut meta = RasterizerMeta {
-                        font: &self.font,
-                        font_layout: &mut self.font_layout,
-                        frame: pixels.frame_mut(),
-                        texture_width: texture_size.width as usize,
-                        texture_height: texture_size.height as usize,
-                    };
-
-                    render_client_frame(&mut meta, &mut self.state_machine);
-
-                    // TODO send frame back (uses counter)
-
-                    // Render
-                    match pixels.render() {
-                        Ok(()) => {
-                            // handle the frame counter of the state machine
-                            self.state_machine.advance_counters();
-                            error!("Advance");
-
-                            if self.state_machine.frame_counter
-                                % (TARGET_FPS * REPORT_FRAME_LOGS_EVERY_SECONDS)
-                                == 0
-                            {
-                                trace!(
-                                    "Pixels were re-rendered (reports all {}s as per frame count)",
-                                    REPORT_FRAME_LOGS_EVERY_SECONDS
-                                );
-                            }
-                        }
-                        Err(e) => error!("Error while rendering: {}", e.to_string()),
-                    }
-                } else {
-                    if self.state_machine.frame_counter % TARGET_FPS == 0 {
-                        warn!("The pixels element of the App context is not initialized");
-                    }
-                }
-            }
-            _ => (),
         }
     }
 }
