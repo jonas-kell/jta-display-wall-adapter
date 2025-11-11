@@ -329,27 +329,38 @@ impl ApplicationHandler for App {
                     "The Window was resized to {}x{}",
                     new_size.width, new_size.height
                 );
+                let mut width_to_use = new_size.width;
+                let mut height_to_use = new_size.height;
+
                 if let Some((width, height)) = self.state_machine.current_frame_dimensions {
                     if width != new_size.width || height != new_size.height {
                         error!(
                             "The window tells it was resized to {}x{}, but we expected {}x{}",
                             new_size.width, new_size.height, width, height
                         );
-                    }
-
-                    // force the values to what we know internally (as in our application there will never be an external resize (e.g. by mouse) anyway)
-                    // user the values from state_machine, not from the resize event
-
-                    // Create every time (defer until window mapped) - resizing was not deemed successfull
-                    if let Some(window) = &self.window {
-                        let surface_texture = SurfaceTexture::new(width, height, window.clone());
-                        self.pixels = Some(Pixels::new(width, height, surface_texture).unwrap());
-                        debug!("Pixels were initialized");
                     } else {
-                        error!("Window should be mapped by now. This is not possible...");
+                        debug!("The resize dimensions from manager match what was expected");
                     }
+                    width_to_use = width;
+                    height_to_use = height;
                 } else {
-                    error!("The state manager should know about the resize before the display manager does. This should not be possible");
+                    debug!("Initializing state machine's knowledge about the window size");
+                    self.state_machine.current_frame_dimensions =
+                        Some((new_size.width, new_size.height));
+                }
+
+                // force the values to what we know internally (as in our application there will never be an external resize (e.g. by mouse) anyway)
+                // user the values from state_machine, not from the resize event
+
+                // Create every time (defer until window mapped) - resizing was not deemed successfull
+                if let Some(window) = &self.window {
+                    let surface_texture =
+                        SurfaceTexture::new(width_to_use, height_to_use, window.clone());
+                    self.pixels =
+                        Some(Pixels::new(width_to_use, height_to_use, surface_texture).unwrap());
+                    debug!("Pixels were initialized");
+                } else {
+                    error!("Window should be mapped by now. This is not possible...");
                 }
             }
             WindowEvent::Moved(p) => {
