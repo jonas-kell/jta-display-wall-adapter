@@ -11,7 +11,9 @@ use pixels::{Pixels, SurfaceTexture};
 use std::io::Error;
 use std::io::Write;
 use std::net::SocketAddr;
+#[cfg(target_os = "linux")]
 use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -24,7 +26,9 @@ use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::WindowEvent;
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+#[cfg(target_os = "linux")]
 use winit::platform::x11::{WindowAttributesExtX11, WindowType};
+use winit::window::WindowAttributes;
 use winit::window::{Window, WindowId};
 
 pub async fn run_client(args: &Args) -> () {
@@ -262,23 +266,34 @@ const TARGET_FPS: u64 = 60;
 const REPORT_FRAME_LOGS_EVERY_SECONDS: u64 = 5;
 const FRAME_TIME_NS: u64 = 1_000_000_000 / TARGET_FPS as u64;
 
+#[cfg(target_os = "linux")]
+fn add_linux_specific_properties(window_attributes: WindowAttributes) -> WindowAttributes {
+    window_attributes.with_x11_window_type([WindowType::Dialog].into())
+}
+
+#[cfg(not(target_os = "linux"))]
+fn add_linux_specific_properties(window_attributes: WindowAttributes) -> WindowAttributes {
+    window_attributes
+}
+
 impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         // Desired size (pixels) and position (pixels from top-left of screen)
-        let attrs = Window::default_attributes()
-            .with_title("JTA Display Window")
-            // initial inner size
-            .with_inner_size(PhysicalSize::new(self.args.dp_width, self.args.dp_height))
-            // prevent user resizing by setting min and max to same size
-            .with_min_inner_size(PhysicalSize::new(self.args.dp_width, self.args.dp_height))
-            .with_max_inner_size(PhysicalSize::new(self.args.dp_width, self.args.dp_height))
-            .with_decorations(false)
-            .with_position(PhysicalPosition::new(
-                self.args.dp_pos_x,
-                self.args.dp_pos_y,
-            ))
-            .with_window_level(winit::window::WindowLevel::AlwaysOnTop)
-            .with_x11_window_type([WindowType::Dialog].into());
+        let attrs = add_linux_specific_properties(
+            Window::default_attributes()
+                .with_title("JTA Display Window")
+                // initial inner size
+                .with_inner_size(PhysicalSize::new(self.args.dp_width, self.args.dp_height))
+                // prevent user resizing by setting min and max to same size
+                .with_min_inner_size(PhysicalSize::new(self.args.dp_width, self.args.dp_height))
+                .with_max_inner_size(PhysicalSize::new(self.args.dp_width, self.args.dp_height))
+                .with_decorations(false)
+                .with_position(PhysicalPosition::new(
+                    self.args.dp_pos_x,
+                    self.args.dp_pos_y,
+                ))
+                .with_window_level(winit::window::WindowLevel::AlwaysOnTop),
+        );
 
         self.window = Some(Arc::new(event_loop.create_window(attrs).unwrap()));
 
@@ -398,6 +413,15 @@ impl ApplicationHandler for App {
     }
 }
 
+#[cfg(target_os = "linux")]
+fn set_perms(path: &Path) {
+    let perms = std::fs::Permissions::from_mode(0o777);
+    let _ = std::fs::set_permissions(path, perms);
+}
+
+#[cfg(not(target_os = "linux"))]
+fn set_perms(_path: &Path) {}
+
 impl App {
     fn process_state(&mut self, event_loop: &ActiveEventLoop) {
         // check for shutdown
@@ -414,7 +438,7 @@ impl App {
                 info!("Repositioning window: {} {}", x, y);
                 window.set_outer_position(PhysicalPosition::new(x, y));
                 if self.args.emit_file_on_location_update {
-                    let path = std::path::Path::new("move_container/coords.txt");
+                    let path = Path::new("move_container/coords.txt");
                     match std::fs::File::create(path) {
                         Err(e) => error!("Could not create file: {}", e.to_string()),
                         Ok(mut file) => match write!(file, "{} {}", x, y) {
@@ -422,8 +446,7 @@ impl App {
                             Err(e) => error!("Could not write to file: {}", e.to_string()),
                         },
                     }
-                    let perms = std::fs::Permissions::from_mode(0o777);
-                    let _ = std::fs::set_permissions(path, perms);
+                    set_perms(path);
                     trace!("Position written to file");
                 }
                 info!("Setting window size: {} {}", w, h);
