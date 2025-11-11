@@ -330,6 +330,9 @@ impl ApplicationHandler for App {
                         Pixels::new(new_size.width, new_size.height, surface_texture).unwrap(),
                     );
                     debug!("Pixels were initialized");
+                    // tell the state machine, so that it can cache-resize incoming frames
+                    self.state_machine.current_frame_dimensions =
+                        Some((new_size.width, new_size.height));
                 } else {
                     error!("Window should be mapped by now. This is not possible...");
                 }
