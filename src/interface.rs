@@ -6,6 +6,7 @@ use crate::{
         ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
         InstructionFromTimingClient, InstructionToTimingClient,
     },
+    rasterizing::ImageMeta,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -117,19 +118,30 @@ pub enum ClientState {
     DisplayText(String),
 }
 
+pub struct ImagesStorage {
+    pub jta_logo: ImageMeta,
+    // todo other images that are loaded dynamically from server
+}
+
 pub struct ClientStateMachine {
     pub state: ClientState,
     messages_to_send_out_to_server: Vec<MessageFromClientToServer>,
     pub frame_counter: u64,
     pub window_state_needs_update: Option<(u32, u32, u32, u32)>,
+    pub permanent_images_storage: ImagesStorage,
 }
 impl ClientStateMachine {
     pub fn new() -> Self {
+        let jta_image = ImageMeta::from_image_bytes(include_bytes!("../JTA-Logo.png")).unwrap();
+
         Self {
             state: ClientState::Created,
             messages_to_send_out_to_server: Vec::new(),
             frame_counter: 0,
             window_state_needs_update: None,
+            permanent_images_storage: ImagesStorage {
+                jta_logo: jta_image,
+            },
         }
     }
 

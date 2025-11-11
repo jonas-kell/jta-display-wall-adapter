@@ -26,7 +26,7 @@ services:
     build:
       context: ./
       dockerfile: ./docker/dev/Dockerfile
-    command: cargo watch -x "run -- client --internal-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --emit-file-on-location-update"
+    command: cargo watch -x "run -- client -v --internal-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --emit-file-on-location-update"
 
 volumes:
   rust_build_cache:
