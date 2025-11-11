@@ -402,7 +402,7 @@ impl ApplicationHandler for App {
                         texture_height: texture_size.height as usize,
                     };
 
-                    render_client_frame(&mut meta, &self.state_machine);
+                    render_client_frame(&mut meta, &mut self.state_machine);
 
                     // TODO send frame back (uses counter)
 

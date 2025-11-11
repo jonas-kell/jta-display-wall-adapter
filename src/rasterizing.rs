@@ -4,7 +4,8 @@ use fontdue::{
 };
 use image::{imageops::FilterType, DynamicImage, ImageReader};
 use image::{GenericImageView, Rgba};
-use std::{io::Cursor, sync::Arc};
+use std::{collections::HashMap, io::Cursor, sync::Arc};
+use uuid::Uuid;
 
 pub struct RasterizerMeta<'a> {
     pub font: &'a Font,
@@ -59,7 +60,9 @@ pub fn draw_text(text: &str, x: f32, y: f32, script_size: f32, meta: &mut Raster
     }
 }
 
+#[derive(Clone)]
 pub struct ImageMeta {
+    id: Uuid,
     pub width: u32,
     pub height: u32,
     img: Arc<DynamicImage>,
@@ -72,6 +75,7 @@ impl ImageMeta {
                     let (width, height) = img.dimensions();
 
                     Ok(ImageMeta {
+                        id: Uuid::new_v4(),
                         img: Arc::new(img),
                         height,
                         width,
@@ -92,6 +96,7 @@ impl ImageMeta {
     pub fn get_rescaled(&self, new_width: u32, new_height: u32) -> Self {
         if new_width == self.width && new_height == self.height {
             return ImageMeta {
+                id: Uuid::new_v4(),
                 width: self.width,
                 height: self.height,
                 img: self.img.clone(),
@@ -105,10 +110,38 @@ impl ImageMeta {
         ));
 
         return Self {
+            id: Uuid::new_v4(),
             height: new_height,
             width: new_width,
             img: new_image,
         };
+    }
+}
+
+pub struct CachedImageScaler {
+    data: HashMap<(Uuid, u32, u32), ImageMeta>,
+}
+impl CachedImageScaler {
+    pub fn new() -> Self {
+        return Self {
+            data: HashMap::new(),
+        };
+    }
+
+    pub fn scale_cached(&mut self, img: &ImageMeta, new_width: u32, new_height: u32) -> ImageMeta {
+        match self.data.get(&(img.id, new_width, new_height)) {
+            Some(met) => {
+                return met.clone();
+            }
+            None => {
+                let rescaled = img.get_rescaled(new_width, new_height);
+
+                self.data
+                    .insert((img.id, new_width, new_height), rescaled.clone());
+
+                return rescaled;
+            }
+        }
     }
 }
 
@@ -134,23 +167,12 @@ fn blend_pixel(dst: &mut [u8], src: &Rgba<u8>) {
         ((((255 - src_a) as u32) * (dst[2] as u32) + (src_a as u32) * (src[2] as u32)) / 255) as u8;
 }
 
-pub fn draw_image(
-    x: u32,
-    y: u32,
-    width: u32,
-    height: u32,
-    img: &ImageMeta,
-    meta: &mut RasterizerMeta,
-) {
-    let image_rescaled = img.get_rescaled(width, height);
-
-    let buffer = image_rescaled.img.to_rgba8(); // bit ugly acces from outside of class
+pub fn draw_image(x: u32, y: u32, img: &ImageMeta, meta: &mut RasterizerMeta) {
+    let buffer = img.img.to_rgba8(); // bit ugly acces from outside of class
 
     if (x as usize) < meta.texture_width && (y as usize) < meta.texture_height {
-        let width_to_draw_to =
-            std::cmp::min(meta.texture_width, (x + image_rescaled.width) as usize);
-        let height_to_draw_to =
-            std::cmp::min(meta.texture_height, (y + image_rescaled.height) as usize);
+        let width_to_draw_to = std::cmp::min(meta.texture_width, (x + img.width) as usize);
+        let height_to_draw_to = std::cmp::min(meta.texture_height, (y + img.height) as usize);
         let x = x as usize;
         let y = y as usize;
 

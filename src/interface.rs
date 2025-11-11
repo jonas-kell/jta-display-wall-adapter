@@ -6,7 +6,7 @@ use crate::{
         ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
         InstructionFromTimingClient, InstructionToTimingClient,
     },
-    rasterizing::ImageMeta,
+    rasterizing::{CachedImageScaler, ImageMeta},
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -121,6 +121,7 @@ pub enum ClientState {
 pub struct ImagesStorage {
     pub jta_logo: ImageMeta,
     // todo other images that are loaded dynamically from server
+    pub cached_rescaler: CachedImageScaler,
 }
 
 pub struct ClientStateMachine {
@@ -141,6 +142,7 @@ impl ClientStateMachine {
             window_state_needs_update: None,
             permanent_images_storage: ImagesStorage {
                 jta_logo: jta_image,
+                cached_rescaler: CachedImageScaler::new(),
             },
         }
     }

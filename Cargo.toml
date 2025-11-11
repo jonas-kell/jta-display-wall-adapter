@@ -19,7 +19,7 @@ async-channel = "2.3.1"
 chrono = { version = "0.4.42", features = ["serde"] }
 nom = "8.0.0"
 quick-xml = { version = "0.31", features = ["serialize"] }
-uuid = { version = "1.18.1", features = ["serde"] }
+uuid = { version = "1.18.1", features = ["serde", "v4"] }
 winit = "0.30"
 pixels = "0.15.0"
 fontdue = "0.9.3"
