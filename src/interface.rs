@@ -119,7 +119,7 @@ impl ServerStateMachine {
     }
 
     async fn send_message_to_timing_client(&mut self, inst: InstructionToTimingClient) {
-        match self.comm_channel.send_out_command(inst).await {
+        match self.comm_channel.send_out_command(inst) {
             Ok(()) => (),
             Err(e) => error!("Failed to send out instruction: {}", e.to_string()),
         }
@@ -131,7 +131,7 @@ impl ServerStateMachine {
     }
 
     async fn send_message_to_client(&mut self, inst: MessageFromServerToClient) {
-        match self.comm_channel_client_outbound.send_away(inst).await {
+        match self.comm_channel_client_outbound.send_away(inst) {
             Ok(()) => (),
             Err(e) => error!(
                 "Failed to send out instruction to client: {}",

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use async_channel::{Receiver, RecvError, SendError, Sender};
+use async_channel::{Receiver, RecvError, Sender, TrySendError};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use tokio::time::{self, error::Elapsed};
@@ -308,22 +308,42 @@ impl InstructionCommunicationChannel {
         }
     }
 
-    pub async fn take_in_command_from_timing_client(
+    pub fn take_in_command_from_timing_client(
         &self,
         inst: InstructionFromTimingClient,
-    ) -> Result<(), SendError<IncomingInstruction>> {
-        self.inbound_sender
-            .send(IncomingInstruction::FromTimingClient(inst))
-            .await
+    ) -> Result<(), String> {
+        match self
+            .inbound_sender
+            .try_send(IncomingInstruction::FromTimingClient(inst))
+        {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
     }
 
-    pub async fn take_in_command_from_camera_program(
+    pub fn take_in_command_from_camera_program(
         &self,
         inst: InstructionFromCameraProgram,
-    ) -> Result<(), SendError<IncomingInstruction>> {
-        self.inbound_sender
-            .send(IncomingInstruction::FromCameraProgram(inst))
-            .await
+    ) -> Result<(), String> {
+        match self
+            .inbound_sender
+            .try_send(IncomingInstruction::FromCameraProgram(inst))
+        {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
     }
 
     pub async fn wait_for_incomming_command(
@@ -336,11 +356,17 @@ impl InstructionCommunicationChannel {
         .await
     }
 
-    pub async fn send_out_command(
-        &self,
-        inst: InstructionToTimingClient,
-    ) -> Result<(), SendError<InstructionToTimingClient>> {
-        self.outbound_sender.send(inst).await
+    pub fn send_out_command(&self, inst: InstructionToTimingClient) -> Result<(), String> {
+        match self.outbound_sender.try_send(inst) {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
     }
 
     pub async fn wait_for_command_to_send(
@@ -373,11 +399,17 @@ impl ClientCommunicationChannelOutbound {
         }
     }
 
-    pub async fn send_away(
-        &self,
-        inst: MessageFromServerToClient,
-    ) -> Result<(), SendError<MessageFromServerToClient>> {
-        self.sender.send(inst).await
+    pub fn send_away(&self, inst: MessageFromServerToClient) -> Result<(), String> {
+        match self.sender.try_send(inst) {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
     }
 
     pub async fn wait_for_message_to_send(

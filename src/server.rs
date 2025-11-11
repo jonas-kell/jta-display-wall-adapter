@@ -397,7 +397,6 @@ async fn tcp_client_to_timing_and_data_exchange(
                                         Some(Ok(inst)) => {
                                             match comm_channel_timing
                                                 .take_in_command_from_camera_program(inst)
-                                                .await
                                             {
                                                 Ok(()) => (),
                                                 Err(e) => {
@@ -490,7 +489,6 @@ async fn tcp_client_to_timing_and_data_exchange(
                                         Some(Ok(inst)) => {
                                             match comm_channel_xml
                                                 .take_in_command_from_camera_program(inst)
-                                                .await
                                             {
                                                 Ok(()) => (),
                                                 Err(e) => {
@@ -580,7 +578,6 @@ async fn tcp_client_to_timing_and_data_exchange(
                                         Some(Ok(inst)) => {
                                             match comm_channel_data
                                                 .take_in_command_from_camera_program(inst)
-                                                .await
                                             {
                                                 Ok(()) => (),
                                                 Err(e) => {
@@ -730,7 +727,6 @@ async fn tcp_listener_timing_program(
                                         debug!("Decoded Inbound Communication: {}", parsed);
                                         match comm_channel_read
                                             .take_in_command_from_timing_client(parsed)
-                                            .await
                                         {
                                             Ok(()) => (),
                                             Err(e) => return Err(e.to_string()),
@@ -746,7 +742,6 @@ async fn tcp_listener_timing_program(
                             if args_read.passthrough_to_display_program {
                                 match comm_channel_packets_read
                                     .inbound_take_in(buf[..n].into())
-                                    .await
                                 {
                                     Ok(_) => (),
                                     Err(e) => return Err(e.to_string()),
@@ -936,7 +931,6 @@ async fn tcp_forwarder_server(
                                                     // proxy just like that if not successfully parsed
                                                     match comm_channel_packets_read
                                                         .outbound_take_in(data_that_could_not_be_parsed)
-                                                        .await
                                                     {
                                                         Ok(()) => trace!(
                                                             "Proxy packet queued into internal communication"
@@ -961,13 +955,13 @@ async fn tcp_forwarder_server(
                                                         // only queue, if it actually should be sent
                                                         match parsed {
                                                             InstructionFromTimingClient::ServerInfo => {
-                                                                match comm_channel.send_out_command(InstructionToTimingClient::SendServerInfo).await {
+                                                                match comm_channel.send_out_command(InstructionToTimingClient::SendServerInfo) {
                                                                     Ok(()) => trace!("Detected Packet and queued server-info for rewrite-proxy"),
                                                                     Err(e) => return Err(e.to_string()),
                                                                 }
                                                             }
                                                             InstructionFromTimingClient::SendFrame(frame_data) => {
-                                                                match comm_channel.send_out_command(InstructionToTimingClient::SendFrame(frame_data)).await {
+                                                                match comm_channel.send_out_command(InstructionToTimingClient::SendFrame(frame_data)) {
                                                                     Ok(()) => trace!("Detected Packet and queued frame for rewrite-proxy"),
                                                                     Err(e) => return Err(e.to_string()),
                                                                 }

@@ -3,7 +3,7 @@ use crate::bitmap::png_to_bmp_bytes;
 use crate::interface::{ClientStateMachine, MessageFromClientToServer, MessageFromServerToClient};
 use crate::rasterizing::RasterizerMeta;
 use crate::rendering::render_client_frame;
-use async_channel::{Receiver, Sender, TryRecvError};
+use async_channel::{Receiver, Sender, TryRecvError, TrySendError};
 use fontdue::layout::{CoordinateSystem, Layout};
 use fontdue::{Font, FontSettings};
 use futures::prelude::*;
@@ -148,11 +148,16 @@ pub async fn run_network_task(
                                 }
                                 Ok(None) => return Err("TCP stream went away".into()),
                                 Ok(Some(Err(e))) => return Err(e.to_string()),
-                                Ok(Some(Ok(mes))) => match tx_to_ui.send(mes).await {
-                                    Ok(()) => trace!(
-                                        "Message taken in and forwarded into internal comm channel"
-                                    ),
-                                    Err(e) => return Err(e.to_string()),
+                                Ok(Some(Ok(mes))) => match tx_to_ui.try_send(mes) {
+                                    Ok(()) => (),
+                                    Err(TrySendError::Closed(_)) => {
+                                        return Err(format!(
+                                            "Internal communication channel closed..."
+                                        ))
+                                    }
+                                    Err(TrySendError::Full(_)) => {
+                                        trace!("Internal communication channel is full. Seems like there is no source to consume");
+                                    }
                                 },
                             }
                         }
@@ -453,12 +458,14 @@ impl App {
             Some(msg) => {
                 match self.outgoing.try_send(msg) {
                     Ok(()) => (),
-                    Err(e) => {
-                        error!(
-                            "Error in outbound client internal communication: {}",
-                            e.to_string()
-                        );
+                    Err(TrySendError::Closed(_)) => {
+                        error!("Internal communication channel closed...");
                         event_loop.exit();
+                    }
+                    Err(TrySendError::Full(_)) => {
+                        trace!(
+                            "Outbound client internal communication full. Seems like there is nobody to consume",
+                        );
                     }
                 };
             }

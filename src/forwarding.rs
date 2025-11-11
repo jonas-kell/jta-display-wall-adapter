@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use async_channel::{Receiver, RecvError, SendError, Sender};
+use async_channel::{Receiver, RecvError, Sender, TrySendError};
 use tokio::time::{self, error::Elapsed};
 
 use crate::args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS};
@@ -31,8 +31,17 @@ impl PacketCommunicationChannel {
         }
     }
 
-    pub async fn inbound_take_in(&self, pack: PacketData) -> Result<(), SendError<PacketData>> {
-        self.inbound_sender.send(pack).await
+    pub fn inbound_take_in(&self, pack: PacketData) -> Result<(), String> {
+        match self.inbound_sender.try_send(pack) {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
     }
 
     pub async fn inbound_coming_in(&self) -> Result<Result<PacketData, RecvError>, Elapsed> {
@@ -43,8 +52,17 @@ impl PacketCommunicationChannel {
         .await
     }
 
-    pub async fn outbound_take_in(&self, pack: PacketData) -> Result<(), SendError<PacketData>> {
-        self.outbound_sender.send(pack).await
+    pub fn outbound_take_in(&self, pack: PacketData) -> Result<(), String> {
+        match self.outbound_sender.try_send(pack) {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
     }
 
     pub async fn outbound_coming_out(&self) -> Result<Result<PacketData, RecvError>, Elapsed> {
