@@ -1,12 +1,11 @@
-use image::GenericImageView;
+use crate::rasterizing::ImageMeta;
 
-pub fn png_to_bmp_bytes(path: &str) -> Vec<u8> {
-    // Load the image
-    let img = image::open(path).expect("Failed to open image");
-    let (width, height) = img.dimensions();
+pub fn png_to_bmp_bytes(image: ImageMeta) -> Vec<u8> {
+    let width = image.width;
+    let height = image.height;
 
     // Convert to RGBA8 (32-bit)
-    let img = img.to_rgba8();
+    let img = image.get_image_buffer();
 
     // BMP headers
     let file_header_size = 14;

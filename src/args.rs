@@ -63,6 +63,9 @@ pub struct Args {
     /// The client will place a file in the running folder with coordinates where the window should be moved to (wayland sway script uses this to move window)
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub emit_file_on_location_update: bool,
+    /// Number of time that passes, until the client sends the next frame
+    #[arg(long, default_value_t = 500)]
+    pub client_emits_frame_every_nr_of_ms: u64,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
@@ -70,3 +73,5 @@ pub enum Mode {
     Server,
     Client,
 }
+
+pub const MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS: usize = 100;

@@ -2,7 +2,7 @@ use fontdue::{
     layout::{Layout, LayoutSettings, TextStyle},
     Font,
 };
-use image::{imageops::FilterType, DynamicImage, ImageReader};
+use image::{imageops::FilterType, DynamicImage, ImageBuffer, ImageReader};
 use image::{GenericImageView, Rgba};
 use std::{collections::HashMap, io::Cursor, sync::Arc};
 use uuid::Uuid;
@@ -13,6 +13,36 @@ pub struct RasterizerMeta<'a> {
     pub frame: &'a mut [u8],
     pub texture_width: usize,
     pub texture_height: usize,
+}
+impl<'a> RasterizerMeta<'a> {
+    pub fn get_buffer_as_image(&self) -> Result<ImageMeta, String> {
+        // Validate buffer size
+        let expected_len = self.texture_width * self.texture_height * 4;
+        if self.frame.len() != expected_len {
+            return Err("Frame buffer size does not match expected dimensions.".into());
+        }
+
+        // Clone the frame into a Vec<u8>, since `ImageBuffer` needs ownership
+        let buf = self.frame.to_vec();
+
+        // SAFETY: image crate requires owned data for ImageBuffer,
+        // but we just cloned it.
+        let img_buffer: ImageBuffer<Rgba<u8>, Vec<u8>> =
+            match ImageBuffer::from_vec(self.texture_width as u32, self.texture_height as u32, buf)
+            {
+                Some(b) => b,
+                None => return Err("Invalid image buffer size".into()),
+            };
+
+        let dynamic = DynamicImage::ImageRgba8(img_buffer);
+
+        Ok(ImageMeta {
+            id: Uuid::new_v4(),
+            width: self.texture_width as u32,
+            height: self.texture_height as u32,
+            img: Arc::new(dynamic),
+        })
+    }
 }
 
 pub fn draw_text(text: &str, x: f32, y: f32, script_size: f32, meta: &mut RasterizerMeta) {
@@ -49,10 +79,7 @@ pub fn draw_text(text: &str, x: f32, y: f32, script_size: f32, meta: &mut Raster
                 {
                     let i = ((ty as usize) * meta.texture_width + (tx as usize)) * 4;
                     if i + 3 < meta.frame.len() {
-                        meta.frame[i] = 255; // R
-                        meta.frame[i + 1] = 255; // G
-                        meta.frame[i + 2] = 255; // B
-                        meta.frame[i + 3] = px; // alpha
+                        blend_pixel(&mut meta.frame[i..], [255, 255, 255, px]);
                     }
                 }
             }
@@ -87,10 +114,8 @@ impl ImageMeta {
         }
     }
 
-    pub fn get_pixel_at(&self, x: u32, y: u32) -> ColorWithAlpha {
-        let intermediate = self.img.to_rgba8();
-        let pixel = intermediate.get_pixel(x, y);
-        return [pixel[0], pixel[1], pixel[2], pixel[3]];
+    pub fn get_image_buffer(&self) -> image::ImageBuffer<Rgba<u8>, Vec<u8>> {
+        return self.img.to_rgba8();
     }
 
     pub fn get_rescaled(&self, new_width: u32, new_height: u32) -> Self {
@@ -145,7 +170,7 @@ impl CachedImageScaler {
     }
 }
 
-fn blend_pixel(dst: &mut [u8], src: &Rgba<u8>) {
+fn blend_pixel(dst: &mut [u8], src: [u8; 4]) {
     dst[3] = 255; // fully opaque sub-surface. This is an assumption, as there is never anything below the window
     let src_a = src[3];
 
@@ -185,7 +210,7 @@ pub fn draw_image(x: u32, y: u32, img: &ImageMeta, meta: &mut RasterizerMeta) {
                 let index = (line_offset + tx) * 4;
                 let px = buffer.get_pixel(x_cursor, y_cursor);
 
-                blend_pixel(&mut meta.frame[index..], px);
+                blend_pixel(&mut meta.frame[index..], [px[0], px[1], px[2], px[3]]);
 
                 x_cursor += 1;
             }
@@ -195,7 +220,6 @@ pub fn draw_image(x: u32, y: u32, img: &ImageMeta, meta: &mut RasterizerMeta) {
 }
 
 pub type Color = [u8; 3];
-pub type ColorWithAlpha = [u8; 4];
 pub const JTA_COLOR: Color = [46, 46, 46];
 
 pub fn fill_with_color(color: Color, meta: &mut RasterizerMeta) {

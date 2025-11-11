@@ -3,7 +3,7 @@ use std::time::Duration;
 use async_channel::{Receiver, RecvError, SendError, Sender};
 use tokio::time::{self, error::Elapsed};
 
-use crate::args::Args;
+use crate::args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS};
 
 pub type PacketData = Vec<u8>;
 
@@ -17,8 +17,10 @@ pub struct PacketCommunicationChannel {
 }
 impl PacketCommunicationChannel {
     pub fn new(args: &Args) -> Self {
-        let (is, ir) = async_channel::unbounded::<PacketData>();
-        let (os, or) = async_channel::unbounded::<PacketData>();
+        let (is, ir) =
+            async_channel::bounded::<PacketData>(MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS);
+        let (os, or) =
+            async_channel::bounded::<PacketData>(MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS);
 
         Self {
             args: args.clone(),

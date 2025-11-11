@@ -6,7 +6,7 @@ use std::fmt::Display;
 use tokio::time::{self, error::Elapsed};
 
 use crate::{
-    args::Args,
+    args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS},
     hex::parse_race_time,
     interface::MessageFromServerToClient,
     xml_serial::{
@@ -292,8 +292,12 @@ pub struct InstructionCommunicationChannel {
 }
 impl InstructionCommunicationChannel {
     pub fn new(args: &Args) -> Self {
-        let (is, ir) = async_channel::unbounded::<IncomingInstruction>();
-        let (os, or) = async_channel::unbounded::<InstructionToTimingClient>();
+        let (is, ir) = async_channel::bounded::<IncomingInstruction>(
+            MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+        );
+        let (os, or) = async_channel::bounded::<InstructionToTimingClient>(
+            MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+        );
 
         Self {
             args: args.clone(),
@@ -358,7 +362,9 @@ pub struct ClientCommunicationChannelOutbound {
 }
 impl ClientCommunicationChannelOutbound {
     pub fn new(args: &Args) -> Self {
-        let (s, r) = async_channel::unbounded::<MessageFromServerToClient>();
+        let (s, r) = async_channel::bounded::<MessageFromServerToClient>(
+            MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+        );
 
         Self {
             args: args.clone(),

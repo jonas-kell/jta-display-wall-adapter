@@ -1,4 +1,5 @@
-use crate::args::Args;
+use crate::args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS};
+use crate::bitmap::png_to_bmp_bytes;
 use crate::interface::{ClientStateMachine, MessageFromClientToServer, MessageFromServerToClient};
 use crate::rasterizing::RasterizerMeta;
 use crate::rendering::render_client_frame;
@@ -27,8 +28,12 @@ use winit::platform::x11::{WindowAttributesExtX11, WindowType};
 use winit::window::{Window, WindowId};
 
 pub async fn run_client(args: &Args) -> () {
-    let (tx_to_ui, rx_to_ui) = async_channel::unbounded::<MessageFromServerToClient>();
-    let (tx_from_ui, rx_from_ui) = async_channel::unbounded::<MessageFromClientToServer>();
+    let (tx_to_ui, rx_to_ui) = async_channel::bounded::<MessageFromServerToClient>(
+        MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+    );
+    let (tx_from_ui, rx_from_ui) = async_channel::bounded::<MessageFromClientToServer>(
+        MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+    );
 
     let shutdown_marker = Arc::new(AtomicBool::new(false));
 
@@ -338,7 +343,23 @@ impl ApplicationHandler for App {
 
                         render_client_frame(&mut meta, &mut self.state_machine);
 
-                        // TODO send frame back (uses counter)
+                        let frame_count_to_emit: u64 = std::cmp::max(
+                            (self.args.client_emits_frame_every_nr_of_ms * 1000000) / FRAME_TIME_NS,
+                            1,
+                        );
+
+                        if self.state_machine.frame_counter % frame_count_to_emit == 0 {
+                            trace!("Sending back frame to the server");
+                            match meta.get_buffer_as_image() {
+                                Ok(img) => {
+                                    let bytes = png_to_bmp_bytes(img);
+                                    self.state_machine.push_new_message(
+                                        MessageFromClientToServer::CurrentWindow(bytes),
+                                    );
+                                }
+                                Err(e) => error!("Conversion error: {}", e),
+                            }
+                        }
 
                         // Render
                         match pixels.render() {

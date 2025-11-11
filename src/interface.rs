@@ -14,21 +14,24 @@ pub enum MessageFromServerToClient {
     DisplayText(String),
     RequestVersion,
     MoveWindow(u32, u32, u32, u32),
+    Clear,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum MessageFromClientToServer {
     Version(String),
+    CurrentWindow(Vec<u8>),
 }
 
-#[derive(PartialEq, Eq)]
-enum ServerState {
-    Idle,
+#[derive(PartialEq, Eq, Clone)]
+pub enum ServerState {
+    PassthroughClient,
+    PassthroughDisplayProgram,
 }
 
 pub struct ServerStateMachine {
     args: Args,
-    state: ServerState,
+    pub state: ServerState,
     comm_channel: InstructionCommunicationChannel,
     comm_channel_client_outbound: ClientCommunicationChannelOutbound,
 }
@@ -40,7 +43,7 @@ impl ServerStateMachine {
     ) -> Self {
         Self {
             args: args.clone(),
-            state: ServerState::Idle,
+            state: ServerState::PassthroughClient,
             comm_channel_client_outbound, // per design, this can only be used to send
             comm_channel, // only used to send instructions to the timing client. Rest is done via incoming commands
         }
@@ -69,6 +72,13 @@ impl ServerStateMachine {
                 ))
                 .await;
             }
+            MessageFromClientToServer::CurrentWindow(data) => {
+                // Comment to link to other location where this is relevant COMPAREWITHTHIS1
+                if self.state == ServerState::PassthroughClient {
+                    self.send_message_to_timing_client(InstructionToTimingClient::SendFrame(data))
+                        .await;
+                }
+            }
         }
     }
 
@@ -76,9 +86,29 @@ impl ServerStateMachine {
         // handle all messages
         match msg {
             IncomingInstruction::FromTimingClient(inst) => match inst {
+                InstructionFromTimingClient::ClientInfo => (),
+                InstructionFromTimingClient::ServerInfo => (),
                 InstructionFromTimingClient::Freetext(text) => {
                     self.send_message_to_client(MessageFromServerToClient::DisplayText(text))
                         .await
+                }
+                InstructionFromTimingClient::Clear => {
+                    if self.args.passthrough_to_display_program {
+                        match self.state {
+                            ServerState::PassthroughClient => {
+                                info!("Now passing through client");
+                                self.state = ServerState::PassthroughDisplayProgram
+                            }
+                            ServerState::PassthroughDisplayProgram => {
+                                info!("Now passing through external display program");
+                                self.state = ServerState::PassthroughClient
+                            }
+                        }
+                        self.send_message_to_client(MessageFromServerToClient::Clear)
+                            .await;
+                    } else {
+                        self.state = ServerState::PassthroughClient;
+                    }
                 }
                 inst => error!("Unhandled instruction from timing client: {}", inst),
             },
@@ -166,10 +196,13 @@ impl ClientStateMachine {
                 debug!("Server requested an update of the window position/size");
                 self.window_state_needs_update = Some((x, y, w, h));
             }
+            MessageFromServerToClient::Clear => {
+                self.state = ClientState::Idle;
+            }
         }
     }
 
-    fn push_new_message(&mut self, msg: MessageFromClientToServer) {
+    pub fn push_new_message(&mut self, msg: MessageFromClientToServer) {
         self.messages_to_send_out_to_server.push(msg);
     }
 

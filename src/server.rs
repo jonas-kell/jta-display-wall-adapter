@@ -5,7 +5,9 @@ use crate::instructions::{
     ClientCommunicationChannelOutbound, InstructionCommunicationChannel,
     InstructionFromTimingClient, InstructionToTimingClient,
 };
-use crate::interface::{MessageFromClientToServer, MessageFromServerToClient, ServerStateMachine};
+use crate::interface::{
+    MessageFromClientToServer, MessageFromServerToClient, ServerState, ServerStateMachine,
+};
 use crate::nrbf::{generate_response_bytes, BufferedParser};
 use crate::xml_serial::{BufferedParserSerial, BufferedParserXML};
 use async_channel::RecvError;
@@ -105,6 +107,7 @@ pub async fn run_server(args: &Args) -> () {
 
     let tcp_forwarder_server_instance = tcp_forwarder_server(
         args.clone(),
+        server_state.clone(),
         comm_channel.clone(),
         comm_channel_packets.clone(),
         Arc::clone(&shutdown_marker),
@@ -764,6 +767,7 @@ async fn tcp_listener_timing_program(
 
                             // wait on the tcp stream from passthrough
                             let comm_channel_tcp_outbound_source = async {
+                                // these get only written INTO the internal command channel (and subsequently the packets channel), if server mode is correct see TOKEN: COMPAREWITHTHIS1
                                 match comm_channel_packets_write.outbound_coming_out().await {
                                     Ok(Ok(data)) => return Ok(data),
                                     Ok(Err(e)) => return Err(TimeoutOrIoError::ReceiveError(e)),
@@ -860,6 +864,7 @@ async fn tcp_listener_timing_program(
 
 async fn tcp_forwarder_server(
     args: Args,
+    state: Arc<Mutex<ServerStateMachine>>, // does not require read, but our main reference is in a mutex // TODO could use RWLock
     comm_channel: InstructionCommunicationChannel,
     comm_channel_packets: PacketCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
@@ -878,8 +883,6 @@ async fn tcp_forwarder_server(
             );
             break;
         }
-
-        // TODO if this would not connect in a long time, the internal passthrough buffer could accumulate a lot of data. Thik about if this is desired
 
         // Wait for new connection with timeout so we can check shutdown flag periodically
         match time::timeout(
@@ -902,6 +905,7 @@ async fn tcp_forwarder_server(
                 let shutdown_marker_write = shutdown_marker.clone();
                 let args_read = args.clone();
                 let args_write = args.clone();
+                let state = state.clone();
 
                 let read_handler = async move {
                     let mut buf = [0u8; 65536];
@@ -941,26 +945,36 @@ async fn tcp_forwarder_server(
                                                     };
                                                 }
                                                 Ok(parsed) => {
-                                                    debug!(
+                                                    trace!(
                                                         "Decoded Outbound Communication: {}",
                                                         parsed
                                                     );
+                                                    
+                                                    let current_state: ServerState;
+                                                    {
+                                                        let guard = state.lock().await;
+                                                        current_state = guard.state.clone();
+                                                    }
 
-                                                    match parsed {
-                                                        InstructionFromTimingClient::ServerInfo => {
-                                                            match comm_channel.send_out_command(InstructionToTimingClient::SendServerInfo).await {
-                                                                Ok(()) => trace!("Detected Packet and queued server-info for rewrite-proxy"),
-                                                                Err(e) => return Err(e.to_string()),
+                                                    // Comment to link to other location where this is relevant COMPAREWITHTHIS1
+                                                    if current_state == ServerState::PassthroughDisplayProgram {
+                                                        // only queue, if it actually should be sent
+                                                        match parsed {
+                                                            InstructionFromTimingClient::ServerInfo => {
+                                                                match comm_channel.send_out_command(InstructionToTimingClient::SendServerInfo).await {
+                                                                    Ok(()) => trace!("Detected Packet and queued server-info for rewrite-proxy"),
+                                                                    Err(e) => return Err(e.to_string()),
+                                                                }
                                                             }
-                                                        }
-                                                        InstructionFromTimingClient::SendFrame(frame_data) => {
-                                                            match comm_channel.send_out_command(InstructionToTimingClient::SendFrame(frame_data)).await {
-                                                                Ok(()) => trace!("Detected Packet and queued frame for rewrite-proxy"),
-                                                                Err(e) => return Err(e.to_string()),
+                                                            InstructionFromTimingClient::SendFrame(frame_data) => {
+                                                                match comm_channel.send_out_command(InstructionToTimingClient::SendFrame(frame_data)).await {
+                                                                    Ok(()) => trace!("Detected Packet and queued frame for rewrite-proxy"),
+                                                                    Err(e) => return Err(e.to_string()),
+                                                                }
+                                                            },
+                                                            comm => {
+                                                                error!("Unexpected: got a command OUTBOUND that should not happen: {}", comm);
                                                             }
-                                                        },
-                                                        comm => {
-                                                            error!("Unexpected: got a command OUTBOUND that should not happen: {}", comm);
                                                         }
                                                     }
                                                 }
