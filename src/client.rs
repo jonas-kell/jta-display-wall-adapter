@@ -368,24 +368,16 @@ impl ApplicationHandler for App {
             WindowEvent::Resized(new_size) => {
                 info!("The Window was resized: {:?}", new_size);
 
-                // pixels setup needs to be redone (only here!!)
-                if let Some(pixels) = &mut self.pixels {
-                    match pixels.resize_surface(new_size.width, new_size.height) {
-                        Ok(()) => debug!("Pixels were resized"),
-                        Err(e) => error!("Failed to resize pixels surface: {}", e),
-                    }
+                // first-time creation (defer until window mapped)
+                if let Some(window) = &self.window {
+                    let surface_texture =
+                        SurfaceTexture::new(new_size.width, new_size.height, window.clone());
+                    self.pixels = Some(
+                        Pixels::new(new_size.width, new_size.height, surface_texture).unwrap(),
+                    );
+                    debug!("Pixels were initialized");
                 } else {
-                    // first-time creation (defer until window mapped)
-                    if let Some(window) = &self.window {
-                        let surface_texture =
-                            SurfaceTexture::new(new_size.width, new_size.height, window.clone());
-                        self.pixels = Some(
-                            Pixels::new(new_size.width, new_size.height, surface_texture).unwrap(),
-                        );
-                        debug!("Pixels were initialized");
-                    } else {
-                        error!("Window should be mapped by now. This is not possible...");
-                    }
+                    error!("Window should be mapped by now. This is not possible...");
                 }
             }
             WindowEvent::Moved(p) => {
