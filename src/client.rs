@@ -321,16 +321,17 @@ impl ApplicationHandler for App {
                 info!("The close button was pressed; Sadly that is not how this works");
             }
             WindowEvent::Resized(new_size) => {
-                // TODO this emits the original size on Wayland with sway window manager ?
+                // this emits the original size on Wayland with sway window manager ?
                 // https://github.com/rust-windowing/winit/issues/3485
                 // https://github.com/rust-windowing/winit/pull/3602
+                // I could not reproduce this (though I am not sure if it ever emitted the "wrong" dimensions)
+                // BUT I added the property .with_resizable(true) above in window creation and at least since then on wayland sway, the resizing instantly returns success
+                // (which is what is documented actually, as this event is only fired if display manager handles the resize request asynchronously)
 
                 info!(
                     "The Window was resized to {}x{}",
                     new_size.width, new_size.height
                 );
-                let mut width_to_use = new_size.width;
-                let mut height_to_use = new_size.height;
 
                 if let Some((width, height)) = self.state_machine.current_frame_dimensions {
                     if width != new_size.width || height != new_size.height {
@@ -341,27 +342,11 @@ impl ApplicationHandler for App {
                     } else {
                         debug!("The resize dimensions from manager match what was expected");
                     }
-                    width_to_use = width;
-                    height_to_use = height;
-                } else {
-                    debug!("Initializing state machine's knowledge about the window size");
-                    self.state_machine.current_frame_dimensions =
-                        Some((new_size.width, new_size.height));
                 }
 
                 // force the values to what we know internally (as in our application there will never be an external resize (e.g. by mouse) anyway)
                 // user the values from state_machine, not from the resize event
-
-                // Create every time (defer until window mapped) - resizing was not deemed successfull
-                if let Some(window) = &self.window {
-                    let surface_texture =
-                        SurfaceTexture::new(width_to_use, height_to_use, window.clone());
-                    self.pixels =
-                        Some(Pixels::new(width_to_use, height_to_use, surface_texture).unwrap());
-                    debug!("Pixels were initialized");
-                } else {
-                    error!("Window should be mapped by now. This is not possible...");
-                }
+                self.re_initialize_pixels(new_size.width, new_size.height);
             }
             WindowEvent::Moved(p) => {
                 info!("The window was moved: {:?}", p);
@@ -510,11 +495,17 @@ impl App {
                 window.set_max_inner_size(Some(PhysicalSize::new(w, h)));
                 window.set_min_inner_size(Some(PhysicalSize::new(w, h)));
                 match window.request_inner_size(PhysicalSize::new(w, h)) {
-                    None => info!("Window resizing request went to the display system"),
-                    Some(size) => info!("Window resizing request: {:?}", size),
+                    None => info!("Window resizing request went to the display system"), // this triggers the WindowEvent::Resized above
+                    Some(size) => {
+                        // if this is the same as before, it failed, if it is a different one, we were successful
+                        info!(
+                            "Window resizing request was answered with size: {}x{}",
+                            size.width, size.height
+                        );
+                        self.re_initialize_pixels(size.width, size.height);
+                    }
                 }
-                // update the  state we think we have in the state machine
-                self.state_machine.current_frame_dimensions = Some((w, h));
+                // update the state we think we have in the state machine
                 self.state_machine.window_state_needs_update = None;
             }
         }
@@ -560,5 +551,18 @@ impl App {
                 REPORT_FRAME_LOGS_EVERY_SECONDS
             );
         }
+    }
+
+    fn re_initialize_pixels(&mut self, width_to_use: u32, height_to_use: u32) {
+        // Create every time (defer until window mapped) - resizing was not deemed successfull
+        if let Some(window) = &self.window {
+            let surface_texture = SurfaceTexture::new(width_to_use, height_to_use, window.clone());
+            self.pixels = Some(Pixels::new(width_to_use, height_to_use, surface_texture).unwrap());
+            debug!("Pixels were (re)-initialized");
+        } else {
+            error!("Window should be mapped by now. This is not possible...");
+        }
+        debug!("Setting state machine's knowledge about the window size");
+        self.state_machine.current_frame_dimensions = Some((width_to_use, height_to_use));
     }
 }
