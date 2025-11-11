@@ -393,17 +393,23 @@ impl ApplicationHandler for App {
                         // Render
                         match pixels.render() {
                             Ok(()) => {
-                                if self.state_machine.frame_counter
+                                if (self.state_machine.frame_counter + 111) // shoud not trigger together with the other nth-frame logs
                                     % (TARGET_FPS * REPORT_FRAME_LOGS_EVERY_SECONDS)
                                     == 0
                                 {
+                                    let percent = (Instant::now()
+                                        .duration_since(self.last_draw_call)
+                                        .as_nanos()
+                                        as u64
+                                        * 100)
+                                        / FRAME_TIME_NS;
                                     trace!(
                                         "Pixels were re-rendered (reports all {}s as per frame count)",
                                         REPORT_FRAME_LOGS_EVERY_SECONDS
                                     );
                                     trace!(
                                         "Rendering a frame takes {}% of the max time to reach {}fps",
-                                        (Instant::now().duration_since(self.last_draw_call).as_nanos() as u64 * 100) / FRAME_TIME_NS,
+                                        percent,
                                         TARGET_FPS
                                     );
                                 }
