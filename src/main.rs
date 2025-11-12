@@ -8,6 +8,7 @@ use server::run_server;
 
 mod args;
 mod client;
+mod file;
 mod hex;
 mod instructions;
 mod interface;

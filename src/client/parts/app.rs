@@ -2,14 +2,12 @@ use crate::args::Args;
 use crate::client::bitmap::png_to_bmp_bytes;
 use crate::client::rasterizing::RasterizerMeta;
 use crate::client::rendering::render_client_frame;
+use crate::file::{create_file_if_not_there_and_write, make_sure_folder_exists, set_perms};
 use crate::interface::{ClientStateMachine, MessageFromClientToServer, MessageFromServerToClient};
 use async_channel::{Receiver, Sender, TryRecvError, TrySendError};
 use fontdue::layout::{CoordinateSystem, Layout};
 use fontdue::{Font, FontSettings};
 use pixels::{Pixels, SurfaceTexture};
-use std::io::Write;
-#[cfg(target_os = "linux")]
-use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -259,15 +257,6 @@ impl ApplicationHandler for App {
     }
 }
 
-#[cfg(target_os = "linux")]
-fn set_perms(path: &Path) {
-    let perms = std::fs::Permissions::from_mode(0o777);
-    let _ = std::fs::set_permissions(path, perms);
-}
-
-#[cfg(not(target_os = "linux"))]
-fn set_perms(_path: &Path) {}
-
 impl App {
     fn process_state(&mut self, event_loop: &ActiveEventLoop) {
         // check for shutdown
@@ -285,16 +274,26 @@ impl App {
                 info!("Repositioning window: {} {}", x, y);
                 window.set_outer_position(PhysicalPosition::new(x, y));
                 if self.args.emit_file_on_location_update {
-                    let path = Path::new("move_container/coords.txt");
-                    match std::fs::File::create(path) {
-                        Err(e) => error!("Could not create file: {}", e.to_string()),
-                        Ok(mut file) => match write!(file, "{} {}", x, y) {
-                            Ok(()) => (),
-                            Err(e) => error!("Could not write to file: {}", e.to_string()),
-                        },
+                    let path_folder = Path::new("move_container/");
+                    let path_file = Path::new("move_container/coords.txt");
+                    match make_sure_folder_exists(path_folder) {
+                        Ok(_) => {
+                            set_perms(path_folder);
+                            match create_file_if_not_there_and_write(
+                                path_file,
+                                &format!("{} {}", x, y),
+                            ) {
+                                Err(e) => error!("{}", e),
+                                Ok(_) => {
+                                    set_perms(path_file);
+                                    debug!("Position written to file");
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            error!("{}", e)
+                        }
                     }
-                    set_perms(path);
-                    trace!("Position written to file");
                 }
                 info!("Setting window size: {} {}", w, h);
                 window.set_max_inner_size(Some(PhysicalSize::new(w, h)));
