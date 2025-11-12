@@ -10,7 +10,7 @@ use std::sync::{
 use std::time::Duration;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
-use tokio::time::{self};
+use tokio::time::{self, sleep};
 
 pub async fn tcp_client_camera_program(
     args: Args,
@@ -101,7 +101,10 @@ pub async fn tcp_client_camera_program(
                         };
                     }
                 }
-                Ok(Err(e)) => error!("Timing exchange read error: {}", e),
+                Ok(Err(e)) => {
+                    error!("Timing exchange error: {}", e);
+                    sleep(Duration::from_millis(1000)).await; // on missing target the communication sometimes connects with "Error - connection refused" -> immediately fails. But this spams logs. Slow down retry a bit
+                }
                 Err(_) => {
                     // expected on timeout, just loop
                     trace!("No TCP connection to timing exchange could be established within timeout interval");
@@ -190,7 +193,10 @@ pub async fn tcp_client_camera_program(
                         };
                     }
                 }
-                Ok(Err(e)) => error!("XML exchange read error: {}", e),
+                Ok(Err(e)) => {
+                    error!("XML exchange error: {}", e);
+                    sleep(Duration::from_millis(1000)).await; // on missing target the communication sometimes connects with "Error - connection refused" -> immediately fails. But this spams logs. Slow down retry a bit
+                }
                 Err(_) => {
                     // expected on timeout, just loop
                     trace!("No TCP connection to xml exchange could be established within timeout interval");
@@ -284,7 +290,10 @@ pub async fn tcp_client_camera_program(
                         };
                     }
                 }
-                Ok(Err(e)) => error!("Data exchange read error: {}", e),
+                Ok(Err(e)) => {
+                    error!("Data exchange error: {}", e);
+                    sleep(Duration::from_millis(1000)).await; // on missing target the communication sometimes connects with "Error - connection refused" -> immediately fails. But this spams logs. Slow down retry a bit
+                }
                 Err(_) => {
                     // expected on timeout, just loop
                     trace!("No TCP connection to data exchange could be established within timeout interval");

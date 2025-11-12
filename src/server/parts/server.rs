@@ -73,6 +73,18 @@ pub async fn run_server(args: &Args) -> () {
         internal_communication_address
     );
 
+    // avoid ports doubling and inform about where to run external display program
+    if args.passthrough_to_display_program {
+        if args.passthrough_address_display_program == "127.0.0.1"
+            && args.passthrough_port_display_program == args.listen_port
+        {
+            error!("Can not passthrough to display program that should run on the same machine (127.0.0.1)");
+            error!("The port {} can only be used by one program at a time (or if no other program is running, this server would connect to itself)", args.listen_port );
+            error!("If you wish to passthrough to external display software, you need to run it on a separate machine", args.listen_port );
+            return;
+        }
+    }
+
     let comm_channel = InstructionCommunicationChannel::new(&args);
     let comm_channel_packets = PacketCommunicationChannel::new(&args);
     let comm_channel_client_outbound = ClientCommunicationChannelOutbound::new(&args);

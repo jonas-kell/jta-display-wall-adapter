@@ -37,7 +37,7 @@ pub struct Args {
     #[arg(long, default_value_t = String::from("5678"))]
     pub internal_communication_port: String,
     /// Address of where display client lives (for the server to talk to) (like "127.0.0.1")
-    #[arg(long, default_value_t = String::from("128.0.0.1"))]
+    #[arg(long, default_value_t = String::from("127.0.0.1"))]
     pub address_internal_communication: String,
     /// If the data that is incoming through should get hexdump-displayed
     #[arg(long, action = clap::ArgAction::SetTrue)]

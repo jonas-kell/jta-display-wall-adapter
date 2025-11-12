@@ -147,11 +147,14 @@ pub async fn client_communicator(
                         Ok(_) => (),
                         Err(e) => {
                             error!("Client connection gone away: {}", e);
-                            sleep(Duration::from_millis(1000)).await; // on dev the communication goes into docker, so it connects, then fails. but this spams logs. Slow down retry a bit
+                            sleep(Duration::from_millis(1000)).await; // on dev the communication goes into docker, so it connects, then fails. But this spams logs. Slow down retry a bit
                         }
                     }
                 }
-                Ok(Err(e)) => error!("Client exchange read error: {}", e),
+                Ok(Err(e)) => {
+                    error!("Client exchange error: {}", e);
+                    sleep(Duration::from_millis(1000)).await; // on missing target the communication sometimes connects with "Error - connection refused" -> immediately fails. But this spams logs. Slow down retry a bit
+                }
                 Err(_) => {
                     // expected on timeout, just loop
                     trace!(
