@@ -16,7 +16,7 @@ use crate::{
 };
 
 pub enum IncomingInstruction {
-    FromTimingClient(InstructionFromTimingClient),
+    FromTimingProgram(InstructionFromTimingProgram),
     FromCameraProgram(InstructionFromCameraProgram),
 }
 impl Display for IncomingInstruction {
@@ -25,7 +25,8 @@ impl Display for IncomingInstruction {
             f,
             "{}",
             match self {
-                IncomingInstruction::FromTimingClient(tci) => format!("FromTimingClient: {}", tci),
+                IncomingInstruction::FromTimingProgram(tci) =>
+                    format!("FromTimingProgram: {}", tci),
                 IncomingInstruction::FromCameraProgram(cpi) =>
                     format!("FromCameraProgram: {:?}", cpi),
             }
@@ -241,7 +242,7 @@ pub enum InstructionFromCameraProgram {
 }
 
 #[derive(Serialize, Deserialize)]
-pub enum InstructionFromTimingClient {
+pub enum InstructionFromTimingProgram {
     ClientInfo,
     Freetext(String),
     Advertisements,
@@ -254,30 +255,30 @@ pub enum InstructionFromTimingClient {
     ServerInfo,
     SendFrame(Vec<u8>),
 }
-impl Display for InstructionFromTimingClient {
+impl Display for InstructionFromTimingProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
             match self {
-                InstructionFromTimingClient::ClientInfo => String::from("ClientInfo"),
-                InstructionFromTimingClient::Freetext(text) => format!("Freetext: {}", text),
-                InstructionFromTimingClient::Advertisements => String::from("Advertisements"),
-                InstructionFromTimingClient::Clear => String::from("Clear"),
-                InstructionFromTimingClient::StartList => String::from("StartList"),
-                InstructionFromTimingClient::Timing => String::from("Timing"),
-                InstructionFromTimingClient::SetProperty => String::from("SetProperty"),
-                InstructionFromTimingClient::Results => String::from("Results"),
-                InstructionFromTimingClient::ResultsUpdate => String::from("ResultsUpdate"),
-                InstructionFromTimingClient::ServerInfo => String::from("ServerInfo"),
-                InstructionFromTimingClient::SendFrame(_) => String::from("SendFrame"),
+                InstructionFromTimingProgram::ClientInfo => String::from("ClientInfo"),
+                InstructionFromTimingProgram::Freetext(text) => format!("Freetext: {}", text),
+                InstructionFromTimingProgram::Advertisements => String::from("Advertisements"),
+                InstructionFromTimingProgram::Clear => String::from("Clear"),
+                InstructionFromTimingProgram::StartList => String::from("StartList"),
+                InstructionFromTimingProgram::Timing => String::from("Timing"),
+                InstructionFromTimingProgram::SetProperty => String::from("SetProperty"),
+                InstructionFromTimingProgram::Results => String::from("Results"),
+                InstructionFromTimingProgram::ResultsUpdate => String::from("ResultsUpdate"),
+                InstructionFromTimingProgram::ServerInfo => String::from("ServerInfo"),
+                InstructionFromTimingProgram::SendFrame(_) => String::from("SendFrame"),
             }
         )
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum InstructionToTimingClient {
+pub enum InstructionToTimingProgram {
     SendServerInfo,
     SendFrame(Vec<u8>), // stores the frame data
 }
@@ -287,15 +288,15 @@ pub struct InstructionCommunicationChannel {
     args: Args,
     inbound_sender: Sender<IncomingInstruction>,
     inbound_receiver: Receiver<IncomingInstruction>,
-    outbound_sender: Sender<InstructionToTimingClient>,
-    outbound_receiver: Receiver<InstructionToTimingClient>,
+    outbound_sender: Sender<InstructionToTimingProgram>,
+    outbound_receiver: Receiver<InstructionToTimingProgram>,
 }
 impl InstructionCommunicationChannel {
     pub fn new(args: &Args) -> Self {
         let (is, ir) = async_channel::bounded::<IncomingInstruction>(
             MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
         );
-        let (os, or) = async_channel::bounded::<InstructionToTimingClient>(
+        let (os, or) = async_channel::bounded::<InstructionToTimingProgram>(
             MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
         );
 
@@ -308,13 +309,13 @@ impl InstructionCommunicationChannel {
         }
     }
 
-    pub fn take_in_command_from_timing_client(
+    pub fn take_in_command_from_timing_program(
         &self,
-        inst: InstructionFromTimingClient,
+        inst: InstructionFromTimingProgram,
     ) -> Result<(), String> {
         match self
             .inbound_sender
-            .try_send(IncomingInstruction::FromTimingClient(inst))
+            .try_send(IncomingInstruction::FromTimingProgram(inst))
         {
             Ok(_) => Ok(()),
             Err(TrySendError::Closed(_)) => {
@@ -356,7 +357,7 @@ impl InstructionCommunicationChannel {
         .await
     }
 
-    pub fn send_out_command(&self, inst: InstructionToTimingClient) -> Result<(), String> {
+    pub fn send_out_command(&self, inst: InstructionToTimingProgram) -> Result<(), String> {
         match self.outbound_sender.try_send(inst) {
             Ok(_) => Ok(()),
             Err(TrySendError::Closed(_)) => {
@@ -371,7 +372,7 @@ impl InstructionCommunicationChannel {
 
     pub async fn wait_for_command_to_send(
         &self,
-    ) -> Result<Result<InstructionToTimingClient, RecvError>, Elapsed> {
+    ) -> Result<Result<InstructionToTimingProgram, RecvError>, Elapsed> {
         time::timeout(
             Duration::from_millis(self.args.wait_ms_before_testing_for_shutdown),
             self.outbound_receiver.recv(),

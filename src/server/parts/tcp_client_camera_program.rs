@@ -12,7 +12,7 @@ use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
 use tokio::time::{self};
 
-pub async fn tcp_client_to_timing_and_data_exchange(
+pub async fn tcp_client_camera_program(
     args: Args,
     comm_channel: InstructionCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,

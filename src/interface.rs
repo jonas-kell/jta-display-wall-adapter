@@ -5,7 +5,7 @@ use crate::{
     client::images_tools::{CachedImageScaler, ImageMeta},
     instructions::{
         ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
-        InstructionFromTimingClient, InstructionToTimingClient,
+        InstructionFromTimingProgram, InstructionToTimingProgram,
     },
 };
 
@@ -27,7 +27,7 @@ pub enum MessageFromClientToServer {
 #[derive(PartialEq, Eq, Clone)]
 pub enum ServerState {
     PassthroughClient,
-    PassthroughDisplayBoard,
+    PassthroughDisplayProgram,
 }
 
 pub struct ServerStateMachine {
@@ -46,7 +46,7 @@ impl ServerStateMachine {
             args: args.clone(),
             state: ServerState::PassthroughClient,
             comm_channel_client_outbound, // per design, this can only be used to send
-            comm_channel, // only used to send instructions to the timing client. Rest is done via incoming commands
+            comm_channel, // only used to send instructions to the timing program. Rest is done via incoming commands
         }
     }
 
@@ -56,8 +56,8 @@ impl ServerStateMachine {
             MessageFromClientToServer::Version(version) => {
                 error!("Client reported to have version: '{}'", version); // TODO compare and error if not compatible
 
-                // report the timing client our fake version
-                self.send_message_to_timing_client(InstructionToTimingClient::SendServerInfo)
+                // report the timing program our fake version
+                self.send_message_to_timing_program(InstructionToTimingProgram::SendServerInfo)
                     .await;
 
                 // get client to respect window position and size
@@ -75,8 +75,10 @@ impl ServerStateMachine {
             }
             MessageFromClientToServer::CurrentWindow(data) => {
                 if self.state == ServerState::PassthroughClient {
-                    self.send_message_to_timing_client(InstructionToTimingClient::SendFrame(data))
-                        .await;
+                    self.send_message_to_timing_program(InstructionToTimingProgram::SendFrame(
+                        data,
+                    ))
+                    .await;
                 }
             }
         }
@@ -85,21 +87,21 @@ impl ServerStateMachine {
     pub async fn parse_incoming_command(&mut self, msg: IncomingInstruction) {
         // handle all messages
         match msg {
-            IncomingInstruction::FromTimingClient(inst) => match inst {
-                InstructionFromTimingClient::ClientInfo => (),
-                InstructionFromTimingClient::ServerInfo => (),
-                InstructionFromTimingClient::Freetext(text) => {
+            IncomingInstruction::FromTimingProgram(inst) => match inst {
+                InstructionFromTimingProgram::ClientInfo => (),
+                InstructionFromTimingProgram::ServerInfo => (),
+                InstructionFromTimingProgram::Freetext(text) => {
                     self.send_message_to_client(MessageFromServerToClient::DisplayText(text))
                         .await
                 }
-                InstructionFromTimingClient::Clear => {
+                InstructionFromTimingProgram::Clear => {
                     if self.args.passthrough_to_display_program {
                         match self.state {
                             ServerState::PassthroughClient => {
                                 info!("Now passing through client");
-                                self.state = ServerState::PassthroughDisplayBoard
+                                self.state = ServerState::PassthroughDisplayProgram
                             }
-                            ServerState::PassthroughDisplayBoard => {
+                            ServerState::PassthroughDisplayProgram => {
                                 info!("Now passing through external display program");
                                 self.state = ServerState::PassthroughClient
                             }
@@ -110,16 +112,16 @@ impl ServerStateMachine {
                         self.state = ServerState::PassthroughClient;
                     }
                 }
-                InstructionFromTimingClient::SendFrame(data) => {
-                    trace!("Got command to send a frame inbound (should be from external display board program to send back and possibly proxy to our client)");
-                    if self.state == ServerState::PassthroughDisplayBoard {
+                InstructionFromTimingProgram::SendFrame(data) => {
+                    trace!("Got command to send a frame inbound (should be from external display program to send back and possibly proxy to our client)");
+                    if self.state == ServerState::PassthroughDisplayProgram {
                         self.send_message_to_client(
                             MessageFromServerToClient::DisplayExternalFrame(data),
                         )
                         .await;
                     }
                 }
-                inst => error!("Unhandled instruction from timing client: {}", inst),
+                inst => error!("Unhandled instruction from timing program: {}", inst),
             },
             IncomingInstruction::FromCameraProgram(inst) => match inst {
                 inst => error!("Unhandled instruction from camera program: {:?}", inst),
@@ -127,7 +129,7 @@ impl ServerStateMachine {
         }
     }
 
-    async fn send_message_to_timing_client(&mut self, inst: InstructionToTimingClient) {
+    async fn send_message_to_timing_program(&mut self, inst: InstructionToTimingProgram) {
         match self.comm_channel.send_out_command(inst) {
             Ok(()) => (),
             Err(e) => error!("Failed to send out instruction: {}", e.to_string()),

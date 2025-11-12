@@ -1,6 +1,6 @@
 use crate::args::Args;
 use crate::hex::hex_log_bytes;
-use crate::instructions::{InstructionCommunicationChannel, InstructionToTimingClient};
+use crate::instructions::{InstructionCommunicationChannel, InstructionToTimingProgram};
 use crate::interface::{ServerState, ServerStateMachine};
 use crate::server::forwarding::{PacketCommunicationChannel, PacketData};
 use crate::server::nrbf::{generate_response_bytes, BufferedParser};
@@ -112,7 +112,7 @@ pub async fn tcp_listener_timing_program(
                                     Ok(parsed) => {
                                         debug!("Decoded Inbound Communication: {}", parsed);
                                         match comm_channel_read
-                                            .take_in_command_from_timing_client(parsed)
+                                            .take_in_command_from_timing_program(parsed)
                                         {
                                             Ok(()) => (),
                                             Err(e) => return Err(e.to_string()),
@@ -154,7 +154,7 @@ pub async fn tcp_listener_timing_program(
                                             current_state = guard.state.clone();
                                         }
 
-                                        if current_state == ServerState::PassthroughDisplayBoard {
+                                        if current_state == ServerState::PassthroughDisplayProgram {
                                             trace!("Display Program sent frame");
                                             return Ok(data);
                                         } else {
@@ -175,7 +175,7 @@ pub async fn tcp_listener_timing_program(
                                     Ok(Ok(inst)) => return Ok(inst),
                                     Ok(Err(e)) => return Err(TimeoutOrIoError::ReceiveError(e)),
                                     Err(_) => {
-                                        return Err::<InstructionToTimingClient, TimeoutOrIoError>(
+                                        return Err::<InstructionToTimingProgram, TimeoutOrIoError>(
                                             TimeoutOrIoError::Timeout,
                                         )
                                     }
@@ -213,8 +213,8 @@ pub async fn tcp_listener_timing_program(
                                     match r {
                                         Ok(inst) => {
                                             trace!("Sending Bytes for custom command: {}", match inst {
-                                                InstructionToTimingClient::SendFrame(_) => "SendFrame",
-                                                InstructionToTimingClient::SendServerInfo => "ServerInfo",
+                                                InstructionToTimingProgram::SendFrame(_) => "SendFrame",
+                                                InstructionToTimingProgram::SendServerInfo => "ServerInfo",
                                             });
                                             let bytes_to_send = generate_response_bytes(inst);
                                             wi.write_all(&bytes_to_send)

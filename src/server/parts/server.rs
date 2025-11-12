@@ -3,8 +3,8 @@ use crate::instructions::{ClientCommunicationChannelOutbound, InstructionCommuni
 use crate::interface::ServerStateMachine;
 use crate::server::forwarding::PacketCommunicationChannel;
 use crate::server::parts::client_communicator::client_communicator;
-use crate::server::parts::tcp_client_camera_program::tcp_client_to_timing_and_data_exchange;
-use crate::server::parts::tcp_forwarder_display_program::tcp_forwarder_server_display_board;
+use crate::server::parts::tcp_client_camera_program::tcp_client_camera_program;
+use crate::server::parts::tcp_forwarder_display_program::tcp_forwarder_display_program;
 use crate::server::parts::tcp_listener_timing_program::tcp_listener_timing_program;
 use std::io::Error;
 use std::net::SocketAddr;
@@ -21,7 +21,7 @@ pub async fn run_server(args: &Args) -> () {
         args.passthrough_address_display_program, args.passthrough_port_display_program
     )
     .parse()
-    .expect("Invalid display_program passthrough address");
+    .expect("Invalid display program passthrough address");
 
     let own_addr_timing: SocketAddr = format!("0.0.0.0:{}", args.listen_port)
         .parse()
@@ -92,7 +92,7 @@ pub async fn run_server(args: &Args) -> () {
         own_addr_timing,
     );
 
-    let tcp_forwarder_server_display_board_instance = tcp_forwarder_server_display_board(
+    let tcp_forwarder_display_program_instance = tcp_forwarder_display_program(
         args.clone(),
         server_state.clone(),
         comm_channel.clone(),
@@ -110,7 +110,7 @@ pub async fn run_server(args: &Args) -> () {
         internal_communication_address,
     );
 
-    let tcp_client_to_timing_and_data_exchange_instance = tcp_client_to_timing_and_data_exchange(
+    let tcp_client_camera_program_instance = tcp_client_camera_program(
         args.clone(),
         comm_channel.clone(),
         Arc::clone(&shutdown_marker),
@@ -122,10 +122,8 @@ pub async fn run_server(args: &Args) -> () {
     // spawn the async runtimes in parallel
     let client_communicator_task = tokio::spawn(client_communicator_instance);
     let tcp_listener_server_task = tokio::spawn(tcp_listener_server_instance);
-    let tcp_forwarder_server_display_board_task =
-        tokio::spawn(tcp_forwarder_server_display_board_instance);
-    let tcp_client_to_timing_and_data_exchange_task =
-        tokio::spawn(tcp_client_to_timing_and_data_exchange_instance);
+    let tcp_forwarder_display_program_task = tokio::spawn(tcp_forwarder_display_program_instance);
+    let tcp_client_camera_program_task = tokio::spawn(tcp_client_camera_program_instance);
     let shutdown_task = tokio::spawn(async move {
         // listen for ctrl-c
         tokio::signal::ctrl_c().await?;
@@ -138,10 +136,10 @@ pub async fn run_server(args: &Args) -> () {
     // Wait for all tasks to complete
     match tokio::try_join!(
         tcp_listener_server_task,
-        tcp_forwarder_server_display_board_task,
+        tcp_forwarder_display_program_task,
         shutdown_task,
         client_communicator_task,
-        tcp_client_to_timing_and_data_exchange_task
+        tcp_client_camera_program_task
     ) {
         Err(_) => error!("Error in at least one listening task"),
         Ok(_) => info!("All listeners closed successfully"),

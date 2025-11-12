@@ -1,7 +1,7 @@
 use crate::args::Args;
 use crate::hex::hex_log_bytes;
 use crate::instructions::{
-    InstructionCommunicationChannel, InstructionFromTimingClient, InstructionToTimingClient,
+    InstructionCommunicationChannel, InstructionFromTimingProgram, InstructionToTimingProgram,
 };
 use crate::interface::{ServerState, ServerStateMachine};
 use crate::server::forwarding::PacketCommunicationChannel;
@@ -19,7 +19,7 @@ use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 use tokio::time;
 
-pub async fn tcp_forwarder_server_display_board(
+pub async fn tcp_forwarder_display_program(
     args: Args,
     state: Arc<Mutex<ServerStateMachine>>, // does not require read, but our main reference is in a mutex // TODO could use RWLock
     comm_channel: InstructionCommunicationChannel,
@@ -96,7 +96,7 @@ pub async fn tcp_forwarder_server_display_board(
                                                         current_state = guard.state.clone();
                                                     }
 
-                                                    if current_state == ServerState::PassthroughDisplayBoard {
+                                                    if current_state == ServerState::PassthroughDisplayProgram {
                                                         // proxy just like that if not successfully parsed
                                                         match comm_channel_packets_read
                                                             .outbound_take_in(data_that_could_not_be_parsed)
@@ -121,21 +121,21 @@ pub async fn tcp_forwarder_server_display_board(
                                                     }
 
                                                     match current_state {
-                                                        ServerState::PassthroughDisplayBoard => {
+                                                        ServerState::PassthroughDisplayProgram => {
                                                             match parsed {
-                                                                // THIS IS A BIT OF A HACK -> the "SendFrame" and "SendServerInfo" flow over the "command_from_timing_client" channel, even though they flow in the opposite direction!
-                                                                InstructionFromTimingClient::ServerInfo => {
-                                                                    match comm_channel.send_out_command(InstructionToTimingClient::SendServerInfo) {
+                                                                // THIS IS A BIT OF A HACK -> the "SendFrame" and "SendServerInfo" flow over the "command_from_timing_program" channel, even though they flow in the opposite direction!
+                                                                InstructionFromTimingProgram::ServerInfo => {
+                                                                    match comm_channel.send_out_command(InstructionToTimingProgram::SendServerInfo) {
                                                                         Ok(()) => trace!("Detected Packet and queued server-info for rewrite-proxy"),
                                                                         Err(e) => return Err(e.to_string()),
                                                                     }
                                                                 }
-                                                                InstructionFromTimingClient::SendFrame(frame_data) => {
-                                                                    match comm_channel.send_out_command(InstructionToTimingClient::SendFrame(frame_data.clone())) {
+                                                                InstructionFromTimingProgram::SendFrame(frame_data) => {
+                                                                    match comm_channel.send_out_command(InstructionToTimingProgram::SendFrame(frame_data.clone())) {
                                                                         Ok(()) => trace!("Detected Packet and queued frame for rewrite-proxy"),
                                                                         Err(e) => return Err(e.to_string()),
                                                                     }
-                                                                    match comm_channel.take_in_command_from_timing_client(InstructionFromTimingClient::SendFrame(frame_data)) {
+                                                                    match comm_channel.take_in_command_from_timing_program(InstructionFromTimingProgram::SendFrame(frame_data)) {
                                                                         Ok(()) => trace!("Detected Packet and queued frame into communication interface"),
                                                                         Err(e) => return Err(e.to_string()),
                                                                     }
