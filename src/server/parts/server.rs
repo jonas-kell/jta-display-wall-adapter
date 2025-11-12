@@ -80,7 +80,7 @@ pub async fn run_server(args: &Args) -> () {
         {
             error!("Can not passthrough to display program that should run on the same machine (127.0.0.1)");
             error!("The port {} can only be used by one program at a time (or if no other program is running, this server would connect to itself)", args.listen_port );
-            error!("If you wish to passthrough to external display software, you need to run it on a separate machine", args.listen_port );
+            error!("If you wish to passthrough to external display software, you need to run it on a separate machine");
             return;
         }
     }
