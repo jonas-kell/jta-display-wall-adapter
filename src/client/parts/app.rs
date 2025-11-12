@@ -1,4 +1,4 @@
-use crate::args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS};
+use crate::args::Args;
 use crate::client::bitmap::png_to_bmp_bytes;
 use crate::client::rasterizing::RasterizerMeta;
 use crate::client::rendering::render_client_frame;
@@ -6,22 +6,14 @@ use crate::interface::{ClientStateMachine, MessageFromClientToServer, MessageFro
 use async_channel::{Receiver, Sender, TryRecvError, TrySendError};
 use fontdue::layout::{CoordinateSystem, Layout};
 use fontdue::{Font, FontSettings};
-use futures::prelude::*;
 use pixels::{Pixels, SurfaceTexture};
-use std::io::Error;
 use std::io::Write;
-use std::net::SocketAddr;
 #[cfg(target_os = "linux")]
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::net::TcpListener;
-use tokio::time;
-use tokio_serde::formats::*;
-use tokio_serde::Framed;
-use tokio_util::codec::{FramedRead, FramedWrite, LengthDelimitedCodec};
 use winit::application::ApplicationHandler;
 use winit::dpi::{PhysicalPosition, PhysicalSize};
 use winit::event::WindowEvent;
@@ -30,193 +22,6 @@ use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::platform::x11::{WindowAttributesExtX11, WindowType};
 use winit::window::WindowAttributes;
 use winit::window::{Window, WindowId};
-
-pub async fn run_client(args: &Args) -> () {
-    let (tx_to_ui, rx_to_ui) = async_channel::bounded::<MessageFromServerToClient>(
-        MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
-    );
-    let (tx_from_ui, rx_from_ui) = async_channel::bounded::<MessageFromClientToServer>(
-        MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
-    );
-
-    let shutdown_marker = Arc::new(AtomicBool::new(false));
-
-    let network_task = tokio::spawn(run_network_task(
-        args.clone(),
-        tx_to_ui,
-        rx_from_ui,
-        Arc::clone(&shutdown_marker),
-    ));
-    let shutdown_marker_sdt = Arc::clone(&shutdown_marker);
-    let shutdown_task = tokio::spawn(async move {
-        // listen for ctrl-c
-        tokio::signal::ctrl_c().await?;
-
-        shutdown_marker_sdt.store(true, Ordering::SeqCst);
-
-        Ok::<_, Error>(())
-    });
-
-    // async runtime stuff started, the display task doesn't like being inside tokio, so it comes after and takes shutdown orders via Arc
-    tokio::spawn(async move {
-        match tokio::try_join!(network_task, shutdown_task) {
-            Err(_) => error!("Error in at least one client task"),
-            Ok(_) => info!("All client tasks closed successfully"),
-        };
-    });
-
-    run_display_task(
-        args.clone(),
-        rx_to_ui,
-        tx_from_ui,
-        Arc::clone(&shutdown_marker),
-    );
-}
-
-pub async fn run_network_task(
-    args: Args,
-    tx_to_ui: Sender<MessageFromServerToClient>,
-    rx_from_ui: Receiver<MessageFromClientToServer>,
-    shutdown_marker: Arc<AtomicBool>,
-) -> Result<(), Error> {
-    let listen_addr: SocketAddr = format!("0.0.0.0:{}", args.internal_communication_port)
-        .parse()
-        .expect("Invalid internal communication address");
-
-    let listener = TcpListener::bind(listen_addr).await?;
-    debug!("TCP listener started on {}", listen_addr);
-
-    loop {
-        if shutdown_marker.load(Ordering::SeqCst) {
-            debug!("Shutdown requested, stopping listener on {}", listen_addr);
-            break;
-        }
-
-        // Wait for new connection with timeout so we can check shutdown flag periodically
-        match time::timeout(
-            Duration::from_millis(args.wait_ms_before_testing_for_shutdown),
-            listener.accept(),
-        )
-        .await
-        {
-            Ok(Ok((inbound, client_addr))) => {
-                debug!("Accepted connection from {}", client_addr);
-
-                let (read_half, write_half) = inbound.into_split();
-                let mut deserializer: Framed<
-                    _,
-                    MessageFromServerToClient,
-                    MessageFromClientToServer,
-                    _,
-                > = Framed::new(
-                    FramedRead::new(read_half, LengthDelimitedCodec::new()),
-                    Bincode::<MessageFromServerToClient, MessageFromClientToServer>::default(),
-                );
-                let mut serializer: Framed<
-                    _,
-                    MessageFromServerToClient,
-                    MessageFromClientToServer,
-                    _,
-                > = Framed::new(
-                    FramedWrite::new(write_half, LengthDelimitedCodec::new()),
-                    Bincode::<MessageFromServerToClient, MessageFromClientToServer>::default(),
-                );
-
-                // Connection is accepted. Handle all further in own task
-
-                let shutdown_marker = shutdown_marker.clone();
-                let tx_to_ui = tx_to_ui.clone();
-                let rx_from_ui = rx_from_ui.clone();
-
-                tokio::spawn(async move {
-                    let shutdown_marker_read = shutdown_marker.clone();
-
-                    let read_handler = async move {
-                        loop {
-                            if shutdown_marker_read.load(Ordering::SeqCst) {
-                                debug!(
-                                    "Shutdown marker set, breaking main external -> self transfer"
-                                );
-                                break;
-                            }
-
-                            match time::timeout(
-                                Duration::from_millis(args.wait_ms_before_testing_for_shutdown),
-                                deserializer.next(),
-                            )
-                            .await
-                            {
-                                Err(_) => {
-                                    trace!("No new TCP traffic within timeout interval");
-                                    continue;
-                                }
-                                Ok(None) => return Err("TCP stream went away".into()),
-                                Ok(Some(Err(e))) => return Err(e.to_string()),
-                                Ok(Some(Ok(mes))) => match tx_to_ui.try_send(mes) {
-                                    Ok(()) => (),
-                                    Err(TrySendError::Closed(_)) => {
-                                        return Err(format!(
-                                            "Internal communication channel closed..."
-                                        ))
-                                    }
-                                    Err(TrySendError::Full(_)) => {
-                                        trace!("Internal communication channel is full. Seems like there is no source to consume");
-                                    }
-                                },
-                            }
-                        }
-                        Ok::<_, String>(())
-                    };
-
-                    let shutdown_marker_write = shutdown_marker;
-
-                    let write_handler = async move {
-                        loop {
-                            if shutdown_marker_write.load(Ordering::SeqCst) {
-                                debug!(
-                                    "Shutdown marker set, breaking main self -> external transfer"
-                                );
-                                break;
-                            }
-
-                            match time::timeout(
-                                Duration::from_millis(args.wait_ms_before_testing_for_shutdown),
-                                rx_from_ui.recv(),
-                            )
-                            .await
-                            {
-                                Err(_) => {
-                                    trace!("No new Messages to send out within timeout interval");
-                                    continue;
-                                }
-                                Ok(Err(e)) => return Err(e.to_string()),
-                                Ok(Ok(mes)) => match serializer.send(mes).await {
-                                    Ok(()) => trace!(
-                                        "TCP sender forwarded message from internal comm channel"
-                                    ),
-                                    Err(e) => return Err(e.to_string()),
-                                },
-                            }
-                        }
-
-                        Ok::<_, String>(())
-                    };
-
-                    tokio::try_join!(read_handler, write_handler)?;
-
-                    Ok::<_, String>(())
-                });
-            }
-            Ok(Err(e)) => error!("Accept error: {}", e),
-            Err(_) => {
-                // expected on timeout, just loop
-                trace!("No new TCP connection within timeout interval");
-            }
-        }
-    }
-
-    Ok(())
-}
 
 pub fn run_display_task(
     args: Args,
@@ -249,7 +54,7 @@ pub fn run_display_task(
     let _ = event_loop.run_app(&mut app);
 }
 
-struct App {
+pub struct App {
     window: Option<Arc<Window>>,
     pixels: Option<Pixels<'static>>,
     font: Font,
