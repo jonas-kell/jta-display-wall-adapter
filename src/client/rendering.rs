@@ -1,6 +1,8 @@
 use crate::{
+    client::rasterizing::{
+        clear, draw_image, draw_text, fill_with_color, RasterizerMeta, JTA_COLOR,
+    },
     interface::{ClientState, ClientStateMachine},
-    rasterizing::{clear, draw_image, draw_text, fill_with_color, RasterizerMeta, JTA_COLOR},
 };
 
 pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMachine) {

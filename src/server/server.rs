@@ -1,5 +1,4 @@
 use crate::args::Args;
-use crate::forwarding::{PacketCommunicationChannel, PacketData};
 use crate::hex::hex_log_bytes;
 use crate::instructions::{
     ClientCommunicationChannelOutbound, InstructionCommunicationChannel,
@@ -8,8 +7,9 @@ use crate::instructions::{
 use crate::interface::{
     MessageFromClientToServer, MessageFromServerToClient, ServerState, ServerStateMachine,
 };
-use crate::nrbf::{generate_response_bytes, BufferedParser};
-use crate::xml_serial::{BufferedParserSerial, BufferedParserXML};
+use crate::server::forwarding::{PacketCommunicationChannel, PacketData};
+use crate::server::nrbf::{generate_response_bytes, BufferedParser};
+use crate::server::xml_serial::{BufferedParserSerial, BufferedParserXML};
 use async_channel::RecvError;
 use futures::prelude::*;
 use std::io::{self, Error, ErrorKind};

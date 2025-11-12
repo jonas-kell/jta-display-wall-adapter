@@ -1,8 +1,8 @@
 use crate::args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS};
-use crate::bitmap::png_to_bmp_bytes;
+use crate::client::bitmap::png_to_bmp_bytes;
+use crate::client::rasterizing::RasterizerMeta;
+use crate::client::rendering::render_client_frame;
 use crate::interface::{ClientStateMachine, MessageFromClientToServer, MessageFromServerToClient};
-use crate::rasterizing::RasterizerMeta;
-use crate::rendering::render_client_frame;
 use async_channel::{Receiver, Sender, TryRecvError, TrySendError};
 use fontdue::layout::{CoordinateSystem, Layout};
 use fontdue::{Font, FontSettings};

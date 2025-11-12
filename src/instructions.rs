@@ -9,7 +9,7 @@ use crate::{
     args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS},
     hex::parse_race_time,
     interface::MessageFromServerToClient,
-    xml_serial::{
+    server::xml_types::{
         CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
         HeatStartList, HeatWind,
     },

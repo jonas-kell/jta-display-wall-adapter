@@ -7,17 +7,11 @@ use client::run_client;
 use server::run_server;
 
 mod args;
-mod bitmap;
 mod client;
-mod forwarding;
 mod hex;
 mod instructions;
 mod interface;
-mod nrbf;
-mod rasterizing;
-mod rendering;
 mod server;
-mod xml_serial;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {

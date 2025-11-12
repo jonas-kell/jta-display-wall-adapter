@@ -2,11 +2,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     args::Args,
+    client::images_tools::{CachedImageScaler, ImageMeta},
     instructions::{
         ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
         InstructionFromTimingClient, InstructionToTimingClient,
     },
-    rasterizing::{CachedImageScaler, ImageMeta},
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

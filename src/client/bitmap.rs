@@ -1,4 +1,4 @@
-use crate::rasterizing::ImageMeta;
+use crate::client::rasterizing::ImageMeta;
 
 pub fn png_to_bmp_bytes(image: ImageMeta) -> Vec<u8> {
     let width = image.width;
