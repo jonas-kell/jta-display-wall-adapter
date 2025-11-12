@@ -1,3 +1,4 @@
+use crate::times::RaceTime;
 use nom::bytes::complete::{take_while, take_while1};
 use nom::combinator::{opt, peek};
 pub use nom::error::{Error as NomError, ErrorKind as NomErrorKind};
@@ -6,8 +7,6 @@ pub use nom::Err::{Error as NomErr, Failure as NomFailure};
 use nom::Parser;
 use nom::{bytes::complete::tag, bytes::complete::take_until, sequence::terminated, IResult};
 use nom::{bytes::complete::take_while_m_n, combinator::map_res};
-
-use crate::instructions::RaceTime;
 
 pub fn parse_two_digits<'a>(input: &'a [u8]) -> IResult<&'a [u8], u16> {
     map_res(

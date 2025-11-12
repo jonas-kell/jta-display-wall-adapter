@@ -12,6 +12,7 @@ mod hex;
 mod instructions;
 mod interface;
 mod server;
+mod times;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {

@@ -1,15 +1,13 @@
+use crate::args::Args;
+use crate::hex::hex_log_bytes;
 use crate::hex::{parse_race_time, parse_two_digits, take_until_and_consume};
+use crate::instructions::InstructionFromCameraProgram;
+use crate::times::{DayTime, RaceTime, RaceWind};
 use chrono::NaiveDateTime;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::multispace0;
 use nom::{IResult, Parser};
-
-use crate::args::Args;
-use crate::hex::hex_log_bytes;
-use crate::instructions::{DayTime, RaceWind};
-use crate::instructions::{InstructionFromCameraProgram, RaceTime};
-
 use quick_xml::de::from_str;
 use serde::{Deserialize, Deserializer, Serialize};
 use uuid::Uuid;
