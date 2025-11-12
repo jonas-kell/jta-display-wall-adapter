@@ -106,7 +106,7 @@ pub async fn run_server(args: &Args) -> () {
         own_addr_timing,
     );
 
-    let tcp_forwarder_server_instance = tcp_forwarder_server(
+    let tcp_forwarder_server_display_board_instance = tcp_forwarder_server_display_board(
         args.clone(),
         server_state.clone(),
         comm_channel.clone(),
@@ -136,7 +136,8 @@ pub async fn run_server(args: &Args) -> () {
     // spawn the async runtimes in parallel
     let client_communicator_task = tokio::spawn(client_communicator_instance);
     let tcp_listener_server_task = tokio::spawn(tcp_listener_server_instance);
-    let tcp_forwarder_server_task = tokio::spawn(tcp_forwarder_server_instance);
+    let tcp_forwarder_server_display_board_task =
+        tokio::spawn(tcp_forwarder_server_display_board_instance);
     let tcp_client_to_timing_and_data_exchange_task =
         tokio::spawn(tcp_client_to_timing_and_data_exchange_instance);
     let shutdown_task = tokio::spawn(async move {
@@ -151,7 +152,7 @@ pub async fn run_server(args: &Args) -> () {
     // Wait for all tasks to complete
     match tokio::try_join!(
         tcp_listener_server_task,
-        tcp_forwarder_server_task,
+        tcp_forwarder_server_display_board_task,
         shutdown_task,
         client_communicator_task,
         tcp_client_to_timing_and_data_exchange_task
@@ -880,7 +881,7 @@ async fn tcp_listener_timing_program(
     Ok(())
 }
 
-async fn tcp_forwarder_server(
+async fn tcp_forwarder_server_display_board(
     args: Args,
     state: Arc<Mutex<ServerStateMachine>>, // does not require read, but our main reference is in a mutex // TODO could use RWLock
     comm_channel: InstructionCommunicationChannel,
