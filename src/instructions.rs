@@ -43,6 +43,7 @@ pub enum InstructionFromCameraProgram {
     HeatFalseStart(HeatFalseStart),
     HeatStartList(HeatStartList),
     HeatWind(HeatWind),
+    HeatWindMissing,
     HeatIntermediate(HeatIntermediate),
     HeatFinish(HeatFinish),
     CompetitorEvaluated(CompetitorEvaluated),

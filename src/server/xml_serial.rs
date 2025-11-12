@@ -106,6 +106,28 @@ impl<'de> Deserialize<'de> for HeatRaceTime {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub enum DisqualificationReason {
+    Disqualified,
+    DidNotStart,
+    DidNotFinish,
+    Canceled,
+    Other(String),
+}
+impl DisqualificationReason {
+    fn parse_from_string(input: &str) -> Self {
+        match input {
+            "DISQ." | "DISQ" | "disqualifiziert" | "DSQ" | "DQ" => Self::Disqualified,
+            "Nicht im Ziel" | "aufgegeben" | "gestürzt" | "DNF" | "surrender" | "fall" => {
+                Self::DidNotFinish
+            }
+            "DNS" | "Nicht am Start" => Self::DidNotStart,
+            "abgemeldet" | "checkout" | "CAN" => Self::Canceled,
+            other => Self::Other(String::from(other)),
+        }
+    }
+}
+
 #[derive(Deserialize, Clone)]
 struct HeatEventXML {
     #[serde(rename = "@Application")]
@@ -321,6 +343,8 @@ struct HeatCompetitorXML {
     #[serde(rename = "@Gender")]
     #[serde(default = "default_str_val")]
     gender: String,
+    #[serde(rename = "@Disqualification")]
+    disqualification: Option<String>,
     // optional data: result data
     #[serde(rename = "@Distance")]
     distance: Option<u32>,
@@ -384,6 +408,7 @@ pub struct HeatCompetitor {
     nation: String,
     club: String,
     gender: String,
+    disqualified: Option<DisqualificationReason>,
 }
 impl From<HeatCompetitorXML> for HeatCompetitor {
     fn from(value: HeatCompetitorXML) -> Self {
@@ -397,6 +422,9 @@ impl From<HeatCompetitorXML> for HeatCompetitor {
             nation: value.nation,
             club: value.club,
             gender: value.gender,
+            disqualified: value
+                .disqualification
+                .map(|a| DisqualificationReason::parse_from_string(&a)),
         }
     }
 }
@@ -418,7 +446,7 @@ struct HeatWindXML {
     #[serde(rename = "@EventId")]
     event_id: String,
     #[serde(rename = "@Wind")]
-    wind: f32,
+    wind: Option<f32>,
     #[serde(rename = "@WindUnit")]
     wind_unit: String,
 }
@@ -448,7 +476,9 @@ impl TryFrom<HeatWindXML> for HeatWind {
             application: value.application,
             generated: value.generated.0,
             version: value.version,
-            wind: RaceWind::parse_from_f32(value.wind),
+            wind: RaceWind::parse_from_f32(value.wind.ok_or(String::from(
+                "Tried to parse a wind, but no wind field present",
+            ))?),
         })
     }
     type Error = String;
@@ -493,6 +523,8 @@ struct CompetitorEvaluatedXML {
     #[serde(rename = "@Gender")]
     #[serde(default = "default_str_val")]
     gender: String,
+    #[serde(rename = "@Disqualification")]
+    disqualification: Option<String>,
     // competitor result data (must be there, here)
     #[serde(rename = "@Distance")]
     distance: u32,
@@ -508,7 +540,7 @@ struct CompetitorEvaluatedXML {
     difference_to_previous: String,
     #[serde(rename = "@Time")] // this is called differently in general Competitor parser
     finish_time: HeatTime,
-} // TODO disqualification
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CompetitorEvaluated {
@@ -534,6 +566,9 @@ impl TryFrom<CompetitorEvaluatedXML> for CompetitorEvaluated {
                 nation: value.nation,
                 club: value.club,
                 gender: value.gender,
+                disqualified: value
+                    .disqualification
+                    .map(|a| DisqualificationReason::parse_from_string(&a)),
             },
             difference_to_previous: DifferenceToCandidate::parse_from_string(
                 value.difference_to_previous,
@@ -746,7 +781,12 @@ fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, Stri
                             Ok(converted) => {
                                 return Ok(InstructionFromCameraProgram::HeatStart(converted))
                             }
-                            Err(e) => return Err(format!("Must be start, could not parse: {}", e)),
+                            Err(e) => {
+                                return Err(format!(
+                                    "Must be start, could not parse: {}\n{}",
+                                    e, decoded_string
+                                ))
+                            }
                         }
                     }
                 } else if decoded_string.starts_with("<HeatFinish ") {
@@ -754,7 +794,12 @@ fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, Stri
                         Ok(converted) => {
                             return Ok(InstructionFromCameraProgram::HeatFinish(converted))
                         }
-                        Err(e) => return Err(format!("Must be finish, could not parse: {}", e)),
+                        Err(e) => {
+                            return Err(format!(
+                                "Must be finish, could not parse: {}\n{}",
+                                e, decoded_string
+                            ))
+                        }
                     }
                 } else {
                     match HeatIntermediate::try_from(event) {
@@ -762,39 +807,62 @@ fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, Stri
                             return Ok(InstructionFromCameraProgram::HeatIntermediate(converted))
                         }
                         Err(e) => {
-                            return Err(format!("Must be intermediate, could not parse: {}", e))
+                            return Err(format!(
+                                "Must be intermediate, could not parse: {}\n{}",
+                                e, decoded_string
+                            ))
                         }
                     }
                 }
             }
-            Err(e) => return Err(e.to_string()),
+            Err(e) => {
+                return Err(format!(
+                    "Heat start, finish or intermediate parse error: {}\n{}",
+                    e.to_string(),
+                    decoded_string
+                ))
+            }
         }
     }
 
     if decoded_string.starts_with("<HeatStartlist ") {
         match from_str::<HeatStartListXML>(&decoded_string) {
             Ok(dec) => return Ok(InstructionFromCameraProgram::HeatStartList(dec.into())),
-            Err(e) => return Err(e.to_string()),
+            Err(e) => {
+                return Err(format!(
+                    "Heat start list parse error: {}\n{}",
+                    e.to_string(),
+                    decoded_string
+                ))
+            }
         }
     }
 
     if decoded_string.starts_with("<HeatWind ") {
         match from_str::<HeatWindXML>(&decoded_string) {
-            Ok(dec) => match HeatWind::try_from(dec) {
-                Ok(dec) => return Ok(InstructionFromCameraProgram::HeatWind(dec)),
-                Err(err) => return Err(format!("Wind could not be decoded: {}", err.to_string())),
-            },
-            Err(e) => return Err(e.to_string()),
-        };
-    }
-
-    if decoded_string.starts_with("<HeatWind ") {
-        match from_str::<HeatWindXML>(&decoded_string) {
-            Ok(dec) => match HeatWind::try_from(dec) {
-                Ok(dec) => return Ok(InstructionFromCameraProgram::HeatWind(dec)),
-                Err(err) => return Err(format!("Wind could not be decoded: {}", err.to_string())),
-            },
-            Err(e) => return Err(e.to_string()),
+            Ok(dec) => {
+                if dec.wind.is_none() {
+                    // detached wind sensor or somethingth
+                    return Ok(InstructionFromCameraProgram::HeatWindMissing);
+                }
+                match HeatWind::try_from(dec) {
+                    Ok(dec) => return Ok(InstructionFromCameraProgram::HeatWind(dec)),
+                    Err(e) => {
+                        return Err(format!(
+                            "Wind could not be decoded: {}\n{}",
+                            e.to_string(),
+                            decoded_string
+                        ))
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(format!(
+                    "Heat wind parse error: {}\n{}",
+                    e.to_string(),
+                    decoded_string
+                ))
+            }
         };
     }
 
@@ -802,14 +870,21 @@ fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, Stri
         match from_str::<CompetitorEvaluatedXML>(&decoded_string) {
             Ok(dec) => match CompetitorEvaluated::try_from(dec) {
                 Ok(dec) => return Ok(InstructionFromCameraProgram::CompetitorEvaluated(dec)),
-                Err(err) => {
+                Err(e) => {
                     return Err(format!(
-                        "Competitor Evaluation could not be decoded: {}",
-                        err.to_string()
+                        "Competitor Evaluation could not be decoded: {}\n{}",
+                        e.to_string(),
+                        decoded_string
                     ))
                 }
             },
-            Err(e) => return Err(e.to_string()),
+            Err(e) => {
+                return Err(format!(
+                    "Competitor evaluated parse error: {}\n{}",
+                    e.to_string(),
+                    decoded_string
+                ))
+            }
         };
     }
 
@@ -817,14 +892,21 @@ fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, Stri
         match from_str::<HeatResultXML>(&decoded_string) {
             Ok(dec) => match HeatResult::try_from(dec) {
                 Ok(dec) => return Ok(InstructionFromCameraProgram::HeatResult(dec)),
-                Err(err) => {
+                Err(e) => {
                     return Err(format!(
-                        "Heat Result cloud not be decoded: {}",
-                        err.to_string()
+                        "Heat Result cloud not be decoded: {}\n{}",
+                        e.to_string(),
+                        decoded_string
                     ))
                 }
             },
-            Err(e) => return Err(e.to_string()),
+            Err(e) => {
+                return Err(format!(
+                    "Heat result evaluated parse error: {}\n{}",
+                    e.to_string(),
+                    decoded_string
+                ))
+            }
         };
     }
 

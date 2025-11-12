@@ -79,7 +79,7 @@ pub async fn tcp_client_camera_program(
                                         }
                                         Some(Err(e)) => {
                                             error!(
-                                                "Could not parse data from camera program: {}",
+                                                "Could not parse data from camera program (timing target): {}",
                                                 e.to_string()
                                             );
                                         }
@@ -174,7 +174,7 @@ pub async fn tcp_client_camera_program(
                                         }
                                         Some(Err(e)) => {
                                             error!(
-                                                "Could not parse data from camera program: {}",
+                                                "Could not parse data from camera program (xml target): {}",
                                                 e.to_string()
                                             );
                                         }
@@ -266,7 +266,7 @@ pub async fn tcp_client_camera_program(
                                         }
                                         Some(Err(e)) => {
                                             error!(
-                                                "Could not parse data from camera program: {}",
+                                                "Could not parse data from camera program (data target): {}",
                                                 e.to_string()
                                             );
                                         }
