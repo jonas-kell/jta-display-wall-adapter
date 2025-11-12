@@ -8,7 +8,7 @@ REM Path to same folder
 set "EXE=%SCRIPT_DIR%\jta-display-wall-adapter.exe"
 
 REM Parameters
-set "PARAMS=server --passthrough-address-display-program 192.168.150.10 --address-camera-program 192.168.150.10 --wait-ms-before-testing-for-shutdown=1000 --passthrough-to-display-program --address-internal-communication=192.168.150.150 --internal-communication-port 5678 --dp-pos-x=100 --dp-pos-y=100 --dp-width=360 --dp-height=120"
+set "PARAMS=server --passthrough-address-display-program 192.168.150.10 --address-camera-program 192.168.150.10 --wait-ms-before-testing-for-shutdown=5000 --passthrough-to-display-program --address-internal-communication=192.168.150.150 --internal-communication-port 5678 --dp-pos-x=0 --dp-pos-y=0 --dp-width=360 --dp-height=120"
 
 REM Start a new cmd window and run the exe, keep window open (/k)
 start "" cmd /k "%EXE% %PARAMS%"
