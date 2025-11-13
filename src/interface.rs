@@ -16,6 +16,7 @@ use crate::{
 pub struct ServerImposedSettings {
     position: (u32, u32, u32, u32),
     slideshow_duration_in_ms: u32,
+    slideshow_transition_duration_nr_ms: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -85,6 +86,9 @@ impl ServerStateMachine {
                             self.args.dp_height,
                         ),
                         slideshow_duration_in_ms: self.args.slideshow_duration_nr_ms,
+                        slideshow_transition_duration_nr_ms: self
+                            .args
+                            .slideshow_transition_duration_nr_ms,
                     },
                 ))
                 .await;
@@ -210,6 +214,7 @@ pub struct ClientStateMachine {
     pub permanent_images_storage: ImagesStorage,
     pub current_frame_dimensions: Option<(u32, u32)>,
     pub slideshow_duration_nr_ms: u32,
+    pub slideshow_transition_duration_nr_ms: u32,
 }
 impl ClientStateMachine {
     pub fn new(args: &Args) -> Self {
@@ -227,6 +232,7 @@ impl ClientStateMachine {
             },
             current_frame_dimensions: None,
             slideshow_duration_nr_ms: args.slideshow_duration_nr_ms,
+            slideshow_transition_duration_nr_ms: args.slideshow_transition_duration_nr_ms,
         }
     }
 

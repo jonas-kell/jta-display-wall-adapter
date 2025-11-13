@@ -67,8 +67,11 @@ pub struct Args {
     #[arg(long, default_value_t = 500)]
     pub client_emits_frame_every_nr_of_ms: u64,
     /// Duration of one advertisement slideshow slide (initial for client, will get sent from server to client)
-    #[arg(long, default_value_t = 1000)]
+    #[arg(long, default_value_t = 2000)]
     pub slideshow_duration_nr_ms: u32,
+    /// Duration of one advertisement slideshow slide transition (initial for client, will get sent from server to client)
+    #[arg(long, default_value_t = 200)]
+    pub slideshow_transition_duration_nr_ms: u32,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]

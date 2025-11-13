@@ -1,6 +1,9 @@
 use crate::{
     client::{
-        rasterizing::{clear, draw_image, draw_text, fill_with_color, RasterizerMeta, JTA_COLOR},
+        rasterizing::{
+            clear, draw_image, draw_image_at_opacity, draw_text, fill_with_color, RasterizerMeta,
+            JTA_COLOR,
+        },
         FRAME_TIME_NS,
     },
     interface::{ClientState, ClientStateMachine},
@@ -74,6 +77,45 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
                         );
 
                         draw_image(0, 0, &resized, meta);
+
+                        // blend to the next frame if desired
+                        let frames_per_transition = ((std::cmp::min(
+                            state.slideshow_transition_duration_nr_ms,
+                            state.slideshow_duration_nr_ms - 1, // transition may not be longer than the slideshow itself.
+                        ) * 1000000) // ms to ns
+                            / (FRAME_TIME_NS as u32))
+                            + 1; // +1 to avoid dividing by 0
+                        let frame_of_image = (current_frame % frames_per_image as u64) as u32;
+                        let frames_of_image_without_transition =
+                            frames_per_image - frames_per_transition;
+                        if frame_of_image > frames_of_image_without_transition {
+                            // we are in the transition -> linearly map the opacity
+                            let frame_of_transition =
+                                frame_of_image - frames_of_image_without_transition;
+                            let opacity =
+                                ((255 * frame_of_transition) / frames_per_transition) as u8;
+
+                            // render over top if possible (with scaled opacity)
+                            if let Some(imge_to_render_over_top) = state
+                                .permanent_images_storage
+                                .advertisement_images
+                                .get(((frame_index + 1) % nr_images as u64) as usize)
+                            {
+                                let imge_to_render_over_top_resized =
+                                    state.permanent_images_storage.cached_rescaler.scale_cached(
+                                        imge_to_render_over_top,
+                                        meta.texture_width as u32,
+                                        meta.texture_height as u32,
+                                    );
+                                draw_image_at_opacity(
+                                    0,
+                                    0,
+                                    &imge_to_render_over_top_resized,
+                                    opacity,
+                                    meta,
+                                );
+                            }
+                        }
                     }
                 }
             } else {

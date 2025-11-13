@@ -214,7 +214,13 @@ fn blend_pixel(dst: &mut [u8], src: [u8; 4]) {
         ((((255 - src_a) as u32) * (dst[2] as u32) + (src_a as u32) * (src[2] as u32)) / 255) as u8;
 }
 
-pub fn draw_image(x: u32, y: u32, img: &ImageMeta, meta: &mut RasterizerMeta) {
+fn draw_image_internal(
+    x: u32,
+    y: u32,
+    img: &ImageMeta,
+    opacity_override: Option<u8>,
+    meta: &mut RasterizerMeta,
+) {
     let buffer = img.img.to_rgba8(); // bit ugly acces from outside of class
 
     if (x as usize) < meta.texture_width && (y as usize) < meta.texture_height {
@@ -232,13 +238,35 @@ pub fn draw_image(x: u32, y: u32, img: &ImageMeta, meta: &mut RasterizerMeta) {
                 let index = (line_offset + tx) * 4;
                 let px = buffer.get_pixel(x_cursor, y_cursor);
 
-                blend_pixel(&mut meta.frame[index..], [px[0], px[1], px[2], px[3]]);
+                // compile should optimize this generalization out, hopefully.
+                if let Some(opacity_override) = opacity_override {
+                    blend_pixel(
+                        &mut meta.frame[index..],
+                        [px[0], px[1], px[2], opacity_override],
+                    );
+                } else {
+                    blend_pixel(&mut meta.frame[index..], [px[0], px[1], px[2], px[3]]);
+                }
 
                 x_cursor += 1;
             }
             y_cursor += 1;
         }
     }
+}
+
+pub fn draw_image(x: u32, y: u32, img: &ImageMeta, meta: &mut RasterizerMeta) {
+    draw_image_internal(x, y, img, None, meta);
+}
+
+pub fn draw_image_at_opacity(
+    x: u32,
+    y: u32,
+    img: &ImageMeta,
+    opacity: u8,
+    meta: &mut RasterizerMeta,
+) {
+    draw_image_internal(x, y, img, Some(opacity), meta);
 }
 
 pub type Color = [u8; 3];
