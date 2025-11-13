@@ -2,7 +2,8 @@ use crate::args::Args;
 use crate::client::bitmap::png_to_bmp_bytes;
 use crate::client::rasterizing::RasterizerMeta;
 use crate::client::rendering::render_client_frame;
-use crate::file::{create_file_if_not_there_and_write, make_sure_folder_exists, set_perms};
+use crate::client::{FRAME_TIME_NS, REPORT_FRAME_LOGS_EVERY_SECONDS, TARGET_FPS};
+use crate::file::{create_file_if_not_there_and_write, make_sure_folder_exists};
 use crate::interface::{ClientStateMachine, MessageFromClientToServer, MessageFromServerToClient};
 use async_channel::{Receiver, Sender, TryRecvError, TrySendError};
 use fontdue::layout::{CoordinateSystem, Layout};
@@ -38,7 +39,7 @@ pub fn run_display_task(
 
     // run app
     let mut app = App {
-        args: args,
+        args: args.clone(),
         font: font,
         font_layout: font_layout,
         pixels: None,
@@ -46,7 +47,7 @@ pub fn run_display_task(
         incoming: rx_to_ui,
         outgoing: tx_from_ui,
         shutdown_marker: shutdown_marker,
-        state_machine: ClientStateMachine::new(),
+        state_machine: ClientStateMachine::new(&args),
         last_draw_call: Instant::now(),
     };
     let _ = event_loop.run_app(&mut app);
@@ -64,10 +65,6 @@ pub struct App {
     state_machine: ClientStateMachine,
     last_draw_call: Instant,
 }
-
-const TARGET_FPS: u64 = 60;
-const REPORT_FRAME_LOGS_EVERY_SECONDS: u64 = 5;
-const FRAME_TIME_NS: u64 = 1_000_000_000 / TARGET_FPS as u64;
 
 #[cfg(target_os = "linux")]
 fn add_linux_specific_properties(window_attributes: WindowAttributes) -> WindowAttributes {
@@ -278,14 +275,12 @@ impl App {
                     let path_file = Path::new("move_container/coords.txt");
                     match make_sure_folder_exists(path_folder) {
                         Ok(_) => {
-                            set_perms(path_folder);
                             match create_file_if_not_there_and_write(
                                 path_file,
                                 &format!("{} {}", x, y),
                             ) {
                                 Err(e) => error!("{}", e),
                                 Ok(_) => {
-                                    set_perms(path_file);
                                     debug!("Position written to file");
                                 }
                             }

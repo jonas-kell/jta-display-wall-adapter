@@ -1,8 +1,11 @@
+use std::path::Path;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
     args::Args,
     client::images_tools::{CachedImageScaler, ImageMeta},
+    file::read_image_files,
     instructions::{
         ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
         InstructionFromTimingProgram, InstructionToTimingProgram,
@@ -10,12 +13,20 @@ use crate::{
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ServerImposedSettings {
+    position: (u32, u32, u32, u32),
+    slideshow_duration_in_ms: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum MessageFromServerToClient {
     DisplayText(String),
     RequestVersion,
-    MoveWindow(u32, u32, u32, u32),
+    ServerImposedSettings(ServerImposedSettings),
     Clear,
     DisplayExternalFrame(Vec<u8>),
+    AdvertisementImages(Vec<(String, Vec<u8>)>),
+    Advertisements,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -65,11 +76,30 @@ impl ServerStateMachine {
                     "Requesting window change on client: {} {} {} {}",
                     self.args.dp_pos_x, self.args.dp_pos_y, self.args.dp_width, self.args.dp_height,
                 );
-                self.send_message_to_client(MessageFromServerToClient::MoveWindow(
-                    self.args.dp_pos_x,
-                    self.args.dp_pos_y,
-                    self.args.dp_width,
-                    self.args.dp_height,
+                self.send_message_to_client(MessageFromServerToClient::ServerImposedSettings(
+                    ServerImposedSettings {
+                        position: (
+                            self.args.dp_pos_x,
+                            self.args.dp_pos_y,
+                            self.args.dp_width,
+                            self.args.dp_height,
+                        ),
+                        slideshow_duration_in_ms: self.args.slideshow_duration_nr_ms,
+                    },
+                ))
+                .await;
+
+                // send client advertisement images
+                let folder_path = Path::new("advertisement_container");
+                let images_data = match read_image_files(folder_path) {
+                    Err(e) => {
+                        error!("Could not read advertisement files: {}", e);
+                        Vec::new()
+                    }
+                    Ok(data) => data,
+                };
+                self.send_message_to_client(MessageFromServerToClient::AdvertisementImages(
+                    images_data,
                 ))
                 .await;
             }
@@ -121,6 +151,12 @@ impl ServerStateMachine {
                         .await;
                     }
                 }
+                InstructionFromTimingProgram::Advertisements => {
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::Advertisements)
+                            .await;
+                    }
+                }
                 inst => error!("Unhandled instruction from timing program: {}", inst),
             },
             IncomingInstruction::FromCameraProgram(inst) => match inst {
@@ -157,11 +193,12 @@ pub enum ClientState {
     Idle,
     DisplayText(String),
     DisplayExternalFrame(ImageMeta),
+    Advertisements,
 }
 
 pub struct ImagesStorage {
     pub jta_logo: ImageMeta,
-    // todo other images that are loaded dynamically from server
+    pub advertisement_images: Vec<ImageMeta>,
     pub cached_rescaler: CachedImageScaler,
 }
 
@@ -172,9 +209,10 @@ pub struct ClientStateMachine {
     pub window_state_needs_update: Option<(u32, u32, u32, u32)>,
     pub permanent_images_storage: ImagesStorage,
     pub current_frame_dimensions: Option<(u32, u32)>,
+    pub slideshow_duration_nr_ms: u32,
 }
 impl ClientStateMachine {
-    pub fn new() -> Self {
+    pub fn new(args: &Args) -> Self {
         let jta_image = ImageMeta::from_image_bytes(include_bytes!("../JTA-Logo.png")).unwrap();
 
         Self {
@@ -185,8 +223,10 @@ impl ClientStateMachine {
             permanent_images_storage: ImagesStorage {
                 jta_logo: jta_image,
                 cached_rescaler: CachedImageScaler::new(),
+                advertisement_images: Vec::new(),
             },
             current_frame_dimensions: None,
+            slideshow_duration_nr_ms: args.slideshow_duration_nr_ms,
         }
     }
 
@@ -205,9 +245,16 @@ impl ClientStateMachine {
                 debug!("Server requested display mode to be switched to text");
                 self.state = ClientState::DisplayText(text)
             }
-            MessageFromServerToClient::MoveWindow(x, y, w, h) => {
+            MessageFromServerToClient::ServerImposedSettings(settings) => {
+                let (x, y, w, h) = settings.position;
                 debug!("Server requested an update of the window position/size");
                 self.window_state_needs_update = Some((x, y, w, h));
+
+                debug!(
+                    "Server set the slideshow duration to {} ms",
+                    settings.slideshow_duration_in_ms
+                );
+                self.slideshow_duration_nr_ms = settings.slideshow_duration_in_ms;
             }
             MessageFromServerToClient::Clear => {
                 self.state = ClientState::Idle;
@@ -228,6 +275,32 @@ impl ClientStateMachine {
                 } else {
                     self.state = ClientState::DisplayExternalFrame(image);
                 }
+            }
+            MessageFromServerToClient::AdvertisementImages(new_images) => {
+                // clear rescale cache or reconnects accumulate data
+                for item_currently_in_cache in &self.permanent_images_storage.advertisement_images {
+                    self.permanent_images_storage
+                        .cached_rescaler
+                        .purge_from_cache(item_currently_in_cache);
+                }
+                self.permanent_images_storage.advertisement_images = Vec::new();
+
+                // write new image data
+                for (new_name, new_data) in new_images {
+                    match ImageMeta::from_image_bytes(&new_data) {
+                        Err(e) => error!(
+                            "Could not transform the advertisement image {}. {}",
+                            new_name, e
+                        ),
+                        Ok(img) => {
+                            info!("Loaded advertisement image: {}", new_name);
+                            self.permanent_images_storage.advertisement_images.push(img);
+                        }
+                    }
+                }
+            }
+            MessageFromServerToClient::Advertisements => {
+                self.state = ClientState::Advertisements;
             }
         }
     }

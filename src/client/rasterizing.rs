@@ -168,6 +168,28 @@ impl CachedImageScaler {
             }
         }
     }
+
+    // TODO this is not optimally efficient. Could use a hash map that only goes for the uuid and that contains hash map with the dimensions.
+    pub fn purge_from_cache(&mut self, img: &ImageMeta) {
+        let filtered: Vec<_>;
+        {
+            filtered = self
+                .data
+                .iter()
+                .filter_map(|((id, w, h), _)| {
+                    if *id == img.id {
+                        Some((id.clone(), w.clone(), h.clone()))
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+        }
+
+        for key in filtered {
+            let _ = self.data.remove_entry(&key);
+        }
+    }
 }
 
 fn blend_pixel(dst: &mut [u8], src: [u8; 4]) {

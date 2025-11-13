@@ -1,6 +1,7 @@
 use crate::{
-    client::rasterizing::{
-        clear, draw_image, draw_text, fill_with_color, RasterizerMeta, JTA_COLOR,
+    client::{
+        rasterizing::{clear, draw_image, draw_text, fill_with_color, RasterizerMeta, JTA_COLOR},
+        FRAME_TIME_NS,
     },
     interface::{ClientState, ClientStateMachine},
 };
@@ -49,6 +50,36 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
         }
         ClientState::DisplayExternalFrame(image) => {
             draw_image(0, 0, &image, meta);
+        }
+        ClientState::Advertisements => {
+            let nr_images = state.permanent_images_storage.advertisement_images.len();
+            if nr_images > 0 {
+                let frames_per_image =
+                    ((state.slideshow_duration_nr_ms * 1000000) / (FRAME_TIME_NS as u32)) + 1; // +1 to avoid dividing by 0
+                let current_frame = state.frame_counter;
+                let frame_index = (current_frame / frames_per_image as u64) % (nr_images as u64);
+
+                let image_to_render = state
+                    .permanent_images_storage
+                    .advertisement_images
+                    .get(frame_index as usize);
+
+                match image_to_render {
+                    None => error!("Error when selecting the image to display"),
+                    Some(img) => {
+                        let resized = state.permanent_images_storage.cached_rescaler.scale_cached(
+                            img,
+                            meta.texture_width as u32,
+                            meta.texture_height as u32,
+                        );
+
+                        draw_image(0, 0, &resized, meta);
+                    }
+                }
+            } else {
+                warn!("There are no advertisement images loaded");
+                draw_text("No images", 10.0, 10.0, 20.0, meta);
+            }
         }
     }
 }
