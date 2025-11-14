@@ -4,6 +4,7 @@ use fontdue::{
 };
 use image::{imageops::FilterType, DynamicImage, ImageBuffer, ImageReader};
 use image::{GenericImageView, Rgba};
+use include_dir::Dir;
 use std::{collections::HashMap, io::Cursor, sync::Arc};
 use uuid::Uuid;
 
@@ -140,6 +141,158 @@ impl ImageMeta {
             width: new_width,
             img: new_image,
         };
+    }
+}
+
+#[derive(Clone)]
+pub struct Animation {
+    real_frames_per_frame: u32,
+    data: Vec<ImageMeta>,
+}
+impl Animation {
+    pub fn from_dir(dir: Dir, real_frames_per_frame: u32) -> Result<Animation, String> {
+        if real_frames_per_frame == 0 {
+            return Err(String::from(
+                "Animation can have 0 for real_frames_per_frame",
+            ));
+        }
+
+        let mut data_aggregator: Vec<(u32, ImageMeta)> = Vec::new();
+
+        let mut animation_width: Option<u32> = None;
+        let mut animation_height: Option<u32> = None;
+
+        for entry in dir.entries() {
+            match entry.as_file() {
+                None => return Err(String::from("Folder with frames must only contain files")),
+                Some(file) => {
+                    let name = match file.path().file_name() {
+                        None => return Err(String::from("The file name of one file in the folder with the frames could not be determined")),
+                        Some(name) => match name.to_str() {
+                            Some(str) => str,
+                            None => return Err(String::from("The file name of one file in the folder with the frames could not be converted"))
+                        }
+                    };
+
+                    let index = match Animation::parse_prefix_u32(name) {
+                        None => {
+                            return Err(format!(
+                            "The file with the name \"{}\" has no filename that is only an index",
+                            name
+                        ))
+                        }
+                        Some(a) => a,
+                    };
+
+                    let image = match ImageMeta::from_image_bytes(file.contents()) {
+                        Err(e) => {
+                            return Err(format!(
+                                "One frame of the file \"{}\" could not be parsed as an image: {}",
+                                name, e
+                            ))
+                        }
+                        Ok(meta) => meta,
+                    };
+
+                    if let Some(animation_width_val) = animation_width {
+                        if animation_width_val != image.width {
+                            return Err(format!(
+                                "Not all frames of the animation have the same width",
+                            ));
+                        }
+                    } else {
+                        animation_width = Some(image.width)
+                    }
+                    if let Some(animation_height_val) = animation_height {
+                        if animation_height_val != image.height {
+                            return Err(format!(
+                                "Not all frames of the animation have the same height",
+                            ));
+                        }
+                    } else {
+                        animation_height = Some(image.height)
+                    }
+
+                    data_aggregator.push((index, image));
+                }
+            }
+        }
+
+        data_aggregator.sort_by(|(ind_a, _), (ind_b, _)| ind_a.cmp(ind_b));
+        let frames: Vec<ImageMeta> = data_aggregator.into_iter().map(|(_, img)| img).collect();
+
+        if frames.len() == 0 {
+            return Err(format!("Animation contains no frames",));
+        }
+
+        return Ok(Animation {
+            real_frames_per_frame,
+            data: frames,
+        });
+    }
+
+    fn parse_prefix_u32(s: &str) -> Option<u32> {
+        let end = s.find(|c: char| !c.is_ascii_digit()).unwrap_or(s.len());
+        if end == 0 {
+            return None;
+        }
+        s[..end].parse().ok()
+    }
+
+    pub fn cache_animation_for_size(
+        &self,
+        width: u32,
+        height: u32,
+        rescaler: &mut CachedImageScaler,
+    ) {
+        for image in &self.data {
+            rescaler.purge_from_cache(image);
+            rescaler.scale_cached(image, width, height);
+        }
+    }
+}
+
+pub struct AnimationPlayer {
+    has_started_on_global_frame: u64,
+    animation: Animation,
+    loop_animation: bool,
+}
+
+impl AnimationPlayer {
+    pub fn new(animation: &Animation, global_frame: u64, loop_animation: bool) -> AnimationPlayer {
+        return AnimationPlayer {
+            has_started_on_global_frame: global_frame,
+            animation: animation.clone(), // that should be an acceptable cost for now
+            loop_animation,
+        };
+    }
+
+    pub fn get_current_frame(
+        &self,
+        width: u32,
+        height: u32,
+        global_frame: u64,
+        rescaler: &mut CachedImageScaler,
+    ) -> Option<ImageMeta> {
+        let number_frames = self.animation.data.len() as u64;
+        let real_frames_since_start =
+            global_frame - std::cmp::min(global_frame, self.has_started_on_global_frame);
+        let animation_frames_since_start =
+            real_frames_since_start / self.animation.real_frames_per_frame as u64;
+
+        if animation_frames_since_start > number_frames && !self.loop_animation {
+            // animation is over
+            return None;
+        }
+
+        let index = animation_frames_since_start % number_frames;
+
+        let image_to_use = match self.animation.data.get(index as usize) {
+            None => return None,
+            Some(img) => img,
+        };
+
+        return Some(rescaler.scale_cached(image_to_use, width, height));
     }
 }
 

@@ -123,5 +123,18 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
                 draw_text("No images", 10.0, 10.0, 20.0, meta);
             }
         }
+        ClientState::TestAnimation(player) => {
+            fill_with_color(JTA_COLOR, meta);
+
+            match player.get_current_frame(
+                meta.texture_width as u32,
+                meta.texture_height as u32,
+                state.frame_counter,
+                &mut state.permanent_images_storage.cached_rescaler,
+            ) {
+                Some(frame) => draw_image(0, 0, &frame, meta),
+                None => (),
+            }
+        }
     }
 }

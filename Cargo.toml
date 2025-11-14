@@ -26,3 +26,4 @@ fontdue = "0.9.3"
 tokio-util = { version = "0.7.17", features = ["codec"] }
 tokio-serde = { version = "0.9.0" , features = ["bincode"] } 
 futures = "0.3.31"
+include_dir = "0.7.4"
