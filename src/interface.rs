@@ -264,6 +264,7 @@ impl ClientStateMachine {
                         w,
                         h,
                         &mut self.permanent_images_storage.cached_rescaler,
+                        false,
                     );
                 debug!("DONE rescaling Animations");
             }

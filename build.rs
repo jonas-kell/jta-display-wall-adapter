@@ -7,7 +7,8 @@ fn main() {
     println!("cargo:rerun-if-changed=images_core/");
     println!("cargo:rerun-if-changed=assets/");
 
-    let storage = ImagesStorage::new_with_compile_data();
+    let sizes_to_pre_cache = [(360, 120)];
+    let storage = ImagesStorage::new_with_compile_data(&sizes_to_pre_cache);
     let bytes = storage.to_bytes();
 
     let out_dir = std::env::var("OUT_DIR").unwrap();

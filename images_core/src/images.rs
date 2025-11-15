@@ -219,9 +219,12 @@ impl Animation {
         width: u32,
         height: u32,
         rescaler: &mut CachedImageScaler,
+        purge: bool,
     ) {
         for image in &self.data {
-            rescaler.purge_from_cache(image);
+            if purge {
+                rescaler.purge_from_cache(image);
+            }
             rescaler.scale_cached(image, width, height);
         }
     }
@@ -390,7 +393,7 @@ pub struct ImagesStorage {
     pub fireworks_animation: Animation,
 }
 impl ImagesStorage {
-    pub fn new_with_compile_data() -> ImagesStorage {
+    pub fn new_with_compile_data(precache_for_sizes: &[(u32, u32)]) -> ImagesStorage {
         // include static files
         let jta_logo =
             ImageMeta::from_image_bytes(include_bytes!("./../../assets/JTA-Logo.png")).unwrap();
@@ -401,9 +404,14 @@ impl ImagesStorage {
         )
         .unwrap();
 
+        let mut scaler = CachedImageScaler::new();
+        for (w, h) in precache_for_sizes {
+            fireworks_animation.cache_animation_for_size(*w, *h, &mut scaler, false);
+        }
+
         return ImagesStorage {
             jta_logo,
-            cached_rescaler: CachedImageScaler::new(),
+            cached_rescaler: scaler,
             advertisement_images: Vec::new(),
             fireworks_animation,
         };
