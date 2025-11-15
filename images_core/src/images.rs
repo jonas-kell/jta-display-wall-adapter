@@ -1,4 +1,4 @@
-use bincode::serde::{decode_from_slice, encode_to_vec};
+use bincode::serde::{borrow_decode_from_slice, encode_to_vec};
 use image::{imageops::FilterType, DynamicImage, ImageReader};
 use image::{GenericImageView, ImageBuffer, Rgba};
 use include_dir::{include_dir, Dir};
@@ -14,11 +14,12 @@ const CONFIG: bincode::config::Configuration<
     .with_fixed_int_encoding();
 
 #[derive(Serialize, Deserialize)]
-struct ImageMetaSerealizer {
+struct ImageMetaSerealizer<'a> {
     id: Uuid,
     width: u32,
     height: u32,
-    img: Vec<u8>,
+    #[serde(borrow)]
+    img: &'a [u8],
 }
 
 #[derive(Clone)]
@@ -91,18 +92,21 @@ impl ImageMeta {
             id: self.id,
             width: self.width,
             height: self.height,
-            img: self.get_image_buffer().into_raw(),
+            img: &self.get_image_buffer().into_raw(),
         };
         let bytes = encode_to_vec(&ser, CONFIG).unwrap();
         return bytes;
     }
 
     /// Can fail, as it is used as a compile-time only method
-    fn from_bytes(data: &[u8]) -> Self {
-        let (dec, _) = decode_from_slice::<ImageMetaSerealizer, _>(data, CONFIG).unwrap();
+    fn from_bytes<'a>(data: &'a [u8]) -> Self {
+        let (dec, _) =
+            borrow_decode_from_slice::<'a, ImageMetaSerealizer<'a>, _>(data, CONFIG).unwrap();
 
+        // this actually copies still
+        // TODO we could do a variant for global data, that always indexes into slices (somehow)
         let image_buffer: image::ImageBuffer<Rgba<u8>, Vec<u8>> =
-            ImageBuffer::from_raw(dec.width, dec.height, dec.img).unwrap();
+            ImageBuffer::from_raw(dec.width, dec.height, dec.img.into()).unwrap();
 
         return Self {
             id: dec.id,
@@ -114,9 +118,10 @@ impl ImageMeta {
 }
 
 #[derive(Serialize, Deserialize)]
-struct AnimationSerealizer {
+struct AnimationSerealizer<'a> {
     real_frames_per_frame: u32,
-    data: Vec<Vec<u8>>,
+    #[serde(borrow)]
+    data: Vec<&'a [u8]>,
 }
 
 #[derive(Clone)]
@@ -231,17 +236,20 @@ impl Animation {
 
     /// Can fail, as it is used as a compile-time only method
     fn to_bytes(&self) -> Vec<u8> {
+        let image_data: Vec<Vec<u8>> = self.data.iter().map(|a| a.to_bytes()).collect();
+
         let ser = AnimationSerealizer {
             real_frames_per_frame: self.real_frames_per_frame,
-            data: self.data.iter().map(|a| a.to_bytes()).collect(),
+            data: image_data.iter().map(|a| a.as_slice()).collect(),
         };
         let bytes = encode_to_vec(&ser, CONFIG).unwrap();
         return bytes;
     }
 
     /// Can fail, as it is used as a compile-time only method
-    fn from_bytes(data: &[u8]) -> Self {
-        let (dec, _) = decode_from_slice::<AnimationSerealizer, _>(data, CONFIG).unwrap();
+    fn from_bytes<'a>(data: &'a [u8]) -> Self {
+        let (dec, _) =
+            borrow_decode_from_slice::<'a, AnimationSerealizer<'a>, _>(data, CONFIG).unwrap();
 
         return Self {
             real_frames_per_frame: dec.real_frames_per_frame,
@@ -299,8 +307,9 @@ impl AnimationPlayer {
 }
 
 #[derive(Serialize, Deserialize)]
-struct CachedImageScalerSerealizer {
-    data: HashMap<(Uuid, u32, u32), Vec<u8>>,
+struct CachedImageScalerSerealizer<'a> {
+    #[serde(borrow)]
+    data: Vec<((Uuid, u32, u32), &'a [u8])>,
 }
 
 pub struct CachedImageScaler {
@@ -353,11 +362,16 @@ impl CachedImageScaler {
 
     /// Can fail, as it is used as a compile-time only method
     fn to_bytes(&self) -> Vec<u8> {
+        let images_data: Vec<((Uuid, u32, u32), Vec<u8>)> = self
+            .data
+            .iter()
+            .map(|(k, v)| (k.clone(), v.to_bytes()))
+            .collect();
+
         let ser = CachedImageScalerSerealizer {
-            data: self
-                .data
+            data: images_data
                 .iter()
-                .map(|(k, v)| (k.clone(), v.to_bytes()))
+                .map(|(k, v)| (k.clone(), v.as_slice()))
                 .collect(),
         };
         let bytes = encode_to_vec(&ser, CONFIG).unwrap();
@@ -365,25 +379,31 @@ impl CachedImageScaler {
     }
 
     /// Can fail, as it is used as a compile-time only method
-    fn from_bytes(data: &[u8]) -> Self {
-        let (dec, _) = decode_from_slice::<CachedImageScalerSerealizer, _>(data, CONFIG).unwrap();
+    fn from_bytes<'a>(data: &'a [u8]) -> Self {
+        let (dec, _) =
+            borrow_decode_from_slice::<'a, CachedImageScalerSerealizer<'a>, _>(data, CONFIG)
+                .unwrap();
 
         return Self {
             data: dec
                 .data
                 .into_iter()
-                .map(|(k, v)| (k, ImageMeta::from_bytes(&v)))
+                .map(|(k, v)| (k, ImageMeta::from_bytes(v)))
                 .collect(),
         };
     }
 }
 
 #[derive(Serialize, Deserialize)]
-struct ImagesStorageSerealizer {
-    pub jta_logo: Vec<u8>,
-    pub advertisement_images: Vec<Vec<u8>>,
-    pub cached_rescaler: Vec<u8>,
-    pub fireworks_animation: Vec<u8>,
+struct ImagesStorageSerealizer<'a> {
+    #[serde(borrow)]
+    pub jta_logo: &'a [u8],
+    #[serde(borrow)]
+    pub advertisement_images: Vec<&'a [u8]>,
+    #[serde(borrow)]
+    pub cached_rescaler: &'a [u8],
+    #[serde(borrow)]
+    pub fireworks_animation: &'a [u8],
 }
 
 pub struct ImagesStorage {
@@ -419,33 +439,36 @@ impl ImagesStorage {
 
     /// Can fail, as it is used as a compile-time only method
     pub fn to_bytes(&self) -> Vec<u8> {
+        let images_data: Vec<Vec<u8>> = self
+            .advertisement_images
+            .iter()
+            .map(|a| a.to_bytes())
+            .collect();
+
         let ser = ImagesStorageSerealizer {
-            jta_logo: self.jta_logo.to_bytes(),
-            advertisement_images: self
-                .advertisement_images
-                .iter()
-                .map(|a| a.to_bytes())
-                .collect(),
-            cached_rescaler: self.cached_rescaler.to_bytes(),
-            fireworks_animation: self.fireworks_animation.to_bytes(),
+            jta_logo: &self.jta_logo.to_bytes(),
+            advertisement_images: images_data.iter().map(|a| a.as_slice()).collect(),
+            cached_rescaler: &self.cached_rescaler.to_bytes(),
+            fireworks_animation: &self.fireworks_animation.to_bytes(),
         };
         let bytes = encode_to_vec(&ser, CONFIG).unwrap();
         return bytes;
     }
 
     /// Can fail, as it is used as a compile-time only method
-    pub fn from_bytes(data: &[u8]) -> Self {
-        let (dec, _) = decode_from_slice::<ImagesStorageSerealizer, _>(data, CONFIG).unwrap();
+    pub fn from_bytes<'a>(data: &'a [u8]) -> Self {
+        let (dec, _) =
+            borrow_decode_from_slice::<'a, ImagesStorageSerealizer<'a>, _>(data, CONFIG).unwrap();
 
         return Self {
-            jta_logo: ImageMeta::from_bytes(&dec.jta_logo),
+            jta_logo: ImageMeta::from_bytes(dec.jta_logo),
             advertisement_images: dec
                 .advertisement_images
                 .into_iter()
-                .map(|a| ImageMeta::from_bytes(&a))
+                .map(|a| ImageMeta::from_bytes(a))
                 .collect(),
-            cached_rescaler: CachedImageScaler::from_bytes(&dec.cached_rescaler),
-            fireworks_animation: Animation::from_bytes(&dec.fireworks_animation),
+            cached_rescaler: CachedImageScaler::from_bytes(dec.cached_rescaler),
+            fireworks_animation: Animation::from_bytes(dec.fireworks_animation),
         };
     }
 }
