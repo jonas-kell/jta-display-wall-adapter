@@ -1,5 +1,6 @@
 /.git
 /target
+/win_target
 *.txt
 /docker
 *.yml
