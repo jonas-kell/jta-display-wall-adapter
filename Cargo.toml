@@ -5,6 +5,7 @@ description = "Software used for running custom display walls"
 authors = ["jonas-kell"]
 repository = "https://github.com/jonas-kell/jta-display-wall-adapter"
 edition = "2021"
+build = "build.rs"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -27,3 +28,7 @@ tokio-util = { version = "0.7.17", features = ["codec"] }
 tokio-serde = { version = "0.9.0" , features = ["bincode"] } 
 futures = "0.3.31"
 include_dir = "0.7.4"
+bincode = { version = "2.0.1", features = ["serde"] }
+
+[build-dependencies]
+jta_display_wall_adapter = { path = ".", artifact = "cdylib" }

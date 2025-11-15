@@ -1,8 +1,25 @@
+use bincode::serde::{decode_from_slice, encode_to_vec};
 use image::{imageops::FilterType, DynamicImage, ImageReader};
-use image::{GenericImageView, Rgba};
-use include_dir::Dir;
+use image::{GenericImageView, ImageBuffer, Rgba};
+use include_dir::{include_dir, Dir};
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, io::Cursor, sync::Arc};
 use uuid::Uuid;
+
+const CONFIG: bincode::config::Configuration<
+    bincode::config::LittleEndian,
+    bincode::config::Fixint,
+> = bincode::config::standard()
+    .with_little_endian()
+    .with_fixed_int_encoding();
+
+#[derive(Serialize, Deserialize)]
+struct ImageMetaSerealizer {
+    id: Uuid,
+    width: u32,
+    height: u32,
+    img: Vec<u8>,
+}
 
 #[derive(Clone)]
 pub struct ImageMeta {
@@ -67,6 +84,39 @@ impl ImageMeta {
             img: new_image,
         };
     }
+
+    /// Can fail, as it is used as a compile-time only method
+    fn to_bytes(&self) -> Vec<u8> {
+        let ser = ImageMetaSerealizer {
+            id: self.id,
+            width: self.width,
+            height: self.height,
+            img: self.get_image_buffer().into_raw(),
+        };
+        let bytes = encode_to_vec(&ser, CONFIG).unwrap();
+        return bytes;
+    }
+
+    /// Can fail, as it is used as a compile-time only method
+    fn from_bytes(data: &[u8]) -> Self {
+        let (dec, _) = decode_from_slice::<ImageMetaSerealizer, _>(data, CONFIG).unwrap();
+
+        let image_buffer: image::ImageBuffer<Rgba<u8>, Vec<u8>> =
+            ImageBuffer::from_raw(dec.width, dec.height, dec.img).unwrap();
+
+        return Self {
+            id: dec.id,
+            width: dec.width,
+            height: dec.height,
+            img: Arc::new(DynamicImage::from(image_buffer)),
+        };
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct AnimationSerealizer {
+    real_frames_per_frame: u32,
+    data: Vec<Vec<u8>>,
 }
 
 #[derive(Clone)]
@@ -175,6 +225,30 @@ impl Animation {
             rescaler.scale_cached(image, width, height);
         }
     }
+
+    /// Can fail, as it is used as a compile-time only method
+    fn to_bytes(&self) -> Vec<u8> {
+        let ser = AnimationSerealizer {
+            real_frames_per_frame: self.real_frames_per_frame,
+            data: self.data.iter().map(|a| a.to_bytes()).collect(),
+        };
+        let bytes = encode_to_vec(&ser, CONFIG).unwrap();
+        return bytes;
+    }
+
+    /// Can fail, as it is used as a compile-time only method
+    fn from_bytes(data: &[u8]) -> Self {
+        let (dec, _) = decode_from_slice::<AnimationSerealizer, _>(data, CONFIG).unwrap();
+
+        return Self {
+            real_frames_per_frame: dec.real_frames_per_frame,
+            data: dec
+                .data
+                .into_iter()
+                .map(|a| ImageMeta::from_bytes(&a))
+                .collect(),
+        };
+    }
 }
 
 pub struct AnimationPlayer {
@@ -219,6 +293,11 @@ impl AnimationPlayer {
 
         return Some(rescaler.scale_cached(image_to_use, width, height));
     }
+}
+
+#[derive(Serialize, Deserialize)]
+struct CachedImageScalerSerealizer {
+    data: HashMap<(Uuid, u32, u32), Vec<u8>>,
 }
 
 pub struct CachedImageScaler {
@@ -267,5 +346,97 @@ impl CachedImageScaler {
         for key in filtered {
             let _ = self.data.remove_entry(&key);
         }
+    }
+
+    /// Can fail, as it is used as a compile-time only method
+    fn to_bytes(&self) -> Vec<u8> {
+        let ser = CachedImageScalerSerealizer {
+            data: self
+                .data
+                .iter()
+                .map(|(k, v)| (k.clone(), v.to_bytes()))
+                .collect(),
+        };
+        let bytes = encode_to_vec(&ser, CONFIG).unwrap();
+        return bytes;
+    }
+
+    /// Can fail, as it is used as a compile-time only method
+    fn from_bytes(data: &[u8]) -> Self {
+        let (dec, _) = decode_from_slice::<CachedImageScalerSerealizer, _>(data, CONFIG).unwrap();
+
+        return Self {
+            data: dec
+                .data
+                .into_iter()
+                .map(|(k, v)| (k, ImageMeta::from_bytes(&v)))
+                .collect(),
+        };
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct ImagesStorageSerealizer {
+    pub jta_logo: Vec<u8>,
+    pub advertisement_images: Vec<Vec<u8>>,
+    pub cached_rescaler: Vec<u8>,
+    pub fireworks_animation: Vec<u8>,
+}
+
+pub struct ImagesStorage {
+    pub jta_logo: ImageMeta,
+    pub advertisement_images: Vec<ImageMeta>,
+    pub cached_rescaler: CachedImageScaler,
+    pub fireworks_animation: Animation,
+}
+impl ImagesStorage {
+    pub fn new_with_compile_data() -> ImagesStorage {
+        // include static files
+        let jta_logo = ImageMeta::from_image_bytes(include_bytes!("../JTA-Logo.png")).unwrap();
+        let fireworks_animation = Animation::from_dir(
+            include_dir!("./assets/Fireworks/frames"),
+            // std::cmp::min((TARGET_FPS as u32) / 30, 1),
+            3, // is technically a 30 fps animation, but looks better like this
+        )
+        .unwrap();
+
+        return ImagesStorage {
+            jta_logo,
+            cached_rescaler: CachedImageScaler::new(),
+            advertisement_images: Vec::new(),
+            fireworks_animation,
+        };
+    }
+
+    /// Can fail, as it is used as a compile-time only method
+    fn to_bytes(&self) -> Vec<u8> {
+        let ser = ImagesStorageSerealizer {
+            jta_logo: self.jta_logo.to_bytes(),
+            advertisement_images: self
+                .advertisement_images
+                .iter()
+                .map(|a| a.to_bytes())
+                .collect(),
+            cached_rescaler: self.cached_rescaler.to_bytes(),
+            fireworks_animation: self.fireworks_animation.to_bytes(),
+        };
+        let bytes = encode_to_vec(&ser, CONFIG).unwrap();
+        return bytes;
+    }
+
+    /// Can fail, as it is used as a compile-time only method
+    fn from_bytes(data: &[u8]) -> Self {
+        let (dec, _) = decode_from_slice::<ImagesStorageSerealizer, _>(data, CONFIG).unwrap();
+
+        return Self {
+            jta_logo: ImageMeta::from_bytes(&dec.jta_logo),
+            advertisement_images: dec
+                .advertisement_images
+                .into_iter()
+                .map(|a| ImageMeta::from_bytes(&a))
+                .collect(),
+            cached_rescaler: CachedImageScaler::from_bytes(&dec.cached_rescaler),
+            fireworks_animation: Animation::from_bytes(&dec.fireworks_animation),
+        };
     }
 }

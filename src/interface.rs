@@ -1,17 +1,14 @@
-use std::path::Path;
-
-use include_dir::include_dir;
-use serde::{Deserialize, Serialize};
-
 use crate::{
     args::Args,
     file::read_image_files,
-    images::{Animation, AnimationPlayer, CachedImageScaler, ImageMeta},
+    images::{AnimationPlayer, ImageMeta, ImagesStorage},
     instructions::{
         ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
         InstructionFromTimingProgram, InstructionToTimingProgram,
     },
 };
+use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ServerImposedSettings {
@@ -209,13 +206,6 @@ pub enum ClientState {
     TestAnimation(AnimationPlayer),
 }
 
-pub struct ImagesStorage {
-    pub jta_logo: ImageMeta,
-    pub advertisement_images: Vec<ImageMeta>,
-    pub cached_rescaler: CachedImageScaler,
-    pub fireworks_animation: Animation,
-}
-
 pub struct ClientStateMachine {
     pub state: ClientState,
     messages_to_send_out_to_server: Vec<MessageFromClientToServer>,
@@ -228,26 +218,12 @@ pub struct ClientStateMachine {
 }
 impl ClientStateMachine {
     pub fn new(args: &Args) -> Self {
-        // include static files // TODO -> this would be cleaner as a compile time unwrap
-        let jta_logo = ImageMeta::from_image_bytes(include_bytes!("../JTA-Logo.png")).unwrap();
-        let fireworks_animation = Animation::from_dir(
-            include_dir!("./assets/Fireworks/frames"),
-            // std::cmp::min((TARGET_FPS as u32) / 30, 1),
-            3, // is technically a 30 fps animation, but looks better
-        )
-        .unwrap();
-
         Self {
             state: ClientState::Created,
             messages_to_send_out_to_server: Vec::new(),
             frame_counter: 0,
             window_state_needs_update: None,
-            permanent_images_storage: ImagesStorage {
-                jta_logo,
-                cached_rescaler: CachedImageScaler::new(),
-                advertisement_images: Vec::new(),
-                fireworks_animation,
-            },
+            permanent_images_storage: ImagesStorage::new_with_compile_data(),
             current_frame_dimensions: None,
             slideshow_duration_nr_ms: args.slideshow_duration_nr_ms,
             slideshow_transition_duration_nr_ms: args.slideshow_transition_duration_nr_ms,
