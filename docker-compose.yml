@@ -35,12 +35,7 @@ services:
           sleep 0.5
         done
         # Run the binary with your flags
-        watchexec --poll 500ms --restart --watch ./target/debug/jta-display-wall-adapter -- bash -c \"echo 'STARTING CLIENT' && \
-            ./target/debug/jta-display-wall-adapter client -v \
-              --internal-communication-port 5678 \
-              --hexdump-incoming-communication \
-              --wait-ms-before-testing-for-shutdown=100000 \
-              --client-emits-frame-every-nr-of-ms=1000 \"
+        watchexec --poll 500ms --restart --watch ./target/debug/jta-display-wall-adapter -- bash -c \"echo 'STARTING CLIENT' && ./target/debug/jta-display-wall-adapter client -v  --internal-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000 \"
       "
     # command: cargo watch -x "run -- client -v --internal-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000"
 
