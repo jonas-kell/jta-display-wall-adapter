@@ -4,9 +4,6 @@ mod rasterizing;
 mod rendering;
 
 pub use parts::client::run_client;
-pub mod images_tools {
-    pub use super::rasterizing::{Animation, AnimationPlayer, CachedImageScaler, ImageMeta};
-}
 
 pub const TARGET_FPS: u64 = 60;
 pub const REPORT_FRAME_LOGS_EVERY_SECONDS: u64 = 5;

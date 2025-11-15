@@ -5,11 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     args::Args,
-    client::{
-        images_tools::{Animation, AnimationPlayer, CachedImageScaler, ImageMeta},
-        TARGET_FPS,
-    },
     file::read_image_files,
+    images::{Animation, AnimationPlayer, CachedImageScaler, ImageMeta},
     instructions::{
         ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
         InstructionFromTimingProgram, InstructionToTimingProgram,

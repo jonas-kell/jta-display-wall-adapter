@@ -10,6 +10,7 @@ mod args;
 mod client;
 mod file;
 mod hex;
+mod images;
 mod instructions;
 mod interface;
 mod server;
