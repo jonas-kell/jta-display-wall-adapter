@@ -418,7 +418,7 @@ impl ImagesStorage {
         let jta_logo =
             ImageMeta::from_image_bytes(include_bytes!("./../../assets/JTA-Logo.png")).unwrap();
         let fireworks_animation = Animation::from_dir(
-            include_dir!("./assets/Fireworks/frames"),
+            include_dir!("$CARGO_MANIFEST_DIR/../assets/Fireworks/frames"),
             // std::cmp::min((TARGET_FPS as u32) / 30, 1),
             3, // is technically a 30 fps animation, but looks better like this
         )
