@@ -27,19 +27,16 @@ services:
       context: ./
       dockerfile: ./docker/dev/Dockerfile
     working_dir: /app
+    restart: unless-stopped
     command: >
       bash -c "
-        while true; do
-          # Wait until the client binary exists
-          while [ ! -f target/debug/jta-display-wall-adapter ]; do
-            echo 'Executable not yet ready'
-            sleep 0.5
-          done
-          # Run the binary with your flags
-          watchexec --poll 500ms --restart --watch ./target/debug/jta-display-wall-adapter -- bash -c \"echo 'STARTING CLIENT' && ./target/debug/jta-display-wall-adapter client -v  --internal-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000 \"
+        while [ ! -f target/debug/jta-display-wall-adapter ]; do
+          echo 'Executable not yet ready'
+          sleep 0.5
         done
+
+        watchexec --poll 500ms --restart --watch ./target/debug/jta-display-wall-adapter -- 'while true; do ./target/debug/jta-display-wall-adapter client -v  --internal-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000 ; done'
       "
-    # command: cargo watch -x "run -- client -v --internal-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000"
 
 volumes:
   rust_build_cache:
