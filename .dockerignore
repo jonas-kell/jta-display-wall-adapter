@@ -8,3 +8,4 @@
 *.bat
 /move_container
 /advertisement_container
+/.vscode

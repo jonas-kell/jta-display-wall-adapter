@@ -1,12 +1,12 @@
 use crate::{
     args::Args,
     file::read_image_files,
-    images::{AnimationPlayer, ImageMeta, ImagesStorage},
     instructions::{
         ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
         InstructionFromTimingProgram, InstructionToTimingProgram,
     },
 };
+use images_core::images::{AnimationPlayer, ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 

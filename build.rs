@@ -1,9 +1,10 @@
-use jta_display_wall_adapter::build_data::ImagesStorage;
+use images_core::images::ImagesStorage;
 use std::{fs, path::PathBuf};
 
 fn main() {
     // rerun only when these change
     println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=images_core/");
     println!("cargo:rerun-if-changed=assets/");
 
     let storage = ImagesStorage::new_with_compile_data();

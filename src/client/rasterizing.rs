@@ -1,10 +1,10 @@
-use crate::images::ImageMeta;
 use fontdue::{
     layout::{Layout, LayoutSettings, TextStyle},
     Font,
 };
 use image::Rgba;
 use image::{DynamicImage, ImageBuffer};
+use images_core::images::ImageMeta;
 
 pub struct RasterizerMeta<'a> {
     pub font: &'a Font,

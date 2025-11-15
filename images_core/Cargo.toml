@@ -1,0 +1,12 @@
+[package]
+name = "images_core"
+authors = ["jonas-kell"]
+repository = "https://github.com/jonas-kell/jta-display-wall-adapter"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+image = "0.25.8"
+uuid = { version = "1.18.1", features = ["serde", "v4"] }
+include_dir = "0.7.4"
+bincode = { version = "2.0.1", features = ["serde"] }

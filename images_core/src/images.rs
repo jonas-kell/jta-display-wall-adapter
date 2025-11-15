@@ -392,7 +392,8 @@ pub struct ImagesStorage {
 impl ImagesStorage {
     pub fn new_with_compile_data() -> ImagesStorage {
         // include static files
-        let jta_logo = ImageMeta::from_image_bytes(include_bytes!("../JTA-Logo.png")).unwrap();
+        let jta_logo =
+            ImageMeta::from_image_bytes(include_bytes!("./../../assets/JTA-Logo.png")).unwrap();
         let fireworks_animation = Animation::from_dir(
             include_dir!("./assets/Fireworks/frames"),
             // std::cmp::min((TARGET_FPS as u32) / 30, 1),
@@ -409,7 +410,7 @@ impl ImagesStorage {
     }
 
     /// Can fail, as it is used as a compile-time only method
-    fn to_bytes(&self) -> Vec<u8> {
+    pub fn to_bytes(&self) -> Vec<u8> {
         let ser = ImagesStorageSerealizer {
             jta_logo: self.jta_logo.to_bytes(),
             advertisement_images: self
@@ -425,7 +426,7 @@ impl ImagesStorage {
     }
 
     /// Can fail, as it is used as a compile-time only method
-    fn from_bytes(data: &[u8]) -> Self {
+    pub fn from_bytes(data: &[u8]) -> Self {
         let (dec, _) = decode_from_slice::<ImagesStorageSerealizer, _>(data, CONFIG).unwrap();
 
         return Self {
