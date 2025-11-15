@@ -6,9 +6,8 @@ services:
       dockerfile: ./docker/dev/Dockerfile
     volumes:
       - rust_build_cache:/usr/local/cargo/registry/
+      - target_dir:/app/target
       - ./:/app/
-    depends_on:
-      - client
     command: cargo watch -x "run -- server --passthrough-address-display-program 192.168.8.119 -v --address-camera-program 192.168.8.119 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --passthrough-to-display-program --address-internal-communication=127.0.0.1 --internal-communication-port 5678 --dp-pos-x=100 --dp-pos-y=200 --dp-width=360 --dp-height=120"
 
   client:
@@ -18,6 +17,7 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
       - ${XAUTHORITY}:/root/.Xauthority:ro
       - rust_build_cache:/usr/local/cargo/registry/
+      - target_dir:/app/target
       - ./:/app/
     devices:
       - /dev/dri:/dev/dri
@@ -26,7 +26,23 @@ services:
     build:
       context: ./
       dockerfile: ./docker/dev/Dockerfile
-    command: cargo watch -x "run -- client -v --internal-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000"
+    working_dir: /app
+    command: >
+      bash -c "
+        # Wait until the client binary exists
+        while [ ! -f target/debug/jta-display-wall-adapter ]; do
+          echo 'Executable not yet ready'
+          sleep 0.5
+        done
+        # Run the binary with your flags
+        ./target/debug/jta-display-wall-adapter client -v \
+          --internal-communication-port 5678 \
+          --hexdump-incoming-communication \
+          --wait-ms-before-testing-for-shutdown=100000 \
+          --client-emits-frame-every-nr-of-ms=1000
+      "
+    # command: cargo watch -x "run -- client -v --internal-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000"
 
 volumes:
   rust_build_cache:
+  target_dir:

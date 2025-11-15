@@ -206,6 +206,8 @@ pub enum ClientState {
     TestAnimation(AnimationPlayer),
 }
 
+static STORAGE_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/image_storage.bin"));
+
 pub struct ClientStateMachine {
     pub state: ClientState,
     messages_to_send_out_to_server: Vec<MessageFromClientToServer>,
@@ -218,12 +220,16 @@ pub struct ClientStateMachine {
 }
 impl ClientStateMachine {
     pub fn new(args: &Args) -> Self {
+        debug!("Start loading Images storage");
+        let images_storage = ImagesStorage::from_bytes(STORAGE_BYTES);
+        debug!("DONE loading Images storage");
+
         Self {
             state: ClientState::Created,
             messages_to_send_out_to_server: Vec::new(),
             frame_counter: 0,
             window_state_needs_update: None,
-            permanent_images_storage: ImagesStorage::new_with_compile_data(),
+            permanent_images_storage: images_storage,
             current_frame_dimensions: None,
             slideshow_duration_nr_ms: args.slideshow_duration_nr_ms,
             slideshow_transition_duration_nr_ms: args.slideshow_transition_duration_nr_ms,

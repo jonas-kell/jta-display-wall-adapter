@@ -108,7 +108,7 @@ impl ImageMeta {
             id: dec.id,
             width: dec.width,
             height: dec.height,
-            img: Arc::new(DynamicImage::from(image_buffer)),
+            img: Arc::new(DynamicImage::ImageRgba8(image_buffer)),
         };
     }
 }
