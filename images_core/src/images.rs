@@ -1,6 +1,7 @@
 use bincode::serde::{borrow_decode_from_slice, encode_to_vec};
+use image::codecs::png::{CompressionType, FilterType as PngFilterType, PngEncoder};
 use image::{imageops::FilterType, DynamicImage, ImageReader};
-use image::{GenericImageView, ImageBuffer, Rgba};
+use image::{ColorType, GenericImageView, ImageEncoder, Rgba};
 use include_dir::{include_dir, Dir};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, io::Cursor, sync::Arc};
@@ -88,14 +89,26 @@ impl ImageMeta {
 
     /// Can fail, as it is used as a compile-time only method
     fn to_bytes(&self) -> Vec<u8> {
+        let data = self.img.to_rgba8().into_raw();
+
+        let mut bytes: Vec<u8> = Vec::new();
+        let encoder = PngEncoder::new_with_quality(
+            Cursor::new(&mut bytes),
+            CompressionType::Best,
+            PngFilterType::Adaptive,
+        );
+
+        encoder
+            .write_image(&data, self.width, self.height, ColorType::Rgba8.into())
+            .expect("PNG encoding failed");
+
         let ser = ImageMetaSerealizer {
             id: self.id,
             width: self.width,
             height: self.height,
-            img: &self.get_image_buffer().into_raw(),
+            img: &bytes,
         };
-        let bytes = encode_to_vec(&ser, CONFIG).unwrap();
-        return bytes;
+        return encode_to_vec(&ser, CONFIG).unwrap();
     }
 
     /// Can fail, as it is used as a compile-time only method
@@ -105,14 +118,15 @@ impl ImageMeta {
 
         // this actually copies still
         // TODO we could do a variant for global data, that always indexes into slices (somehow)
-        let image_buffer: image::ImageBuffer<Rgba<u8>, Vec<u8>> =
-            ImageBuffer::from_raw(dec.width, dec.height, dec.img.into()).unwrap();
+        let mut reader = ImageReader::new(Cursor::new(dec.img));
+        reader.set_format(image::ImageFormat::Png);
+        let image = reader.decode().unwrap();
 
         return Self {
             id: dec.id,
             width: dec.width,
             height: dec.height,
-            img: Arc::new(DynamicImage::ImageRgba8(image_buffer)),
+            img: Arc::new(image),
         };
     }
 }
