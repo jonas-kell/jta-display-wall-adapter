@@ -1,23 +1,26 @@
 services:
   server:
+    environment:
+      - CARGO_TARGET_DIR=container_target
     network_mode: "host"
     build:
       context: ./
       dockerfile: ./docker/dev/Dockerfile
     volumes:
       - rust_build_cache:/usr/local/cargo/registry/
-      - target_dir:/app/target
+      - target_dir:/app/container_target
       - ./:/app/
     command: cargo watch -x "run -- server --passthrough-address-display-program 192.168.8.119 -v --address-camera-program 192.168.8.119 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --passthrough-to-display-program --address-internal-communication=127.0.0.1 --internal-communication-port 5678 --dp-pos-x=100 --dp-pos-y=200 --dp-width=360 --dp-height=120"
 
   client:
     environment:
       - DISPLAY=${DISPLAY}
+      - CARGO_TARGET_DIR=container_target
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
       - ${XAUTHORITY}:/root/.Xauthority:ro
       - rust_build_cache:/usr/local/cargo/registry/
-      - target_dir:/app/target
+      - target_dir:/app/container_target
       - ./:/app/
     devices:
       - /dev/dri:/dev/dri

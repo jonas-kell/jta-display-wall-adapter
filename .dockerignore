@@ -2,6 +2,7 @@
 /target
 /win_target
 /linux_target
+/container_target
 *.txt
 /docker
 *.yml
