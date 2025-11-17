@@ -6,6 +6,7 @@ use crate::server::parts::client_communicator::client_communicator;
 use crate::server::parts::tcp_client_camera_program::tcp_client_camera_program;
 use crate::server::parts::tcp_forwarder_display_program::tcp_forwarder_display_program;
 use crate::server::parts::tcp_listener_timing_program::tcp_listener_timing_program;
+use crate::webserver::{get_local_ip, webserver, HttpServerStateManager, Server};
 use std::io::Error;
 use std::net::SocketAddr;
 use std::sync::{
@@ -73,6 +74,16 @@ pub async fn run_server(args: &Args) -> () {
         internal_communication_address
     );
 
+    let own_addr_webcontrol: SocketAddr = format!("0.0.0.0:{}", args.internal_webcontrol_port)
+        .parse()
+        .expect("Invalid webcontrol address");
+
+    info!(
+        "LAN access from http://{}:{}/",
+        get_local_ip(),
+        args.internal_webcontrol_port
+    );
+
     // avoid ports doubling and inform about where to run external display program
     if args.passthrough_to_display_program {
         if args.passthrough_address_display_program == "127.0.0.1"
@@ -131,16 +142,28 @@ pub async fn run_server(args: &Args) -> () {
         camera_program_xml_address,
     );
 
+    let web_server_task = webserver(own_addr_webcontrol);
+    let (web_server_manager, http_server): (HttpServerStateManager, Server) = match web_server_task
+    {
+        Ok(res) => res,
+        Err(e) => {
+            error!("{}", e);
+            return;
+        }
+    };
+
     // spawn the async runtimes in parallel
     let client_communicator_task = tokio::spawn(client_communicator_instance);
     let tcp_listener_server_task = tokio::spawn(tcp_listener_server_instance);
     let tcp_forwarder_display_program_task = tokio::spawn(tcp_forwarder_display_program_instance);
     let tcp_client_camera_program_task = tokio::spawn(tcp_client_camera_program_instance);
+    let webserver_task = tokio::spawn(http_server);
     let shutdown_task = tokio::spawn(async move {
         // listen for ctrl-c
         tokio::signal::ctrl_c().await?;
 
         shutdown_marker.store(true, Ordering::SeqCst);
+        web_server_manager.stop_gracefully().await;
 
         Ok::<_, Error>(())
     });
@@ -151,7 +174,8 @@ pub async fn run_server(args: &Args) -> () {
         tcp_forwarder_display_program_task,
         shutdown_task,
         client_communicator_task,
-        tcp_client_camera_program_task
+        tcp_client_camera_program_task,
+        webserver_task
     ) {
         Err(_) => error!("Error in at least one listening task"),
         Ok(_) => info!("All listeners closed successfully"),

@@ -14,19 +14,20 @@ mod instructions;
 mod interface;
 mod server;
 mod times;
+mod webserver;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var(
         "RUST_LOG",
-        "debug,actix=off,reqwest=off,hyper=off,mio=off,wgpu_core=info,wgpu_hal=info,naga=info,calloop=info",
+        "debug,actix=off,reqwest=off,hyper=off,mio=off,wgpu_core=info,wgpu_hal=info,naga=info,calloop=info,neli=info,tracing=off",
     );
 
     let args = Args::parse();
     if args.verbose {
         std::env::set_var(
             "RUST_LOG",
-            "trace,actix=off,reqwest=off,hyper=off,mio=off,wgpu_core=info,wgpu_hal=info,naga=info,calloop=info",
+            "trace,actix=off,reqwest=off,hyper=off,mio=off,wgpu_core=info,wgpu_hal=info,naga=info,calloop=info,neli=info,tracing=off",
         );
         // more logs!!
     }

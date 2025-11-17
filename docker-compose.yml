@@ -15,7 +15,6 @@ services:
   client:
     environment:
       - DISPLAY=${DISPLAY}
-      - CARGO_TARGET_DIR=container_target
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
       - ${XAUTHORITY}:/root/.Xauthority:ro
@@ -33,12 +32,12 @@ services:
     restart: unless-stopped
     command: >
       bash -c "
-        while [ ! -f target/debug/jta-display-wall-adapter ]; do
+        while [ ! -f container_target/debug/jta-display-wall-adapter ]; do
           echo 'Executable not yet ready'
           sleep 0.5
         done
 
-        watchexec --poll 500ms --restart --watch ./target/debug/jta-display-wall-adapter -- 'while true; do ./target/debug/jta-display-wall-adapter client -v  --internal-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000 ; done'
+        watchexec --poll 500ms --restart --watch ./container_target/debug/jta-display-wall-adapter -- 'while true; do ./container_target/debug/jta-display-wall-adapter client -v  --internal-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000 ; done'
       "
 
 volumes:
