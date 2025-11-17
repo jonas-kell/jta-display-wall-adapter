@@ -29,7 +29,6 @@ services:
       context: ./
       dockerfile: ./docker/dev/Dockerfile
     working_dir: /app
-    restart: unless-stopped
     command: >
       bash -c "
         while [ ! -f container_target/debug/jta-display-wall-adapter ]; do

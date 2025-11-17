@@ -29,13 +29,13 @@ docker buildx build \
 ## Build for Linux
 
 ```cmd
-docker compose -f docker-compose.build.yml up
+docker compose -f docker-compose.build.yml up --abort-on-container-exit && docker compose -f docker-compose.build.yml down --remove-orphans
 ```
 
 ## Cross compile Windows executable on Linux
 
 ```cmd
-docker compose -f docker-compose.buildwindows.yml up
+docker compose -f docker-compose.buildwindows.yml up --abort-on-container-exit && docker compose -f docker-compose.buildwindows.yml down --remove-orphans
 ```
 
 ## Start on a Windows live system

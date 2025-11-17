@@ -4,8 +4,12 @@ services:
       context: ./
       dockerfile: ./docker/dev/Dockerfile
     volumes:
+      - rust_build_cache_linux:/usr/local/cargo/registry/
       - ./:/app/
     working_dir: /app
     environment:
       - CARGO_TARGET_DIR=linux_target
     command: cargo build --release
+
+volumes:
+  rust_build_cache_linux:
