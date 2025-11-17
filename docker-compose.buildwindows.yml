@@ -1,0 +1,11 @@
+services:
+  build:
+    build:
+      context: ./
+      dockerfile: ./docker/compile_windows/Dockerfile
+    volumes:
+      - ./:/app/
+    working_dir: /app
+    environment:
+      - CARGO_TARGET_DIR=win_target
+    command: cargo build --release --target x86_64-pc-windows-gnu

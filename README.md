@@ -26,12 +26,16 @@ docker buildx build \
   --push .
 ```
 
+## Build for Linux
+
+```cmd
+docker compose -f docker-compose.build.yml up
+```
+
 ## Cross compile Windows executable on Linux
 
 ```cmd
-rustup target add x86_64-pc-windows-gnu
-sudo apt install mingw-w64
-CARGO_TARGET_DIR=win_target cargo build --release --target x86_64-pc-windows-gnu
+docker compose -f docker-compose.buildwindows.yml up
 ```
 
 ## Start on a Windows live system
