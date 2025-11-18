@@ -1,8 +1,22 @@
 services:
+  build-frontend:
+    image: node:20
+    working_dir: /app/
+    volumes:
+      - ./web_client:/app/
+    command: >
+      bash -c "
+        npm install &&
+        npm run build
+      "
+
   build-linux:
     build:
       context: ./
       dockerfile: ./docker/dev/Dockerfile
+    depends_on:
+      build-frontend:
+        condition: service_completed_successfully
     volumes:
       - rust_build_cache_linux:/usr/local/cargo/registry/
       - ./:/app/

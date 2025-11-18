@@ -1,4 +1,17 @@
 services:
+  web-frontend:
+    image: node:20
+    working_dir: /app/
+    volumes:
+      - ./web_client:/app/
+    ports:
+      - "5173:5173"
+    command: >
+      bash -c "
+        npm install &&
+        npm run dev
+      "
+
   server:
     environment:
       - CARGO_TARGET_DIR=container_target

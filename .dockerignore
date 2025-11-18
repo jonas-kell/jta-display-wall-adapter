@@ -12,3 +12,6 @@
 /move_container
 /advertisement_container
 /.vscode
+/web_client/**
+!/web_client/dist/
+!/web_client/dist/**

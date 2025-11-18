@@ -52,6 +52,10 @@ async fn main() -> std::io::Result<()> {
                 "http://localhost:{}/",
                 args.internal_webcontrol_port
             ));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AddrInUse,
+                "Server Address already used",
+            ));
         }
     }
 

@@ -1,0 +1,33 @@
+{
+    "name": "jta-display-wall-adapter",
+    "version": "1.0.0",
+    "description": "Control panel for the jta-display-wall-adapter",
+    "type": "module",
+    "scripts": {
+        "build": "vue-tsc && vite build",
+        "dev": "vue-tsc && vite"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/jonas-kell/jta-display-wall-adapter"
+    },
+    "keywords": [],
+    "author": "jonas-kell",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/jonas-kell/jta-display-wall-adapter/issues"
+    },
+    "homepage": "https://github.com/jonas-kell/jta-display-wall-adapter#readme",
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^5.0.4",
+        "typescript": "5.6.3",
+        "vite": "^5.2.0",
+        "vite-plugin-pwa": "^0.19.7",
+        "vue-tsc": "^2.0.7"
+    },
+    "dependencies": {
+        "pinia": "^2.1.7",
+        "vue": "^3.4.21",
+        "vue-router": "^4.3.0"
+    }
+}
