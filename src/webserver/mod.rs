@@ -1,3 +1,4 @@
+mod interface;
 mod routes;
 mod static_files;
 mod web;

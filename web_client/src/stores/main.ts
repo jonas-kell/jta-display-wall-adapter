@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { WS_URL } from "../functions/environment";
+import { Advertisements, FreeText, Idle } from "../functions/interfaceOutbound";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -59,8 +60,24 @@ export default defineStore("main", () => {
     }
 
     function sendAdvertisementsCommand() {
-        sendWSCommand("Test");
+        const packet: Advertisements = {
+            type: "Advertisements",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    function sendIdleCommand() {
+        const packet: Idle = {
+            type: "Idle",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    function sendFreetextCommand(payload: string) {
+        const packet: FreeText = {
+            type: "FreeText",
+            data: payload,
+        };
+        sendWSCommand(JSON.stringify(packet));
     }
 
-    return { connected, sendAdvertisementsCommand };
+    return { connected, sendAdvertisementsCommand, sendIdleCommand, sendFreetextCommand };
 });

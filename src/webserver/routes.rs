@@ -1,3 +1,4 @@
+use crate::webserver::interface::MessageFromWebControlToWebSocket;
 use actix_web::{web, HttpRequest, Responder};
 use actix_ws::Message;
 use futures::StreamExt;
@@ -30,7 +31,23 @@ pub async fn ws_route(req: HttpRequest, body: web::Payload) -> actix_web::Result
                 Message::Pong(_) => {
                     trace!("Websocket received pong");
                 }
-                Message::Text(msg) => println!("Got text: {msg}"),
+                Message::Text(msg) => {
+                    let msg_parsed =
+                        match serde_json::from_str::<MessageFromWebControlToWebSocket>(&msg) {
+                            Ok(m) => m,
+                            Err(e) => {
+                                error!(
+                                    "Could not parse a websocket message: {}\n{}",
+                                    msg,
+                                    e.to_string()
+                                );
+
+                                continue;
+                            }
+                        };
+
+                    trace!("Websocket received message: {:?}", msg_parsed);
+                }
                 _ => break,
             }
         }

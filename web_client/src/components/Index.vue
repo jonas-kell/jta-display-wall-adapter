@@ -1,13 +1,23 @@
 <template>
     <h1>JTA Display Wall Adapter</h1>
 
-    <button @click="mainStore.sendAdvertisementsCommand">Test</button>
+    <button @click="mainStore.sendAdvertisementsCommand">Advertisements</button>
+    <button @click="mainStore.sendIdleCommand">Idle</button>
 
-    {{ mainStore.connected }}
+    <br />
+    <br />
+    <input type="text" v-model="freetext" />
+    <button @click="mainStore.sendFreetextCommand(freetext)">Freetext</button>
+    <br />
+    <br />
+    Connected: {{ mainStore.connected }}
 </template>
 
 <script setup lang="ts">
+    import { ref } from "vue";
     import useMainStore from "../stores/main";
+
+    const freetext = ref("");
 
     const mainStore = useMainStore();
 </script>
