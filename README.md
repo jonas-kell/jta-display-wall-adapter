@@ -32,6 +32,12 @@ docker buildx build \
 docker compose -f docker-compose.build.yml up --abort-on-container-exit && docker compose -f docker-compose.build.yml down --remove-orphans
 ```
 
+Or legacy linux versions (older glibc).
+
+```cmd
+docker compose -f docker-compose.buildlegacy.yml up --abort-on-container-exit && docker compose -f docker-compose.buildlegacy.yml down --remove-orphans
+```
+
 ## Cross compile Windows executable on Linux
 
 ```cmd
