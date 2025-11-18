@@ -1,6 +1,8 @@
 <template>
     <h1>JTA Display Wall Adapter</h1>
 
+    <button @click="mainStore.sendAdvertisementsCommand">Test</button>
+
     {{ mainStore.connected }}
 </template>
 
