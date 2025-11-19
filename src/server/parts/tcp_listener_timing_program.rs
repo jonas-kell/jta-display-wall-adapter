@@ -171,7 +171,10 @@ pub async fn tcp_listener_timing_program(
                             };
                             // wait on the back-send-command scheduler
                             let comm_channel_command_outbound_source = async {
-                                match comm_channel_write.wait_for_command_to_send().await {
+                                match comm_channel_write
+                                    .wait_for_command_to_send_to_timing_program()
+                                    .await
+                                {
                                     Ok(Ok(inst)) => return Ok(inst),
                                     Ok(Err(e)) => return Err(TimeoutOrIoError::ReceiveError(e)),
                                     Err(_) => {

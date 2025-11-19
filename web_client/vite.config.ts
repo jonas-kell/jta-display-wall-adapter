@@ -13,8 +13,6 @@ export default defineConfig((props) => {
         "process.env": `${JSON.stringify(env)}`,
     };
 
-    console.log(envWithProcessPrefix);
-
     return {
         // Configuration options
         define: envWithProcessPrefix,

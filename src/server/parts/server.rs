@@ -1,5 +1,5 @@
 use crate::args::Args;
-use crate::instructions::{ClientCommunicationChannelOutbound, InstructionCommunicationChannel};
+use crate::instructions::InstructionCommunicationChannel;
 use crate::interface::ServerStateMachine;
 use crate::server::forwarding::PacketCommunicationChannel;
 use crate::server::parts::client_communicator::client_communicator;
@@ -98,11 +98,9 @@ pub async fn run_server(args: &Args) -> () {
 
     let comm_channel = InstructionCommunicationChannel::new(&args);
     let comm_channel_packets = PacketCommunicationChannel::new(&args);
-    let comm_channel_client_outbound = ClientCommunicationChannelOutbound::new(&args);
     let server_state = Arc::new(Mutex::new(ServerStateMachine::new(
         &args,
         comm_channel.clone(),
-        comm_channel_client_outbound.clone(),
     )));
     let shutdown_marker = Arc::new(AtomicBool::new(false));
 
@@ -128,7 +126,6 @@ pub async fn run_server(args: &Args) -> () {
         args.clone(),
         server_state,
         comm_channel.clone(),
-        comm_channel_client_outbound.clone(),
         Arc::clone(&shutdown_marker),
         internal_communication_address,
     );
@@ -142,7 +139,7 @@ pub async fn run_server(args: &Args) -> () {
         camera_program_xml_address,
     );
 
-    let web_server_task = webserver(own_addr_webcontrol);
+    let web_server_task = webserver(own_addr_webcontrol, comm_channel.clone());
     let (web_server_manager, http_server): (HttpServerStateManager, Server) = match web_server_task
     {
         Ok(res) => res,

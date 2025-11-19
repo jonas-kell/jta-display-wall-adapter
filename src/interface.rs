@@ -2,9 +2,10 @@ use crate::{
     args::Args,
     file::read_image_files,
     instructions::{
-        ClientCommunicationChannelOutbound, IncomingInstruction, InstructionCommunicationChannel,
-        InstructionFromTimingProgram, InstructionToTimingProgram,
+        IncomingInstruction, InstructionCommunicationChannel, InstructionFromTimingProgram,
+        InstructionToTimingProgram,
     },
+    webserver::MessageFromWebControl,
 };
 use images_core::images::{AnimationPlayer, ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
@@ -45,19 +46,13 @@ pub struct ServerStateMachine {
     args: Args,
     pub state: ServerState,
     comm_channel: InstructionCommunicationChannel,
-    comm_channel_client_outbound: ClientCommunicationChannelOutbound,
 }
 impl ServerStateMachine {
-    pub fn new(
-        args: &Args,
-        comm_channel: InstructionCommunicationChannel,
-        comm_channel_client_outbound: ClientCommunicationChannelOutbound,
-    ) -> Self {
+    pub fn new(args: &Args, comm_channel: InstructionCommunicationChannel) -> Self {
         Self {
             args: args.clone(),
             state: ServerState::PassthroughClient,
-            comm_channel_client_outbound, // per design, this can only be used to send
-            comm_channel, // only used to send instructions to the timing program. Rest is done via incoming commands
+            comm_channel, // only used to send instructions outwards. Rest is done via incoming commands
         }
     }
 
@@ -124,8 +119,10 @@ impl ServerStateMachine {
                 InstructionFromTimingProgram::ClientInfo => (),
                 InstructionFromTimingProgram::ServerInfo => (),
                 InstructionFromTimingProgram::Freetext(text) => {
-                    self.send_message_to_client(MessageFromServerToClient::DisplayText(text))
-                        .await
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::DisplayText(text))
+                            .await
+                    }
                 }
                 InstructionFromTimingProgram::Clear => {
                     if self.args.passthrough_to_display_program {
@@ -171,11 +168,31 @@ impl ServerStateMachine {
             IncomingInstruction::FromCameraProgram(inst) => match inst {
                 inst => error!("Unhandled instruction from camera program: {:?}", inst),
             },
+            IncomingInstruction::FromWebControl(inst) => match inst {
+                MessageFromWebControl::Advertisements => {
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::Advertisements)
+                            .await;
+                    }
+                }
+                MessageFromWebControl::FreeText(text) => {
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::DisplayText(text))
+                            .await
+                    }
+                }
+                MessageFromWebControl::Idle => {
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::Clear)
+                            .await
+                    }
+                }
+            },
         }
     }
 
     async fn send_message_to_timing_program(&mut self, inst: InstructionToTimingProgram) {
-        match self.comm_channel.send_out_command(inst) {
+        match self.comm_channel.send_out_command_to_timing_program(inst) {
             Ok(()) => (),
             Err(e) => error!("Failed to send out instruction: {}", e.to_string()),
         }
@@ -187,7 +204,7 @@ impl ServerStateMachine {
     }
 
     async fn send_message_to_client(&mut self, inst: MessageFromServerToClient) {
-        match self.comm_channel_client_outbound.send_away(inst) {
+        match self.comm_channel.send_out_command_to_client(inst) {
             Ok(()) => (),
             Err(e) => error!(
                 "Failed to send out instruction to client: {}",

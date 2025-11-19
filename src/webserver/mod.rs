@@ -11,4 +11,5 @@ pub fn get_local_ip() -> String {
     }
 }
 
+pub use interface::{MessageFromWebControl, MessageToWebControl};
 pub use web::{webserver, HttpServerStateManager, Server};

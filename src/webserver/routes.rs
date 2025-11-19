@@ -1,10 +1,16 @@
-use crate::webserver::interface::MessageFromWebControlToWebSocket;
+use crate::{
+    instructions::InstructionCommunicationChannel, webserver::interface::MessageFromWebControl,
+};
 use actix_web::{web, HttpRequest, Responder};
 use actix_ws::Message;
 use futures::StreamExt;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
-pub async fn ws_route(req: HttpRequest, body: web::Payload) -> actix_web::Result<impl Responder> {
+pub async fn ws_route(
+    comm_channel_data: web::Data<Arc<InstructionCommunicationChannel>>,
+    req: HttpRequest,
+    body: web::Payload,
+) -> actix_web::Result<impl Responder> {
     let (response, mut session, mut msg_stream) = actix_ws::handle(&req, body)?;
 
     // HEARTBEAT TASK
@@ -32,21 +38,27 @@ pub async fn ws_route(req: HttpRequest, body: web::Payload) -> actix_web::Result
                     trace!("Websocket received pong");
                 }
                 Message::Text(msg) => {
-                    let msg_parsed =
-                        match serde_json::from_str::<MessageFromWebControlToWebSocket>(&msg) {
-                            Ok(m) => m,
-                            Err(e) => {
-                                error!(
-                                    "Could not parse a websocket message: {}\n{}",
-                                    msg,
-                                    e.to_string()
-                                );
+                    let msg_parsed = match serde_json::from_str::<MessageFromWebControl>(&msg) {
+                        Ok(m) => m,
+                        Err(e) => {
+                            error!(
+                                "Could not parse a websocket message: {}\n{}",
+                                msg,
+                                e.to_string()
+                            );
 
-                                continue;
-                            }
-                        };
+                            continue;
+                        }
+                    };
 
                     trace!("Websocket received message: {:?}", msg_parsed);
+                    match comm_channel_data.take_in_command_from_web_control(msg_parsed) {
+                        Ok(()) => trace!("Websocket message forwarded into internal communication"),
+                        Err(e) => {
+                            error!("Websocket could not forward into internal message queue. That one should be always empty though. Not recoverable error: {}",e);
+                            break;
+                        }
+                    }
                 }
                 _ => break,
             }

@@ -1,5 +1,5 @@
 use crate::args::Args;
-use crate::instructions::{ClientCommunicationChannelOutbound, InstructionCommunicationChannel};
+use crate::instructions::InstructionCommunicationChannel;
 use crate::interface::{MessageFromClientToServer, MessageFromServerToClient, ServerStateMachine};
 use futures::prelude::*;
 use std::io::{self, Error, ErrorKind};
@@ -20,12 +20,12 @@ pub async fn client_communicator(
     args: Args,
     server_state: Arc<Mutex<ServerStateMachine>>,
     comm_channel: InstructionCommunicationChannel,
-    comm_channel_client_outbound: ClientCommunicationChannelOutbound,
     shutdown_marker: Arc<AtomicBool>,
     client_addr: SocketAddr,
 ) -> io::Result<()> {
     let server_state_exchange = server_state.clone();
     let shutdown_marker_exchange = shutdown_marker.clone();
+    let comm_channel_client_client_exchange = comm_channel.clone();
     let client_exchange_task = tokio::spawn(async move {
         loop {
             if shutdown_marker_exchange.load(Ordering::SeqCst) {
@@ -108,7 +108,8 @@ pub async fn client_communicator(
                     };
 
                     let shutdown_marker_write = shutdown_marker_exchange.clone();
-                    let comm_channel_client_outbound_write = comm_channel_client_outbound.clone();
+                    let comm_channel_client_outbound_write =
+                        comm_channel_client_client_exchange.clone();
 
                     let write_handler = async move {
                         loop {
@@ -120,7 +121,7 @@ pub async fn client_communicator(
                             }
 
                             match comm_channel_client_outbound_write
-                                .wait_for_message_to_send()
+                                .wait_for_command_to_send_to_client()
                                 .await
                             {
                                 Err(_) => {

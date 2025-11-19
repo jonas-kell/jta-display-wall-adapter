@@ -125,13 +125,13 @@ pub async fn tcp_forwarder_display_program(
                                                             match parsed {
                                                                 // THIS IS A BIT OF A HACK -> the "SendFrame" and "SendServerInfo" flow over the "command_from_timing_program" channel, even though they flow in the opposite direction!
                                                                 InstructionFromTimingProgram::ServerInfo => {
-                                                                    match comm_channel.send_out_command(InstructionToTimingProgram::SendServerInfo) {
+                                                                    match comm_channel.send_out_command_to_timing_program(InstructionToTimingProgram::SendServerInfo) {
                                                                         Ok(()) => trace!("Detected Packet and queued server-info for rewrite-proxy"),
                                                                         Err(e) => return Err(e.to_string()),
                                                                     }
                                                                 }
                                                                 InstructionFromTimingProgram::SendFrame(frame_data) => {
-                                                                    match comm_channel.send_out_command(InstructionToTimingProgram::SendFrame(frame_data.clone())) {
+                                                                    match comm_channel.send_out_command_to_timing_program(InstructionToTimingProgram::SendFrame(frame_data.clone())) {
                                                                         Ok(()) => trace!("Detected Packet and queued frame for rewrite-proxy"),
                                                                         Err(e) => return Err(e.to_string()),
                                                                     }

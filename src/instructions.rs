@@ -6,6 +6,7 @@ use crate::{
         HeatStartList, HeatWind,
     },
     times::{DayTime, RaceTime},
+    webserver::{MessageFromWebControl, MessageToWebControl},
 };
 use async_channel::{Receiver, RecvError, Sender, TrySendError};
 use serde::{Deserialize, Serialize};
@@ -16,6 +17,7 @@ use tokio::time::{self, error::Elapsed};
 pub enum IncomingInstruction {
     FromTimingProgram(InstructionFromTimingProgram),
     FromCameraProgram(InstructionFromCameraProgram),
+    FromWebControl(MessageFromWebControl),
 }
 impl Display for IncomingInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -27,6 +29,7 @@ impl Display for IncomingInstruction {
                     format!("FromTimingProgram: {}", tci),
                 IncomingInstruction::FromCameraProgram(cpi) =>
                     format!("FromCameraProgram: {:?}", cpi),
+                IncomingInstruction::FromWebControl(wci) => format!("FromWebControl: {:?}", wci),
             }
         )
     }
@@ -97,8 +100,12 @@ pub struct InstructionCommunicationChannel {
     args: Args,
     inbound_sender: Sender<IncomingInstruction>,
     inbound_receiver: Receiver<IncomingInstruction>,
-    outbound_sender: Sender<InstructionToTimingProgram>,
-    outbound_receiver: Receiver<InstructionToTimingProgram>,
+    outbound_sender_timing_program: Sender<InstructionToTimingProgram>,
+    outbound_receiver_timing_program: Receiver<InstructionToTimingProgram>,
+    outbound_sender_client: Sender<MessageFromServerToClient>,
+    outbound_receiver_client: Receiver<MessageFromServerToClient>,
+    outbound_sender_web_control: Sender<MessageToWebControl>,
+    outbound_receiver_web_control: Receiver<MessageToWebControl>,
 }
 impl InstructionCommunicationChannel {
     pub fn new(args: &Args) -> Self {
@@ -108,13 +115,23 @@ impl InstructionCommunicationChannel {
         let (os, or) = async_channel::bounded::<InstructionToTimingProgram>(
             MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
         );
+        let (sc, rc) = async_channel::bounded::<MessageFromServerToClient>(
+            MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+        );
+        let (sw, rw) = async_channel::bounded::<MessageToWebControl>(
+            MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+        );
 
         Self {
             args: args.clone(),
             inbound_sender: is,
             inbound_receiver: ir,
-            outbound_sender: os,
-            outbound_receiver: or,
+            outbound_sender_timing_program: os,
+            outbound_receiver_timing_program: or,
+            outbound_sender_client: sc,
+            outbound_receiver_client: rc,
+            outbound_sender_web_control: sw,
+            outbound_receiver_web_control: rw,
         }
     }
 
@@ -156,6 +173,25 @@ impl InstructionCommunicationChannel {
         }
     }
 
+    pub fn take_in_command_from_web_control(
+        &self,
+        inst: MessageFromWebControl,
+    ) -> Result<(), String> {
+        match self
+            .inbound_sender
+            .try_send(IncomingInstruction::FromWebControl(inst))
+        {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
+    }
+
     pub async fn wait_for_incomming_command(
         &self,
     ) -> Result<Result<IncomingInstruction, RecvError>, Elapsed> {
@@ -166,68 +202,75 @@ impl InstructionCommunicationChannel {
         .await
     }
 
-    pub fn send_out_command(&self, inst: InstructionToTimingProgram) -> Result<(), String> {
-        match self.outbound_sender.try_send(inst) {
+    pub fn send_out_command_to_timing_program(
+        &self,
+        inst: InstructionToTimingProgram,
+    ) -> Result<(), String> {
+        match self.outbound_sender_timing_program.try_send(inst) {
             Ok(_) => Ok(()),
             Err(TrySendError::Closed(_)) => {
-                Err(format!("Internal communication channel closed..."))
+                Err(format!("Timing program communication channel closed..."))
             }
             Err(TrySendError::Full(_)) => {
-                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                trace!("Timing program communication channel is full. Seems like there is no source to consume");
                 Ok(())
             }
         }
     }
 
-    pub async fn wait_for_command_to_send(
+    pub async fn wait_for_command_to_send_to_timing_program(
         &self,
     ) -> Result<Result<InstructionToTimingProgram, RecvError>, Elapsed> {
         time::timeout(
             Duration::from_millis(self.args.wait_ms_before_testing_for_shutdown),
-            self.outbound_receiver.recv(),
+            self.outbound_receiver_timing_program.recv(),
         )
         .await
     }
-}
 
-#[derive(Clone)]
-pub struct ClientCommunicationChannelOutbound {
-    args: Args,
-    sender: Sender<MessageFromServerToClient>,
-    receiver: Receiver<MessageFromServerToClient>,
-}
-impl ClientCommunicationChannelOutbound {
-    pub fn new(args: &Args) -> Self {
-        let (s, r) = async_channel::bounded::<MessageFromServerToClient>(
-            MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
-        );
-
-        Self {
-            args: args.clone(),
-            sender: s,
-            receiver: r,
-        }
-    }
-
-    pub fn send_away(&self, inst: MessageFromServerToClient) -> Result<(), String> {
-        match self.sender.try_send(inst) {
+    pub fn send_out_command_to_client(
+        &self,
+        inst: MessageFromServerToClient,
+    ) -> Result<(), String> {
+        match self.outbound_sender_client.try_send(inst) {
             Ok(_) => Ok(()),
-            Err(TrySendError::Closed(_)) => {
-                Err(format!("Internal communication channel closed..."))
-            }
+            Err(TrySendError::Closed(_)) => Err(format!("Client communication channel closed...")),
             Err(TrySendError::Full(_)) => {
-                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                trace!("Client communication channel is full. Seems like there is no source to consume");
                 Ok(())
             }
         }
     }
 
-    pub async fn wait_for_message_to_send(
+    pub async fn wait_for_command_to_send_to_client(
         &self,
     ) -> Result<Result<MessageFromServerToClient, RecvError>, Elapsed> {
         time::timeout(
             Duration::from_millis(self.args.wait_ms_before_testing_for_shutdown),
-            self.receiver.recv(),
+            self.outbound_receiver_client.recv(),
+        )
+        .await
+    }
+
+    pub fn send_out_command_to_web_control(&self, inst: MessageToWebControl) -> Result<(), String> {
+        match self.outbound_sender_web_control.try_send(inst) {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Web control communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Web control communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
+    }
+
+    pub async fn wait_for_command_to_send_to_web_control(
+        &self,
+    ) -> Result<Result<MessageToWebControl, RecvError>, Elapsed> {
+        time::timeout(
+            Duration::from_millis(self.args.wait_ms_before_testing_for_shutdown),
+            self.outbound_receiver_web_control.recv(),
         )
         .await
     }

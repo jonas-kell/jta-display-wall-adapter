@@ -1,3 +1,4 @@
+use crate::instructions::InstructionCommunicationChannel;
 use crate::webserver::routes::ws_route;
 use crate::webserver::static_files;
 use actix_cors::Cors;
@@ -6,12 +7,20 @@ use actix_web::dev::ServerHandle;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 const STATIC_PATH_SEGMENT: &str = "static";
 
-pub fn webserver(addr: SocketAddr) -> Result<(HttpServerStateManager, Server), String> {
+pub fn webserver(
+    addr: SocketAddr,
+    comm_channel: InstructionCommunicationChannel,
+) -> Result<(HttpServerStateManager, Server), String> {
+    let comm_channel = Arc::new(comm_channel);
+
     let http_server: Server = match HttpServer::new(move || {
         let file_map = web::Data::new(static_files::cache_static_files());
+        let channel_clone = Arc::clone(&comm_channel);
+        let comm_channel_data = web::Data::new(channel_clone);
 
         let cors = Cors::default()
             .allow_any_origin()
@@ -21,6 +30,7 @@ pub fn webserver(addr: SocketAddr) -> Result<(HttpServerStateManager, Server), S
 
         App::new()
             .app_data(file_map)
+            .app_data(comm_channel_data)
             .wrap(cors)
             .wrap(Logger::default())
             .service(
