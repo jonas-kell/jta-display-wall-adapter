@@ -7,12 +7,14 @@ pub enum MessageFromWebControl {
     Advertisements,
     FreeText(String),
     RequestDisplayClientState,
+    SwitchMode,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DisplayClientState {
     pub alive: bool,
     pub external_passthrough_mode: bool,
+    pub can_switch_mode: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

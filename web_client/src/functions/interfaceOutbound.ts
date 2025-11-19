@@ -14,3 +14,7 @@ export type FreeText = {
 export type RequestDisplayClientState = {
     type: "RequestDisplayClientState";
 };
+
+export type SwitchMode = {
+    type: "SwitchMode";
+};

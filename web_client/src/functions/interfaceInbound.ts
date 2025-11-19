@@ -1,6 +1,7 @@
 export type DisplayClientStateState = {
     alive: boolean;
     external_passthrough_mode: boolean;
+    can_switch_mode: boolean;
 };
 
 export type DisplayClientState = {

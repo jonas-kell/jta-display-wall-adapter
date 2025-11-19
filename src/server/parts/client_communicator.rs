@@ -32,6 +32,10 @@ pub async fn client_communicator(
                 debug!("Shutdown requested, stopping listener on {}", client_addr);
                 break;
             }
+            {
+                let mut guard = server_state_exchange.lock().await;
+                guard.set_main_display_state(false);
+            }
 
             // Wait for new connection with timeout so we can check shutdown flag periodically
             match time::timeout(
@@ -46,6 +50,7 @@ pub async fn client_communicator(
                     // on connection first request version to initiate communication
                     {
                         let mut guard = server_state_exchange.lock().await;
+                        guard.set_main_display_state(true);
                         guard.make_server_request_client_version().await;
                         debug!("Requested server version from client {}", client_addr);
                     }
@@ -148,12 +153,20 @@ pub async fn client_communicator(
                         Ok(_) => (),
                         Err(e) => {
                             error!("Client connection gone away: {}", e);
+                            {
+                                let mut guard = server_state_exchange.lock().await;
+                                guard.set_main_display_state(false);
+                            }
                             sleep(Duration::from_millis(1000)).await; // on dev the communication goes into docker, so it connects, then fails. But this spams logs. Slow down retry a bit
                         }
                     }
                 }
                 Ok(Err(e)) => {
                     error!("Client exchange error: {}", e);
+                    {
+                        let mut guard = server_state_exchange.lock().await;
+                        guard.set_main_display_state(false);
+                    }
                     sleep(Duration::from_millis(1000)).await; // on missing target the communication sometimes connects with "Error - connection refused" -> immediately fails. But this spams logs. Slow down retry a bit
                 }
                 Err(_) => {
@@ -161,6 +174,10 @@ pub async fn client_communicator(
                     trace!(
                         "No TCP connection to client could be established within timeout interval"
                     );
+                    {
+                        let mut guard = server_state_exchange.lock().await;
+                        guard.set_main_display_state(false);
+                    }
                 }
             }
         }

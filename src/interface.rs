@@ -46,6 +46,7 @@ pub struct ServerStateMachine {
     args: Args,
     pub state: ServerState,
     comm_channel: InstructionCommunicationChannel,
+    display_connected: bool,
 }
 impl ServerStateMachine {
     pub fn new(args: &Args, comm_channel: InstructionCommunicationChannel) -> Self {
@@ -53,6 +54,7 @@ impl ServerStateMachine {
             args: args.clone(),
             state: ServerState::PassthroughClient,
             comm_channel, // only used to send instructions outwards. Rest is done via incoming commands (there is a handler that continously takes them out of the channel and forwards them into us)
+            display_connected: false,
         }
     }
 
@@ -185,14 +187,32 @@ impl ServerStateMachine {
                         self.get_display_client_state(),
                     ));
                 }
+                MessageFromWebControl::SwitchMode => {
+                    if self.args.passthrough_to_display_program {
+                        match self.state {
+                            ServerState::PassthroughClient => {
+                                info!("Now passing through client");
+                                self.state = ServerState::PassthroughDisplayProgram
+                            }
+                            ServerState::PassthroughDisplayProgram => {
+                                info!("Now passing through external display program");
+                                self.state = ServerState::PassthroughClient
+                            }
+                        }
+                        self.send_message_to_client(MessageFromServerToClient::Clear);
+                    } else {
+                        self.state = ServerState::PassthroughClient;
+                    }
+                }
             },
         }
     }
 
     fn get_display_client_state(&self) -> DisplayClientState {
         DisplayClientState {
-            alive: true, // TODO
+            alive: self.display_connected,
             external_passthrough_mode: self.state == ServerState::PassthroughDisplayProgram,
+            can_switch_mode: self.args.passthrough_to_display_program,
         }
     }
 
@@ -225,6 +245,10 @@ impl ServerStateMachine {
                 e.to_string()
             ),
         }
+    }
+
+    pub fn set_main_display_state(&mut self, state: bool) {
+        self.display_connected = state;
     }
 }
 
