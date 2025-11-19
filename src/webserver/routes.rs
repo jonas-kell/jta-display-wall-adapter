@@ -26,6 +26,53 @@ pub async fn ws_route(
         }
     });
 
+    // Sender task
+    let mut sender_session = session.clone();
+    let comm_channel_data_read = comm_channel_data.clone();
+    actix_web::rt::spawn(async move {
+        loop {
+            match comm_channel_data_read
+                .wait_for_command_to_send_to_web_control()
+                .await
+            {
+                Err(_) => {
+                    trace!("No new command to send to web control within timeout interval");
+                    continue;
+                }
+                Ok(Err(e)) => {
+                    error!("Error reading from internal channel: {}", e.to_string());
+                    break;
+                }
+                Ok(Ok(msg)) => match sender_session
+                    .text(match serde_json::to_string(&msg) {
+                        Ok(str) => str,
+                        Err(e) => {
+                            error!(
+                                "Serde could not serealize message. This should not happen: {}",
+                                e
+                            );
+                            break;
+                        }
+                    })
+                    .await
+                {
+                    Ok(()) => {
+                        trace!("Communication to web control was sent out");
+                        continue;
+                    }
+                    Err(e) => {
+                        warn!(
+                            "Communication to web control went while sending message: {}",
+                            e.to_string()
+                        );
+                        break;
+                    }
+                },
+            }
+        }
+    });
+
+    let comm_channel_data_write = comm_channel_data;
     actix_web::rt::spawn(async move {
         while let Some(Ok(msg)) = msg_stream.next().await {
             match msg {
@@ -52,7 +99,7 @@ pub async fn ws_route(
                     };
 
                     trace!("Websocket received message: {:?}", msg_parsed);
-                    match comm_channel_data.take_in_command_from_web_control(msg_parsed) {
+                    match comm_channel_data_write.take_in_command_from_web_control(msg_parsed) {
                         Ok(()) => trace!("Websocket message forwarded into internal communication"),
                         Err(e) => {
                             error!("Websocket could not forward into internal message queue. That one should be always empty though. Not recoverable error: {}",e);

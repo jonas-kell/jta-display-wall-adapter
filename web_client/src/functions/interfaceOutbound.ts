@@ -10,3 +10,7 @@ export type FreeText = {
     type: "FreeText";
     data: string;
 };
+
+export type RequestDisplayClientState = {
+    type: "RequestDisplayClientState";
+};

@@ -11,6 +11,10 @@
     <br />
     <br />
     Connected: {{ mainStore.connected }}
+    <br />
+    <br />
+    Display Connected: {{ mainStore.displayConnected }}, Mode:
+    {{ mainStore.displayExternalPassthrough ? "External Passthrough" : "Default client" }}
 </template>
 
 <script setup lang="ts">

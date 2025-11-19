@@ -168,6 +168,7 @@ pub async fn client_communicator(
         Ok::<_, Error>(())
     });
 
+    // TODO: this tecnically does not need its own channel AND is kind of misplaced in this worker. -> should have at leats its own worker
     let server_state_intake = server_state;
     let comm_channel = comm_channel;
     let shutdown_marker_intake = shutdown_marker;

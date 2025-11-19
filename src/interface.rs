@@ -5,7 +5,7 @@ use crate::{
         IncomingInstruction, InstructionCommunicationChannel, InstructionFromTimingProgram,
         InstructionToTimingProgram,
     },
-    webserver::MessageFromWebControl,
+    webserver::{DisplayClientState, MessageFromWebControl, MessageToWebControl},
 };
 use images_core::images::{AnimationPlayer, ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
@@ -52,7 +52,7 @@ impl ServerStateMachine {
         Self {
             args: args.clone(),
             state: ServerState::PassthroughClient,
-            comm_channel, // only used to send instructions outwards. Rest is done via incoming commands
+            comm_channel, // only used to send instructions outwards. Rest is done via incoming commands (there is a handler that continously takes them out of the channel and forwards them into us)
         }
     }
 
@@ -63,8 +63,7 @@ impl ServerStateMachine {
                 error!("Client reported to have version: '{}'", version); // TODO compare and error if not compatible
 
                 // report the timing program our fake version
-                self.send_message_to_timing_program(InstructionToTimingProgram::SendServerInfo)
-                    .await;
+                self.send_message_to_timing_program(InstructionToTimingProgram::SendServerInfo);
 
                 // get client to respect window position and size
                 debug!(
@@ -84,8 +83,7 @@ impl ServerStateMachine {
                             .args
                             .slideshow_transition_duration_nr_ms,
                     },
-                ))
-                .await;
+                ));
 
                 // send client advertisement images
                 let folder_path = Path::new("advertisement_container");
@@ -98,16 +96,18 @@ impl ServerStateMachine {
                 };
                 self.send_message_to_client(MessageFromServerToClient::AdvertisementImages(
                     images_data,
-                ))
-                .await;
+                ));
             }
             MessageFromClientToServer::CurrentWindow(data) => {
                 if self.state == ServerState::PassthroughClient {
                     self.send_message_to_timing_program(InstructionToTimingProgram::SendFrame(
                         data,
-                    ))
-                    .await;
+                    ));
                 }
+                // ping the state to the web control
+                self.send_message_to_web_control(MessageToWebControl::DisplayClientState(
+                    self.get_display_client_state(),
+                ));
             }
         }
     }
@@ -121,7 +121,6 @@ impl ServerStateMachine {
                 InstructionFromTimingProgram::Freetext(text) => {
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::DisplayText(text))
-                            .await
                     }
                 }
                 InstructionFromTimingProgram::Clear => {
@@ -136,31 +135,28 @@ impl ServerStateMachine {
                                 self.state = ServerState::PassthroughClient
                             }
                         }
-                        self.send_message_to_client(MessageFromServerToClient::Clear)
-                            .await;
+                        self.send_message_to_client(MessageFromServerToClient::Clear);
                     } else {
                         self.state = ServerState::PassthroughClient;
                     }
                 }
                 InstructionFromTimingProgram::SendFrame(data) => {
+                    // this is a bit of a hack, because technically this message comes from the display program
                     trace!("Got command to send a frame inbound (should be from external display program to send back and possibly proxy to our client)");
                     if self.state == ServerState::PassthroughDisplayProgram {
                         self.send_message_to_client(
                             MessageFromServerToClient::DisplayExternalFrame(data),
-                        )
-                        .await;
+                        );
                     }
                 }
                 InstructionFromTimingProgram::Advertisements => {
                     if self.state == ServerState::PassthroughClient {
-                        self.send_message_to_client(MessageFromServerToClient::Advertisements)
-                            .await;
+                        self.send_message_to_client(MessageFromServerToClient::Advertisements);
                     }
                 }
                 InstructionFromTimingProgram::Timing => {
                     if self.state == ServerState::PassthroughClient {
-                        self.send_message_to_client(MessageFromServerToClient::Timing)
-                            .await;
+                        self.send_message_to_client(MessageFromServerToClient::Timing);
                     }
                 }
                 inst => error!("Unhandled instruction from timing program: {}", inst),
@@ -171,27 +167,36 @@ impl ServerStateMachine {
             IncomingInstruction::FromWebControl(inst) => match inst {
                 MessageFromWebControl::Advertisements => {
                     if self.state == ServerState::PassthroughClient {
-                        self.send_message_to_client(MessageFromServerToClient::Advertisements)
-                            .await;
+                        self.send_message_to_client(MessageFromServerToClient::Advertisements);
                     }
                 }
                 MessageFromWebControl::FreeText(text) => {
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::DisplayText(text))
-                            .await
                     }
                 }
                 MessageFromWebControl::Idle => {
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::Clear)
-                            .await
                     }
+                }
+                MessageFromWebControl::RequestDisplayClientState => {
+                    self.send_message_to_web_control(MessageToWebControl::DisplayClientState(
+                        self.get_display_client_state(),
+                    ));
                 }
             },
         }
     }
 
-    async fn send_message_to_timing_program(&mut self, inst: InstructionToTimingProgram) {
+    fn get_display_client_state(&self) -> DisplayClientState {
+        DisplayClientState {
+            alive: true, // TODO
+            external_passthrough_mode: self.state == ServerState::PassthroughDisplayProgram,
+        }
+    }
+
+    fn send_message_to_timing_program(&mut self, inst: InstructionToTimingProgram) {
         match self.comm_channel.send_out_command_to_timing_program(inst) {
             Ok(()) => (),
             Err(e) => error!("Failed to send out instruction: {}", e.to_string()),
@@ -200,14 +205,23 @@ impl ServerStateMachine {
 
     pub async fn make_server_request_client_version(&mut self) {
         self.send_message_to_client(MessageFromServerToClient::RequestVersion)
-            .await
     }
 
-    async fn send_message_to_client(&mut self, inst: MessageFromServerToClient) {
+    fn send_message_to_client(&mut self, inst: MessageFromServerToClient) {
         match self.comm_channel.send_out_command_to_client(inst) {
             Ok(()) => (),
             Err(e) => error!(
                 "Failed to send out instruction to client: {}",
+                e.to_string()
+            ),
+        }
+    }
+
+    fn send_message_to_web_control(&mut self, inst: MessageToWebControl) {
+        match self.comm_channel.send_out_command_to_web_control(inst) {
+            Ok(()) => (),
+            Err(e) => error!(
+                "Failed to send out instruction to web control: {}",
                 e.to_string()
             ),
         }

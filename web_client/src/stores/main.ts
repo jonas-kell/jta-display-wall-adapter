@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import { WS_URL } from "../functions/environment";
 import { Advertisements, FreeText, Idle } from "../functions/interfaceOutbound";
+import { InboundMessageType, parseMessage } from "../functions/interfaceInbound";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -9,12 +10,24 @@ function sleep(ms: number) {
 
 export default defineStore("main", () => {
     const connected = ref(false);
-    let reconnecting = false;
+    const displayConnected = ref(false);
+    const displayExternalPassthrough = ref(false);
 
+    let reconnecting = false;
     let ws = null as null | WebSocket;
 
     function handleWSMessage(ev: any) {
-        console.log(ev.data);
+        let msg = parseMessage(JSON.parse(ev.data));
+
+        switch (msg.type) {
+            case InboundMessageType.DisplayClientState:
+                displayConnected.value = msg.data.alive;
+                displayExternalPassthrough.value = msg.data.external_passthrough_mode;
+                break;
+            case InboundMessageType.Unknown:
+                console.error("Received unknown message type:", msg.data);
+                break;
+        }
     }
 
     async function initWS() {
@@ -65,12 +78,14 @@ export default defineStore("main", () => {
         };
         sendWSCommand(JSON.stringify(packet));
     }
+
     function sendIdleCommand() {
         const packet: Idle = {
             type: "Idle",
         };
         sendWSCommand(JSON.stringify(packet));
     }
+
     function sendFreetextCommand(payload: string) {
         const packet: FreeText = {
             type: "FreeText",
@@ -79,5 +94,12 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
 
-    return { connected, sendAdvertisementsCommand, sendIdleCommand, sendFreetextCommand };
+    return {
+        connected,
+        sendAdvertisementsCommand,
+        sendIdleCommand,
+        sendFreetextCommand,
+        displayConnected,
+        displayExternalPassthrough,
+    };
 });
