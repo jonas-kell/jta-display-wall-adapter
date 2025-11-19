@@ -14,18 +14,6 @@ docker compose up
 docker compose -f docker-compose.buildrun.yml up
 ```
 
-## Build and push to docker hub
-
-```cmd
-docker buildx create --use
-docker login
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  -t kellehorreur/jta-display-wall-adapter:latest \
-  -f docker/run/Dockerfile \
-  --push .
-```
-
 ## Build for Linux
 
 ```cmd
@@ -42,6 +30,20 @@ docker compose -f docker-compose.buildlegacy.yml up --abort-on-container-exit &&
 
 ```cmd
 docker compose -f docker-compose.buildwindows.yml up --abort-on-container-exit && docker compose -f docker-compose.buildwindows.yml down --remove-orphans
+```
+
+## Build and push to docker hub
+
+CAUTION: js must have been compiled beforehand -> run Build for linux, legacy or windows first!!!!
+
+```cmd
+docker buildx create --use
+docker login
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t kellehorreur/jta-display-wall-adapter:latest \
+  -f docker/run/Dockerfile \
+  --push .
 ```
 
 ## Start on a Windows live system
