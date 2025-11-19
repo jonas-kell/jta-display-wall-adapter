@@ -19,7 +19,7 @@ mod times;
 mod webserver;
 
 fn is_port_in_use(port: &str) -> bool {
-    let addr = format!("127.0.0.1:{}", port);
+    let addr = format!("0.0.0.0:{}", port);
     TcpListener::bind(addr).is_err()
 }
 

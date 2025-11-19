@@ -62,7 +62,7 @@ pub async fn ws_route(
                     }
                     Err(e) => {
                         warn!(
-                            "Communication to web control went while sending message: {}",
+                            "Communication to web control went away while sending message: {}",
                             e.to_string()
                         );
                         break;
