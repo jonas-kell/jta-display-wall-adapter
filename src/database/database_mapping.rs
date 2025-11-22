@@ -18,13 +18,16 @@ pub trait DatabaseSerializable: Sized + Serialize {
 }
 
 macro_rules! impl_database_serializable {
-    ($domain:ty, $db_model:ty, $table:ty, $serialize_fn:expr) => {
+    ($domain:ty, $db_model:ty, $table:ty) => {
         impl DatabaseSerializable for $domain {
             type DbModel = $db_model;
             type DbTable = $table;
 
             fn serialize_for_database(self) -> Result<Self::DbModel, DatabaseError> {
-                $serialize_fn(self)
+                Ok(Self::DbModel {
+                    id: self.id.to_string(),
+                    data: serde_json::to_string(&self)?,
+                })
             }
 
             fn store_to_database(self, manager: &DatabaseManager) -> Result<(), DatabaseError> {
@@ -46,12 +49,4 @@ pub struct HeatStartDatabase {
     id: String,
     data: String,
 }
-impl_database_serializable!(
-    HeatStart,
-    HeatStartDatabase,
-    heat_starts::table,
-    |self_param: HeatStart| Ok(HeatStartDatabase {
-        id: self_param.id.to_string(),
-        data: serde_json::to_string(&self_param)?,
-    })
-);
+impl_database_serializable!(HeatStart, HeatStartDatabase, heat_starts::table);
