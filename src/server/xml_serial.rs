@@ -146,11 +146,12 @@ pub struct HeatEventXML {
 }
 impl TryFrom<HeatEventXML> for HeatStart {
     fn try_from(value: HeatEventXML) -> Result<Self, Self::Error> {
+        let _ = value.heat_id; // drop because we get inconsistent type from source
+
         if let Some(time) = value.time {
             Ok(Self {
                 application: value.application,
                 generated: value.generated.0,
-                useless_heat_id: value.heat_id,
                 id: value.id,
                 time: time.0,
                 version: value.version,
@@ -164,12 +165,13 @@ impl TryFrom<HeatEventXML> for HeatStart {
 }
 impl TryFrom<HeatEventXML> for HeatFinish {
     fn try_from(value: HeatEventXML) -> Result<Self, Self::Error> {
+        let _ = value.heat_id; // drop because we get inconsistent type from source
+
         if let Some(time) = value.time {
             if let Some(race_time) = value.runtime {
                 Ok(Self {
                     application: value.application,
                     generated: value.generated.0,
-                    useless_heat_id: value.heat_id,
                     id: value.id,
                     time: time.0,
                     version: value.version,
@@ -187,12 +189,13 @@ impl TryFrom<HeatEventXML> for HeatFinish {
 }
 impl TryFrom<HeatEventXML> for HeatIntermediate {
     fn try_from(value: HeatEventXML) -> Result<Self, Self::Error> {
+        let _ = value.heat_id; // drop because we get inconsistent type from source
+
         if let Some(time) = value.time {
             if let Some(race_time) = value.runtime {
                 Ok(Self {
                     application: value.application,
                     generated: value.generated.0,
-                    useless_heat_id: value.heat_id,
                     id: value.id,
                     time: time.0,
                     version: value.version,
@@ -210,12 +213,13 @@ impl TryFrom<HeatEventXML> for HeatIntermediate {
 }
 impl TryFrom<HeatEventXML> for HeatFalseStart {
     fn try_from(value: HeatEventXML) -> Result<Self, Self::Error> {
+        let _ = value.heat_id; // drop because we get inconsistent type from source
+
         if let Some(is_false_start) = value.is_false_start {
             if is_false_start {
                 Ok(Self {
                     application: value.application,
                     generated: value.generated.0,
-                    useless_heat_id: value.heat_id,
                     id: value.id,
                     version: value.version,
                 })
@@ -319,14 +323,15 @@ pub struct HeatCompetitorXML {
 }
 impl From<HeatStartListXML> for HeatStartList {
     fn from(value: HeatStartListXML) -> Self {
+        let _ = value.heat_id; // drop because we get inconsistent type from source
+        let _ = value.session_id;
+        let _ = value.event_id;
+
         Self {
             name: value.name,
             id: value.id,
-            useless_heat_id: value.heat_id,
             nr: value.nr,
             session_nr: value.session_nr,
-            useless_session_id: value.session_id,
-            useless_event_id: value.event_id,
             distance_meters: value.distance_meters,
             scheduled_start_time: value.scheduled_start_time.0,
             competitors: value
@@ -384,11 +389,12 @@ impl TryFrom<HeatWindXML> for HeatWind {
             return Err("Can only parse wind that is in unit 'MetersPerSecond'".into());
         }
 
+        let _ = value.heat_id; // drop because we get inconsistent type from source
+        let _ = value.session_id;
+        let _ = value.event_id;
+
         Ok(Self {
             id: value.id,
-            useless_heat_id: value.heat_id,
-            useless_session_id: value.session_id,
-            useless_event_id: value.event_id,
             application: value.application,
             generated: value.generated.0,
             version: value.version,
@@ -487,11 +493,12 @@ impl TryFrom<CompetitorEvaluatedXML> for CompetitorEvaluated {
             runtime_full_precision: value.runtime_full_precision.0,
         };
 
+        let _ = value.heat_id; // drop because we get inconsistent type from source
+        let _ = value.session_id;
+        let _ = value.event_id;
+
         Ok(Self {
             id: value.id,
-            useless_heat_id: value.heat_id,
-            useless_session_id: value.session_id,
-            useless_event_id: value.event_id,
             application: value.application,
             generated: value.generated.0,
             version: value.version,
@@ -617,11 +624,12 @@ impl TryFrom<HeatResultXML> for HeatResult {
             }
         }
 
+        let _ = value.heat_id; // drop because we get inconsistent type from source
+        let _ = value.session_id;
+        let _ = value.event_id;
+
         Ok(Self {
             id: value.id,
-            useless_heat_id: value.heat_id,
-            useless_session_id: value.session_id,
-            useless_event_id: value.event_id,
             wind: value.wind.map(|w| RaceWind::parse_from_f32(w)),
             distance_meters: value.distance_meters,
             name: value.name,

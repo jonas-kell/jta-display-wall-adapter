@@ -11,13 +11,13 @@ pub enum DisqualificationReason {
     Canceled,
     Other(String),
 }
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HeatStart {
     pub application: String,
     pub version: String,
     pub generated: NaiveDateTime,
     pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
     pub time: DayTime,
 }
 
@@ -27,7 +27,6 @@ pub struct HeatFinish {
     pub version: String,
     pub generated: NaiveDateTime,
     pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
     pub time: DayTime,
     pub race_time: RaceTime,
 }
@@ -38,7 +37,6 @@ pub struct HeatIntermediate {
     pub version: String,
     pub generated: NaiveDateTime,
     pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
     pub time: DayTime,
     pub intermediate_time_at: RaceTime,
 }
@@ -49,18 +47,14 @@ pub struct HeatFalseStart {
     pub version: String,
     pub generated: NaiveDateTime,
     pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HeatStartList {
     pub name: String,
     pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
     pub nr: u32,
     pub session_nr: u32,
-    pub useless_session_id: String, // this is sometimes a date, sometimes numerical -> I think we do not use this
-    pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
     pub distance_meters: u32,
     pub scheduled_start_time: DayTime,
     pub competitors: Vec<HeatCompetitor>,
@@ -86,9 +80,6 @@ pub struct HeatWind {
     pub version: String,
     pub generated: NaiveDateTime,
     pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub useless_session_id: String, // this is sometimes a date, sometimes numerical -> I think we do not use this
-    pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
     pub wind: RaceWind,
 }
 
@@ -98,9 +89,6 @@ pub struct CompetitorEvaluated {
     pub version: String,
     pub generated: NaiveDateTime,
     pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub useless_session_id: String, // this is sometimes a date, sometimes numerical -> I think we do not use this
-    pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
     pub competitor_result: HeatCompetitorResult,
 }
 
@@ -125,9 +113,6 @@ pub struct HeatCompetitorResult {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HeatResult {
     pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub useless_session_id: String, // this is sometimes a date, sometimes numerical -> I think we do not use this
-    pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
     // usefull props
     pub name: String,
     pub distance_meters: u32,
