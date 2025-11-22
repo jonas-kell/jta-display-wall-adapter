@@ -1,0 +1,4 @@
+CREATE TABLE heat_starts (
+  id VARCHAR NOT NULL PRIMARY KEY,
+  data VARCHAR NOT NULL
+);

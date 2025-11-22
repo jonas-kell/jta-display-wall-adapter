@@ -1,1 +1,2 @@
 run.sh text eol=lf executable
+src/database/schema.patch eol=lf

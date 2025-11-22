@@ -3,7 +3,7 @@ use crate::instructions::InstructionCommunicationChannel;
 use crate::interface::ServerStateMachine;
 use crate::server::forwarding::PacketCommunicationChannel;
 use crate::server::parts::client_communicator::client_communicator;
-use crate::server::parts::database::database_test_task;
+use crate::server::parts::database::create_database_manager;
 use crate::server::parts::tcp_client_camera_program::tcp_client_camera_program;
 use crate::server::parts::tcp_forwarder_display_program::tcp_forwarder_display_program;
 use crate::server::parts::tcp_listener_timing_program::tcp_listener_timing_program;
@@ -99,9 +99,17 @@ pub async fn run_server(args: &Args) -> () {
 
     let comm_channel = InstructionCommunicationChannel::new(&args);
     let comm_channel_packets = PacketCommunicationChannel::new(&args);
+    let database_manager = match create_database_manager(args.clone()) {
+        Err(e) => {
+            error!("Database initialization problem: {}", e);
+            return ();
+        }
+        Ok(man) => man,
+    };
     let server_state = Arc::new(Mutex::new(ServerStateMachine::new(
         &args,
         comm_channel.clone(),
+        database_manager,
     )));
     let shutdown_marker = Arc::new(AtomicBool::new(false));
 
@@ -148,14 +156,6 @@ pub async fn run_server(args: &Args) -> () {
             error!("{}", e);
             return;
         }
-    };
-
-    match database_test_task(args.clone()) {
-        Err(e) => {
-            error!("WE HAVE A DATABASE PROBLEM: {}", e);
-            return ();
-        }
-        Ok(()) => (),
     };
 
     // spawn the async runtimes in parallel

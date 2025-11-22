@@ -1,5 +1,6 @@
 use crate::{
     args::Args,
+    database::{DatabaseManager, DatabaseSerializable},
     file::read_image_files,
     instructions::{
         IncomingInstruction, InstructionCommunicationChannel, InstructionFromTimingProgram,
@@ -47,14 +48,20 @@ pub struct ServerStateMachine {
     pub state: ServerState,
     comm_channel: InstructionCommunicationChannel,
     display_connected: bool,
+    database_manager: DatabaseManager,
 }
 impl ServerStateMachine {
-    pub fn new(args: &Args, comm_channel: InstructionCommunicationChannel) -> Self {
+    pub fn new(
+        args: &Args,
+        comm_channel: InstructionCommunicationChannel,
+        database_manager: DatabaseManager,
+    ) -> Self {
         Self {
             args: args.clone(),
             state: ServerState::PassthroughClient,
             comm_channel, // only used to send instructions outwards. Rest is done via incoming commands (there is a handler that continously takes them out of the channel and forwards them into us)
             display_connected: false,
+            database_manager,
         }
     }
 
@@ -164,6 +171,18 @@ impl ServerStateMachine {
                 inst => error!("Unhandled instruction from timing program: {}", inst),
             },
             IncomingInstruction::FromCameraProgram(inst) => match inst {
+                crate::instructions::InstructionFromCameraProgram::HeatStart(start) => {
+                    info!("Heat start to store");
+
+                    match start.store_to_database(&self.database_manager) {
+                        Ok(()) => {
+                            info!("Success, we stored into the database");
+                        }
+                        Err(e) => {
+                            error!("Database storage error: {}", e);
+                        }
+                    }
+                }
                 inst => error!("Unhandled instruction from camera program: {:?}", inst),
             },
             IncomingInstruction::FromWebControl(inst) => match inst {

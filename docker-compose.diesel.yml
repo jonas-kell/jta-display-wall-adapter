@@ -1,0 +1,10 @@
+services:
+  diesel:
+    build:
+      context: ./
+      dockerfile: ./docker/diesel/Dockerfile
+    volumes:
+      - ./:/app
+    environment:
+      DATABASE_URL: "sqlite:///app/database_container/db.db"
+    entrypoint: ["diesel"]

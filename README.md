@@ -4,6 +4,19 @@ Software used for running custom display walls.
 
 ## Dev
 
+Init diesel database and make schema changes
+
+```cmd
+# inital setup
+docker compose -f docker-compose.diesel.yml run --rm diesel setup && docker compose -f docker-compose.diesel.yml down --remove-orphans
+# create migration
+docker compose -f docker-compose.diesel.yml run --rm diesel migration generate init && docker compose -f docker-compose.diesel.yml down --remove-orphans
+# run migrations and print schema to file
+docker compose -f docker-compose.diesel.yml run --rm diesel migration run && docker compose -f docker-compose.diesel.yml run --rm diesel migration redo && docker compose -f docker-compose.diesel.yml down --remove-orphans
+```
+
+Run dev mode
+
 ```cmd
 docker compose up
 ```

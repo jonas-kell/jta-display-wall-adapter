@@ -83,6 +83,12 @@ impl From<TryFromIntError> for DatabaseError {
     }
 }
 
+impl From<serde_json::Error> for DatabaseError {
+    fn from(error: serde_json::Error) -> DatabaseError {
+        DatabaseError::new(format!("Serde JSON error: {}", error))
+    }
+}
+
 impl From<DatabaseError> for std::io::Error {
     fn from(value: DatabaseError) -> Self {
         return std::io::Error::new(
