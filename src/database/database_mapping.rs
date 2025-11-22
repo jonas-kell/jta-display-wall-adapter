@@ -6,19 +6,30 @@ use crate::database::DatabaseManager;
 use crate::server::xml_types::HeatStart;
 use diesel::associations::HasTable;
 use diesel::prelude::*;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
-pub trait DatabaseSerializable: Sized + Serialize {
+pub trait DatabaseSerializable: Sized + Serialize + for<'a> Deserialize<'a> {
     type DbTable: Table + HasTable<Table = Self::DbTable>;
     type DbModel: Insertable<Self::DbTable>;
 
     fn serialize_for_database(self) -> Result<Self::DbModel, DatabaseError>;
 
     fn store_to_database(self, manager: &DatabaseManager) -> Result<(), DatabaseError>;
+
+    fn get_from_database_by_id(id: Uuid, manager: &DatabaseManager) -> Result<Self, DatabaseError>;
 }
 
 macro_rules! impl_database_serializable {
-    ($domain:ty, $db_model:ty, $table:ty) => {
+    ($domain:ty, $db_model:ty, $table:ty, $id:expr) => {
+        impl TryFrom<$db_model> for $domain {
+            fn try_from(value: $db_model) -> Result<Self, Self::Error> {
+                Ok(serde_json::from_str(&value.data)?)
+            }
+
+            type Error = DatabaseError;
+        }
+
         impl DatabaseSerializable for $domain {
             type DbModel = $db_model;
             type DbTable = $table;
@@ -36,17 +47,33 @@ macro_rules! impl_database_serializable {
                 diesel::insert_into(<$table>::table())
                     .values(db_model)
                     .execute(&mut conn)?;
-
                 Ok(())
+            }
+
+            fn get_from_database_by_id(
+                id: Uuid,
+                manager: &DatabaseManager,
+            ) -> Result<Self, DatabaseError> {
+                let mut conn = manager.get_connection()?;
+                let data: Self::DbModel = <$table>::table()
+                    .filter($id.eq(id.to_string()))
+                    .first(&mut conn)?;
+
+                Self::try_from(data)
             }
         }
     };
 }
 
-#[derive(Insertable, Queryable)]
+#[derive(Insertable, Queryable, Identifiable)]
 #[diesel(table_name = heat_starts)]
 pub struct HeatStartDatabase {
     id: String,
     data: String,
 }
-impl_database_serializable!(HeatStart, HeatStartDatabase, heat_starts::table);
+impl_database_serializable!(
+    HeatStart,
+    HeatStartDatabase,
+    heat_starts::table,
+    heat_starts::id
+);
