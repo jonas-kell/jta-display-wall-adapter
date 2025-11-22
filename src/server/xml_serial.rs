@@ -2,6 +2,11 @@ use crate::args::Args;
 use crate::hex::hex_log_bytes;
 use crate::hex::{parse_race_time, parse_two_digits, take_until_and_consume};
 use crate::instructions::InstructionFromCameraProgram;
+use crate::server::camera_program_datatypes::{
+    CompetitorEvaluated, DifferenceToCandidate, DisqualificationReason, HeatCompetitor,
+    HeatCompetitorResult, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
+    HeatStartList, HeatWind,
+};
 use crate::times::{DayTime, RaceTime, RaceWind};
 use chrono::NaiveDateTime;
 use nom::branch::alt;
@@ -9,7 +14,7 @@ use nom::bytes::complete::tag;
 use nom::character::complete::multispace0;
 use nom::{IResult, Parser};
 use quick_xml::de::from_str;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer};
 use uuid::Uuid;
 
 pub struct BufferedParserXML {
@@ -106,14 +111,6 @@ impl<'de> Deserialize<'de> for HeatRaceTime {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum DisqualificationReason {
-    Disqualified,
-    DidNotStart,
-    DidNotFinish,
-    Canceled,
-    Other(String),
-}
 impl DisqualificationReason {
     fn parse_from_string(input: &str) -> Self {
         match input {
@@ -129,7 +126,7 @@ impl DisqualificationReason {
 }
 
 #[derive(Deserialize, Clone)]
-struct HeatEventXML {
+pub struct HeatEventXML {
     #[serde(rename = "@Application")]
     application: String,
     #[serde(rename = "@Version")]
@@ -146,16 +143,6 @@ struct HeatEventXML {
     runtime: Option<HeatRaceTime>,
     #[serde(rename = "@IsFalseStart")]
     is_false_start: Option<bool>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeatStart {
-    pub application: String,
-    pub version: String,
-    pub generated: NaiveDateTime,
-    pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub time: DayTime,
 }
 impl TryFrom<HeatEventXML> for HeatStart {
     fn try_from(value: HeatEventXML) -> Result<Self, Self::Error> {
@@ -174,17 +161,6 @@ impl TryFrom<HeatEventXML> for HeatStart {
     }
 
     type Error = String;
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeatFinish {
-    pub application: String,
-    pub version: String,
-    pub generated: NaiveDateTime,
-    pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub time: DayTime,
-    pub race_time: RaceTime,
 }
 impl TryFrom<HeatEventXML> for HeatFinish {
     fn try_from(value: HeatEventXML) -> Result<Self, Self::Error> {
@@ -209,17 +185,6 @@ impl TryFrom<HeatEventXML> for HeatFinish {
 
     type Error = String;
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeatIntermediate {
-    pub application: String,
-    pub version: String,
-    pub generated: NaiveDateTime,
-    pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub time: DayTime,
-    pub intermediate_time_at: RaceTime,
-}
 impl TryFrom<HeatEventXML> for HeatIntermediate {
     fn try_from(value: HeatEventXML) -> Result<Self, Self::Error> {
         if let Some(time) = value.time {
@@ -242,15 +207,6 @@ impl TryFrom<HeatEventXML> for HeatIntermediate {
     }
 
     type Error = String;
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeatFalseStart {
-    pub application: String,
-    pub version: String,
-    pub generated: NaiveDateTime,
-    pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
 }
 impl TryFrom<HeatEventXML> for HeatFalseStart {
     fn try_from(value: HeatEventXML) -> Result<Self, Self::Error> {
@@ -275,7 +231,7 @@ impl TryFrom<HeatEventXML> for HeatFalseStart {
 }
 
 #[derive(Deserialize)]
-struct HeatStartListXML {
+pub struct HeatStartListXML {
     #[serde(rename = "@Name")]
     name: String,
     #[serde(rename = "@Id")]
@@ -318,7 +274,7 @@ fn default_str_nation() -> String {
 }
 
 #[derive(Deserialize, Clone)]
-struct HeatCompetitorXML {
+pub struct HeatCompetitorXML {
     #[serde(rename = "@Id")]
     id: String,
     #[serde(rename = "@Lane")]
@@ -361,20 +317,6 @@ struct HeatCompetitorXML {
     #[serde(rename = "@Finishtime")] // this is called differently in Evaluated!!
     finish_time: Option<HeatTime>,
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeatStartList {
-    pub name: String,
-    pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub nr: u32,
-    pub session_nr: u32,
-    pub useless_session_id: String, // this is sometimes a date, sometimes numerical -> I think we do not use this
-    pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
-    pub distance_meters: u32,
-    pub scheduled_start_time: DayTime,
-    pub competitors: Vec<HeatCompetitor>,
-}
 impl From<HeatStartListXML> for HeatStartList {
     fn from(value: HeatStartListXML) -> Self {
         Self {
@@ -396,20 +338,6 @@ impl From<HeatStartListXML> for HeatStartList {
         }
     }
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeatCompetitor {
-    id: String,
-    lane: u32,
-    bib: u32,
-    class: String,
-    last_name: String,
-    first_name: String,
-    nation: String,
-    club: String,
-    gender: String,
-    disqualified: Option<DisqualificationReason>,
-}
 impl From<HeatCompetitorXML> for HeatCompetitor {
     fn from(value: HeatCompetitorXML) -> Self {
         Self {
@@ -430,7 +358,7 @@ impl From<HeatCompetitorXML> for HeatCompetitor {
 }
 
 #[derive(Deserialize)]
-struct HeatWindXML {
+pub struct HeatWindXML {
     #[serde(rename = "@Application")]
     application: String,
     #[serde(rename = "@Version")]
@@ -449,18 +377,6 @@ struct HeatWindXML {
     wind: Option<f32>,
     #[serde(rename = "@WindUnit")]
     wind_unit: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeatWind {
-    pub application: String,
-    pub version: String,
-    pub generated: NaiveDateTime,
-    pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub useless_session_id: String, // this is sometimes a date, sometimes numerical -> I think we do not use this
-    pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
-    pub wind: RaceWind,
 }
 impl TryFrom<HeatWindXML> for HeatWind {
     fn try_from(value: HeatWindXML) -> Result<Self, Self::Error> {
@@ -485,7 +401,7 @@ impl TryFrom<HeatWindXML> for HeatWind {
 }
 
 #[derive(Deserialize)]
-struct CompetitorEvaluatedXML {
+pub struct CompetitorEvaluatedXML {
     #[serde(rename = "@Application")]
     application: String,
     #[serde(rename = "@Version")]
@@ -541,18 +457,6 @@ struct CompetitorEvaluatedXML {
     #[serde(rename = "@Time")] // this is called differently in general Competitor parser
     finish_time: HeatTime,
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct CompetitorEvaluated {
-    pub application: String,
-    pub version: String,
-    pub generated: NaiveDateTime,
-    pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub useless_session_id: String, // this is sometimes a date, sometimes numerical -> I think we do not use this
-    pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
-    pub competitor_result: HeatCompetitorResult,
-}
 impl TryFrom<CompetitorEvaluatedXML> for CompetitorEvaluated {
     fn try_from(value: CompetitorEvaluatedXML) -> Result<Self, Self::Error> {
         let competitor_result = HeatCompetitorResult {
@@ -597,11 +501,6 @@ impl TryFrom<CompetitorEvaluatedXML> for CompetitorEvaluated {
     type Error = String;
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum DifferenceToCandidate {
-    Winner,
-    Difference(RaceTime),
-}
 impl DifferenceToCandidate {
     fn parse_from_string(input: String) -> Result<DifferenceToCandidate, String> {
         if input == "Sieger" {
@@ -613,17 +512,6 @@ impl DifferenceToCandidate {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeatCompetitorResult {
-    competitor: HeatCompetitor,
-    distance: u32,
-    rank: u32,
-    runtime: RaceTime,
-    runtime_full_precision: RaceTime,
-    difference_to_winner: DifferenceToCandidate,
-    difference_to_previous: DifferenceToCandidate,
-    finish_time: DayTime,
-}
 impl TryFrom<HeatCompetitorXML> for HeatCompetitorResult {
     fn try_from(value: HeatCompetitorXML) -> Result<Self, Self::Error> {
         let heat_competitor: HeatCompetitor = value.clone().into();
@@ -679,7 +567,7 @@ impl TryFrom<HeatCompetitorXML> for HeatCompetitorResult {
 }
 
 #[derive(Deserialize)]
-struct HeatResultXML {
+pub struct HeatResultXML {
     #[serde(rename = "@Id")]
     id: Uuid,
     #[serde(rename = "@HeatId")]
@@ -709,22 +597,6 @@ struct ResultsXML {
     #[serde(default)]
     #[serde(rename = "Competitor")]
     competitors: Vec<HeatCompetitorXML>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HeatResult {
-    pub id: Uuid,
-    pub useless_heat_id: String, // this is sometimes numerical, sometimes a uuid -> I think we do not use this
-    pub useless_session_id: String, // this is sometimes a date, sometimes numerical -> I think we do not use this
-    pub useless_event_id: String, // this is sometimes a uuid, sometimes numerical -> I think we do not use this
-    // usefull props
-    pub name: String,
-    pub distance_meters: u32,
-    pub start_time: DayTime,
-    pub wind: Option<RaceWind>,
-    // vec data
-    pub competitors_evaluated: Vec<HeatCompetitorResult>,
-    pub competitors_left_to_evaluate: Vec<HeatCompetitor>,
 }
 impl TryFrom<HeatResultXML> for HeatResult {
     fn try_from(value: HeatResultXML) -> Result<Self, Self::Error> {
