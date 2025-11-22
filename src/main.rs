@@ -10,6 +10,7 @@ use server::run_server;
 
 mod args;
 mod client;
+mod database;
 mod file;
 mod hex;
 mod instructions;

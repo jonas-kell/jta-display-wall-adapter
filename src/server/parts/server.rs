@@ -3,6 +3,7 @@ use crate::instructions::InstructionCommunicationChannel;
 use crate::interface::ServerStateMachine;
 use crate::server::forwarding::PacketCommunicationChannel;
 use crate::server::parts::client_communicator::client_communicator;
+use crate::server::parts::database::database_test_task;
 use crate::server::parts::tcp_client_camera_program::tcp_client_camera_program;
 use crate::server::parts::tcp_forwarder_display_program::tcp_forwarder_display_program;
 use crate::server::parts::tcp_listener_timing_program::tcp_listener_timing_program;
@@ -147,6 +148,14 @@ pub async fn run_server(args: &Args) -> () {
             error!("{}", e);
             return;
         }
+    };
+
+    match database_test_task(args.clone()) {
+        Err(e) => {
+            error!("WE HAVE A DATABASE PROBLEM: {}", e);
+            return ();
+        }
+        Ok(()) => (),
     };
 
     // spawn the async runtimes in parallel

@@ -10,6 +10,7 @@
 *.sh
 *.bat
 /move_container
+/database_container
 /advertisement_container
 /.vscode
 /web_client/**
