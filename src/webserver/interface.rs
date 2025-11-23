@@ -1,4 +1,4 @@
-use crate::{database::PermanentlyStoredDataset, server::xml_types::HeatStart};
+use crate::{database::PermanentlyStoredDataset, server::xml_types::HeatMeta};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -9,7 +9,7 @@ pub enum MessageFromWebControl {
     FreeText(String),
     RequestDisplayClientState,
     SwitchMode,
-    GetHeatStarts,
+    GetHeats,
     GetLogs(u32),
 }
 
@@ -24,6 +24,6 @@ pub struct DisplayClientState {
 #[serde(tag = "type", content = "data")]
 pub enum MessageToWebControl {
     DisplayClientState(DisplayClientState),
-    HeatStarts(Vec<HeatStart>),
+    HeatsMeta(Vec<HeatMeta>),
     Logs(Vec<PermanentlyStoredDataset>),
 }

@@ -130,3 +130,33 @@ pub struct HeatResult {
     pub competitors_evaluated: Vec<HeatCompetitorResult>,
     pub competitors_left_to_evaluate: Vec<HeatCompetitor>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeatMeta {
+    pub id: Uuid,
+    pub name: String,
+    pub number: u32,
+    pub scheduled_start_time_string: String,
+}
+impl From<HeatStartList> for HeatMeta {
+    fn from(value: HeatStartList) -> Self {
+        HeatMeta {
+            id: value.id,
+            name: value.name,
+            number: value.nr,
+            scheduled_start_time_string: value.scheduled_start_time.to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HeatData {
+    pub meta: HeatMeta,
+    pub start_list: HeatStartList,
+    pub start: Option<HeatStart>,
+    pub intermediates: Option<Vec<HeatIntermediate>>,
+    pub wind: Option<HeatWind>,
+    pub finishes: Option<HeatFinish>,
+    pub evaluations: Option<Vec<CompetitorEvaluated>>,
+    pub result: Option<HeatResult>,
+}

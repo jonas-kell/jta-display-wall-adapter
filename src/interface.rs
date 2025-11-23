@@ -6,7 +6,7 @@ use crate::{
         IncomingInstruction, InstructionCommunicationChannel, InstructionFromCameraProgram,
         InstructionFromTimingProgram, InstructionToTimingProgram,
     },
-    server::xml_types::HeatStart,
+    server::xml_types::{HeatStart, HeatStartList},
     webserver::{DisplayClientState, MessageFromWebControl, MessageToWebControl},
 };
 use images_core::images::{AnimationPlayer, ImageMeta, ImagesStorage};
@@ -254,11 +254,13 @@ impl ServerStateMachine {
                         self.state = ServerState::PassthroughClient;
                     }
                 }
-                MessageFromWebControl::GetHeatStarts => {
-                    trace!("Heat Starts were requested");
-                    match HeatStart::get_all_from_database(&self.database_manager) {
+                MessageFromWebControl::GetHeats => {
+                    trace!("Heats were requested");
+                    match HeatStartList::get_all_from_database(&self.database_manager) {
                         Ok(data) => {
-                            self.send_message_to_web_control(MessageToWebControl::HeatStarts(data));
+                            self.send_message_to_web_control(MessageToWebControl::HeatsMeta(
+                                data.into_iter().map(|h| h.into()).collect(),
+                            ));
                         }
                         Err(e) => {
                             error!("Database loading error: {}", e);

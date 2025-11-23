@@ -4,13 +4,13 @@ import { WS_URL } from "../functions/environment";
 import {
     Advertisements,
     FreeText,
-    GetHeatStarts,
+    GetHeats,
     GetLogs,
     Idle,
     RequestDisplayClientState,
     SwitchMode,
 } from "../functions/interfaceOutbound";
-import { HeatStarts, InboundMessageType, LogEntry, parseMessage } from "../functions/interfaceInbound";
+import { HeatMeta, InboundMessageType, LogEntry, parseMessage } from "../functions/interfaceInbound";
 import { CircularBuffer } from "../functions/circularBUffer";
 
 function sleep(ms: number) {
@@ -43,8 +43,11 @@ export default defineStore("main", () => {
                 displayExternalPassthrough.value = msg.data.external_passthrough_mode;
                 displayCanSwitchModeInternal.value = msg.data.can_switch_mode;
                 return;
-            case InboundMessageType.HeatStarts:
-                heatStartsResult.value = msg.data;
+            case InboundMessageType.HeatsMeta:
+                heatsMetaResult.value = msg.data;
+                heatsMetaResult.value.sort((a, b) => {
+                    return a.scheduled_start_time_string.localeCompare(b.scheduled_start_time_string);
+                });
                 return;
             case InboundMessageType.Logs:
                 const entArr = msg.data;
@@ -158,13 +161,13 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
 
-    function sendGetHeatStartsCommand() {
-        const packet: GetHeatStarts = {
-            type: "GetHeatStarts",
+    function sendGetHeatsCommand() {
+        const packet: GetHeats = {
+            type: "GetHeats",
         };
         sendWSCommand(JSON.stringify(packet));
     }
-    const heatStartsResult = ref(null as null | HeatStarts);
+    const heatsMetaResult = ref([] as HeatMeta[]);
 
     function sendGetLogsCommand(how_many: number) {
         if (how_many < 0) {
@@ -190,10 +193,10 @@ export default defineStore("main", () => {
         sendAdvertisementsCommand,
         sendIdleCommand,
         sendFreetextCommand,
-        sendGetHeatStartsCommand,
+        sendGetHeatsCommand,
         sendGetLogsCommand,
         logEntries,
-        heatStartsResult,
+        heatsMetaResult,
         displayConnected,
         displayExternalPassthrough,
         displayCanSwitchMode,

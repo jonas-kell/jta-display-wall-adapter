@@ -1,3 +1,14 @@
+// server Datatype formats (keep in sync with "./../../../src/server/camera_program_datatypes.rs")
+
+export type HeatMeta = {
+    id: string;
+    name: string;
+    number: number;
+    scheduled_start_time_string: string;
+};
+
+// message formats
+
 export type DisplayClientStateState = {
     alive: boolean;
     external_passthrough_mode: boolean;
@@ -9,9 +20,9 @@ export type DisplayClientState = {
     data: DisplayClientStateState;
 };
 
-export type HeatStarts = {
-    type: "HeatStarts";
-    data: any;
+export type HeatsMeta = {
+    type: "HeatsMeta";
+    data: HeatMeta[];
 };
 
 export type LogEntry = {
@@ -33,11 +44,11 @@ export type Unknown = {
 export enum InboundMessageType {
     DisplayClientState = "DisplayClientState",
     Unknown = "Unknown",
-    HeatStarts = "HeatStarts",
+    HeatsMeta = "HeatsMeta",
     Logs = "Logs",
 }
 
-export type InboundMessage = DisplayClientState | HeatStarts | Logs | Unknown;
+export type InboundMessage = DisplayClientState | HeatsMeta | Logs | Unknown;
 
 export function parseMessage(json: unknown): InboundMessage {
     if (typeof json !== "object" || json === null) {
@@ -49,8 +60,8 @@ export function parseMessage(json: unknown): InboundMessage {
     switch (obj.type) {
         case InboundMessageType.DisplayClientState:
             return { type: "DisplayClientState", data: obj.data } as DisplayClientState;
-        case InboundMessageType.HeatStarts:
-            return { type: "HeatStarts", data: obj.data } as HeatStarts;
+        case InboundMessageType.HeatsMeta:
+            return { type: "HeatsMeta", data: obj.data } as HeatsMeta;
         case InboundMessageType.Logs:
             return { type: "Logs", data: obj.data } as Logs;
 

@@ -18,8 +18,11 @@
     <button @click="mainStore.sendSwitchModeCommand" :disabled="!mainStore.displayCanSwitchMode">Switch Mode</button>
     <br />
     <br />
-    <button @click="mainStore.sendGetHeatStartsCommand">Get Heats</button>
-    {{ mainStore.heatStartsResult }}
+    <button @click="mainStore.sendGetHeatsCommand">Get Heats</button>
+    <p v-for="heatEntry in mainStore.heatsMetaResult">
+        {{ heatEntry.name }}, Nr: {{ heatEntry.number }}, Time: {{ heatEntry.scheduled_start_time_string }}
+    </p>
+    <p v-if="mainStore.heatsMetaResult.length == 0">No heats loaded/available</p>
     <br />
     <br />
     <button @click="mainStore.sendGetLogsCommand(10000)">Get Logs</button>

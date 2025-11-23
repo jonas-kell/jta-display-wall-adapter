@@ -127,7 +127,7 @@ impl DisqualificationReason {
 }
 
 #[derive(Deserialize, Clone)]
-pub struct HeatEventXML {
+struct HeatEventXML {
     #[serde(rename = "@Application")]
     application: String,
     #[serde(rename = "@Version")]
@@ -236,7 +236,7 @@ impl TryFrom<HeatEventXML> for HeatFalseStart {
 }
 
 #[derive(Deserialize)]
-pub struct HeatStartListXML {
+struct HeatStartListXML {
     #[serde(rename = "@Name")]
     name: String,
     #[serde(rename = "@Id")]
@@ -283,7 +283,7 @@ fn default_str_nation() -> String {
 }
 
 #[derive(Deserialize, Clone)]
-pub struct HeatCompetitorXML {
+struct HeatCompetitorXML {
     #[serde(rename = "@Id")]
     id: String,
     #[serde(rename = "@Lane")]
@@ -370,7 +370,7 @@ impl From<HeatCompetitorXML> for HeatCompetitor {
 }
 
 #[derive(Deserialize)]
-pub struct HeatWindXML {
+struct HeatWindXML {
     #[serde(rename = "@Application")]
     application: String,
     #[serde(rename = "@Version")]
@@ -428,7 +428,7 @@ impl From<HeatWindXML> for HeatWindMissing {
 }
 
 #[derive(Deserialize)]
-pub struct CompetitorEvaluatedXML {
+struct CompetitorEvaluatedXML {
     #[serde(rename = "@Application")]
     application: String,
     #[serde(rename = "@Version")]
@@ -597,7 +597,7 @@ impl TryFrom<HeatCompetitorXML> for HeatCompetitorResult {
 }
 
 #[derive(Deserialize)]
-pub struct HeatResultXML {
+struct HeatResultXML {
     #[serde(rename = "@Id")]
     id: Uuid,
     #[serde(rename = "@HeatId")]
