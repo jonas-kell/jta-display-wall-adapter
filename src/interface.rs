@@ -1,6 +1,6 @@
 use crate::{
     args::Args,
-    database::{DatabaseManager, DatabaseSerializable},
+    database::{get_log_limited, DatabaseManager, DatabaseSerializable},
     file::read_image_files,
     instructions::{
         IncomingInstruction, InstructionCommunicationChannel, InstructionFromTimingProgram,
@@ -229,6 +229,17 @@ impl ServerStateMachine {
                     match HeatStart::get_all_from_database(&self.database_manager) {
                         Ok(data) => {
                             self.send_message_to_web_control(MessageToWebControl::HeatStarts(data));
+                        }
+                        Err(e) => {
+                            error!("Database loading error: {}", e);
+                        }
+                    }
+                }
+                MessageFromWebControl::GetLogs(how_many) => {
+                    trace!("{} Logs were requested", how_many);
+                    match get_log_limited(Some(how_many), &self.database_manager) {
+                        Ok(data) => {
+                            self.send_message_to_web_control(MessageToWebControl::Logs(data));
                         }
                         Err(e) => {
                             error!("Database loading error: {}", e);

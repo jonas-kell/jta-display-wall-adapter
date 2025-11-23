@@ -1,0 +1,6 @@
+CREATE TABLE permanent_storage (
+  id VARCHAR NOT NULL PRIMARY KEY,  
+  name_key VARCHAR NOT NULL,
+  stored_at TIMESTAMP NOT NULL,
+  data VARCHAR NOT NULL
+);

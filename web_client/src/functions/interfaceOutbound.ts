@@ -22,3 +22,8 @@ export type SwitchMode = {
 export type GetHeatStarts = {
     type: "GetHeatStarts";
 };
+
+export type GetLogs = {
+    type: "GetLogs";
+    data: number;
+};

@@ -5,11 +5,12 @@ import {
     Advertisements,
     FreeText,
     GetHeatStarts,
+    GetLogs,
     Idle,
     RequestDisplayClientState,
     SwitchMode,
 } from "../functions/interfaceOutbound";
-import { HeatStarts, InboundMessageType, parseMessage } from "../functions/interfaceInbound";
+import { HeatStarts, InboundMessageType, LogEntry, parseMessage } from "../functions/interfaceInbound";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -41,6 +42,9 @@ export default defineStore("main", () => {
                 return;
             case InboundMessageType.HeatStarts:
                 heatStartsResult.value = msg.data;
+                return;
+            case InboundMessageType.Logs:
+                logEntries.value = msg.data;
                 return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);
@@ -152,6 +156,20 @@ export default defineStore("main", () => {
     }
     const heatStartsResult = ref(null as null | HeatStarts);
 
+    function sendGetLogsCommand(how_many: number) {
+        if (how_many < 0) {
+            how_many = 1;
+        }
+        how_many = Math.floor(how_many);
+
+        const packet: GetLogs = {
+            type: "GetLogs",
+            data: how_many,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    const logEntries = ref([] as LogEntry[]);
+
     const displayCanSwitchMode = computed(() => {
         return displayCanSwitchModeInternal.value && displayConnected.value;
     });
@@ -163,6 +181,8 @@ export default defineStore("main", () => {
         sendIdleCommand,
         sendFreetextCommand,
         sendGetHeatStartsCommand,
+        sendGetLogsCommand,
+        logEntries,
         heatStartsResult,
         displayConnected,
         displayExternalPassthrough,

@@ -1,9 +1,11 @@
 // to avoid mapping this into the database for real (as we only basically process the datatypes in rust and make really no computations on the database) we just store everything serealized
 
 use crate::database::db::DatabaseError;
-use crate::database::schema::heat_starts;
+use crate::database::schema::{heat_starts, permanent_storage};
 use crate::database::DatabaseManager;
 use crate::server::xml_types::HeatStart;
+use chrono::NaiveDateTime;
+use chrono::Utc;
 use diesel::associations::HasTable;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -49,6 +51,19 @@ macro_rules! impl_database_serializable {
                     .do_update()
                     .set(&db_model)
                     .execute(&mut conn)?;
+                // permanent storage
+                let name = String::from(std::any::type_name::<$domain>());
+                let perm = PermanentStorageDatabase {
+                    id: Uuid::new_v4().to_string(),
+                    name_key: name,
+                    stored_at: Utc::now().naive_utc(),
+                    data: db_model.data,
+                };
+                diesel::insert_into(permanent_storage::table::table())
+                    .values(&perm)
+                    .on_conflict_do_nothing()
+                    .execute(&mut conn)?;
+
                 Ok(())
             }
 
@@ -101,3 +116,39 @@ impl_database_serializable!(
         data: serde_json::to_string(self_obj)?,
     })
 );
+
+#[derive(Insertable, Queryable, Identifiable)]
+#[diesel(table_name = permanent_storage)]
+struct PermanentStorageDatabase {
+    id: String,
+    name_key: String,
+    stored_at: NaiveDateTime,
+    data: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PermanentlyStoredDataset {
+    name_key: String,
+    stored_at: NaiveDateTime,
+    data: String,
+}
+
+pub fn get_log_limited(
+    limit: Option<u32>,
+    manager: &DatabaseManager,
+) -> Result<Vec<PermanentlyStoredDataset>, DatabaseError> {
+    let mut conn = manager.get_connection()?;
+    let data = permanent_storage::table::table()
+        .order(permanent_storage::stored_at.desc())
+        .limit(limit.map(|a| a as i64).unwrap_or(i64::MAX))
+        .load::<PermanentStorageDatabase>(&mut conn)?;
+
+    Ok(data
+        .into_iter()
+        .map(|h| PermanentlyStoredDataset {
+            data: h.data,
+            name_key: h.name_key,
+            stored_at: h.stored_at,
+        })
+        .collect::<Vec<PermanentlyStoredDataset>>())
+}

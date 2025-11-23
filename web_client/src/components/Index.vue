@@ -20,6 +20,13 @@
     <br />
     <button @click="mainStore.sendGetHeatStartsCommand">Get Heats</button>
     {{ mainStore.heatStartsResult }}
+    <br />
+    <br />
+    <button @click="mainStore.sendGetLogsCommand(10000)">Get Logs</button>
+    <p v-for="logEntry in mainStore.logEntries">
+        Time: {{ logEntry.stored_at }}, Key: {{ logEntry.name_key }}, Data: {{ JSON.parse(logEntry.data) }}
+    </p>
+    <p v-if="mainStore.logEntries.length == 0">No logs loaded/available</p>
 </template>
 
 <script setup lang="ts">
