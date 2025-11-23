@@ -67,10 +67,10 @@ pub fn create_file_if_not_there_and_write(path: &Path, content: &str) -> Result<
 }
 
 #[cfg(target_os = "linux")]
-fn set_perms(path: &Path) {
+pub fn set_perms(path: &Path) {
     let perms = std::fs::Permissions::from_mode(0o777);
     let _ = std::fs::set_permissions(path, perms);
 }
 
 #[cfg(not(target_os = "linux"))]
-fn set_perms(_path: &Path) {}
+pub fn set_perms(_path: &Path) {}

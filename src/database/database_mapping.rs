@@ -13,7 +13,7 @@ pub trait DatabaseSerializable: Sized + Serialize + for<'a> Deserialize<'a> {
     type DbTable: Table + HasTable<Table = Self::DbTable>;
     type DbModel: Insertable<Self::DbTable>;
 
-    fn serialize_for_database(self) -> Result<Self::DbModel, DatabaseError>;
+    fn serialize_for_database(&self) -> Result<Self::DbModel, DatabaseError>;
 
     fn store_to_database(self, manager: &DatabaseManager) -> Result<(), DatabaseError>;
 
@@ -21,7 +21,7 @@ pub trait DatabaseSerializable: Sized + Serialize + for<'a> Deserialize<'a> {
 }
 
 macro_rules! impl_database_serializable {
-    ($domain:ty, $db_model:ty, $table:ty, $id:expr) => {
+    ($domain:ty, $db_model:ty, $table:ty, $id:expr, $ser_cb:expr) => {
         impl TryFrom<$db_model> for $domain {
             fn try_from(value: $db_model) -> Result<Self, Self::Error> {
                 Ok(serde_json::from_str(&value.data)?)
@@ -34,11 +34,8 @@ macro_rules! impl_database_serializable {
             type DbModel = $db_model;
             type DbTable = $table;
 
-            fn serialize_for_database(self) -> Result<Self::DbModel, DatabaseError> {
-                Ok(Self::DbModel {
-                    id: self.id.to_string(),
-                    data: serde_json::to_string(&self)?,
-                })
+            fn serialize_for_database(&self) -> Result<Self::DbModel, DatabaseError> {
+                $ser_cb(self) // callback here is more versatile than hardcoding what the id parameter is
             }
 
             fn store_to_database(self, manager: &DatabaseManager) -> Result<(), DatabaseError> {
@@ -75,5 +72,9 @@ impl_database_serializable!(
     HeatStart,
     HeatStartDatabase,
     heat_starts::table,
-    heat_starts::id
+    heat_starts::id,
+    |self_obj: &HeatStart| Ok(HeatStartDatabase {
+        id: self_obj.id.to_string(),
+        data: serde_json::to_string(self_obj)?,
+    })
 );

@@ -9,6 +9,8 @@ use std::num::TryFromIntError;
 use std::path::Path;
 use std::time::Duration;
 
+use crate::file::set_perms;
+
 type Pool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 pub type DbConnection = r2d2::PooledConnection<ConnectionManager<SqliteConnection>>;
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./src/database/migrations");
@@ -39,6 +41,9 @@ impl DatabaseManager {
                 e
             ))
         })?;
+
+        // set database to be ediatable by not root on docker deev and docker run on linux
+        let _ = set_perms(db_file_path);
 
         return Ok(manager);
     }
