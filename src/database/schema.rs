@@ -8,6 +8,14 @@ diesel::table! {
 }
 
 diesel::table! {
+    heat_intermediates (id) {
+        id -> Text,
+        belongs_to_id -> Text,
+        data -> Text,
+    }
+}
+
+diesel::table! {
     heat_start_lists (id) {
         id -> Text,
         data -> Text,
@@ -31,4 +39,4 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    heat_false_starts,heat_start_lists,heat_starts,permanent_storage,);
+    heat_false_starts,heat_intermediates,heat_start_lists,heat_starts,permanent_storage,);

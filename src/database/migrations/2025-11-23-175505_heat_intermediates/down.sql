@@ -1,0 +1,3 @@
+DROP INDEX idx_heat_intermediates_belongs_to_id;
+
+DROP TABLE heat_intermediates;
