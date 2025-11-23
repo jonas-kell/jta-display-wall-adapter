@@ -116,7 +116,7 @@ sudo nano /etc/lightdm/lightdm.conf
 ```
 
 Modify the config file that opens.
-At the Part `[Seat:*]` (probably it reads `rpd-labwc` -> keep that) replace with the following settings
+At the Part `[Seat:*]` (probably it reads `rpd-labwc`) replace with the following settings
 
 ```config
 user-session=sway
