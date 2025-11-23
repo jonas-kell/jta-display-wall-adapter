@@ -44,7 +44,10 @@ macro_rules! impl_database_serializable {
                 let mut conn = manager.get_connection()?;
                 let db_model = self.serialize_for_database()?;
                 diesel::insert_into(<$table>::table())
-                    .values(db_model)
+                    .values(&db_model)
+                    .on_conflict($id)
+                    .do_update()
+                    .set(&db_model)
                     .execute(&mut conn)?;
                 Ok(())
             }
@@ -82,7 +85,7 @@ macro_rules! impl_database_serializable {
     };
 }
 
-#[derive(Insertable, Queryable, Identifiable)]
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
 #[diesel(table_name = heat_starts)]
 pub struct HeatStartDatabase {
     id: String,
