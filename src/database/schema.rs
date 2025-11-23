@@ -52,6 +52,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    heat_wind_missings (id) {
+        id -> Text,
+        data -> Text,
+    }
+}
+
+diesel::table! {
     heat_winds (id) {
         id -> Text,
         data -> Text,
@@ -68,4 +75,4 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    heat_evaluations,heat_false_starts,heat_finishes,heat_intermediates,heat_results,heat_start_lists,heat_starts,heat_winds,permanent_storage,);
+    heat_evaluations,heat_false_starts,heat_finishes,heat_intermediates,heat_results,heat_start_lists,heat_starts,heat_wind_missings,heat_winds,permanent_storage,);

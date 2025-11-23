@@ -4,7 +4,7 @@
 use crate::database::db::DatabaseError;
 use crate::database::schema::{
     heat_evaluations, heat_false_starts, heat_finishes, heat_intermediates, heat_results,
-    heat_start_lists, heat_starts, heat_winds, permanent_storage,
+    heat_start_lists, heat_starts, heat_wind_missings, heat_winds, permanent_storage,
 };
 use crate::database::DatabaseManager;
 use crate::server::xml_types::{
@@ -198,12 +198,19 @@ impl_database_serializable!(
         data: serde_json::to_string(self_obj)?,
     })
 );
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = heat_wind_missings)]
+pub struct HeatWindMissingDatabase {
+    id: String,
+    data: String,
+}
 impl_database_serializable!(
     HeatWindMissing,
-    HeatWindDatabase,
-    heat_winds::table,
-    heat_winds::id,
-    |self_obj: &HeatWindMissing| Ok(HeatWindDatabase {
+    HeatWindMissingDatabase,
+    heat_wind_missings::table,
+    heat_wind_missings::id,
+    |self_obj: &HeatWindMissing| Ok(HeatWindMissingDatabase {
         id: self_obj.id.to_string(),
         data: serde_json::to_string(self_obj)?,
     })
