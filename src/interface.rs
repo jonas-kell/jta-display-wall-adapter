@@ -44,6 +44,20 @@ pub enum ServerState {
     PassthroughDisplayProgram,
 }
 
+macro_rules! store_to_database {
+    ($value:expr, $self_val:expr) => {
+        match $value.store_to_database(&$self_val.database_manager) {
+            Ok(()) => {
+                trace!("Success, we stored an instruction into the database");
+            }
+            Err(e) => {
+                error!("Database storage error: {}", e);
+            }
+        }
+        $self_val.send_out_latest_n_logs_to_webclient(1);
+    };
+}
+
 pub struct ServerStateMachine {
     args: Args,
     pub state: ServerState,
@@ -173,16 +187,7 @@ impl ServerStateMachine {
             },
             IncomingInstruction::FromCameraProgram(inst) => match inst {
                 crate::instructions::InstructionFromCameraProgram::HeatStart(start) => {
-                    info!("Heat start to store");
-
-                    match start.store_to_database(&self.database_manager) {
-                        Ok(()) => {
-                            info!("Success, we stored into the database");
-                        }
-                        Err(e) => {
-                            error!("Database storage error: {}", e);
-                        }
-                    }
+                    store_to_database!(start, self);
                 }
                 inst => error!("Unhandled instruction from camera program: {:?}", inst),
             },
@@ -237,16 +242,20 @@ impl ServerStateMachine {
                 }
                 MessageFromWebControl::GetLogs(how_many) => {
                     trace!("{} Logs were requested", how_many);
-                    match get_log_limited(Some(how_many), &self.database_manager) {
-                        Ok(data) => {
-                            self.send_message_to_web_control(MessageToWebControl::Logs(data));
-                        }
-                        Err(e) => {
-                            error!("Database loading error: {}", e);
-                        }
-                    }
+                    self.send_out_latest_n_logs_to_webclient(how_many);
                 }
             },
+        }
+    }
+
+    fn send_out_latest_n_logs_to_webclient(&mut self, n: u32) {
+        match get_log_limited(Some(n), &self.database_manager) {
+            Ok(data) => {
+                self.send_message_to_web_control(MessageToWebControl::Logs(data));
+            }
+            Err(e) => {
+                error!("Database log loading error: {}", e);
+            }
         }
     }
 

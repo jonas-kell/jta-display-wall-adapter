@@ -11,6 +11,7 @@ import {
     SwitchMode,
 } from "../functions/interfaceOutbound";
 import { HeatStarts, InboundMessageType, LogEntry, parseMessage } from "../functions/interfaceInbound";
+import { CircularBuffer } from "../functions/circularBUffer";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -31,6 +32,8 @@ export default defineStore("main", () => {
         }
     });
 
+    const logEntriesRolling = new CircularBuffer<LogEntry>(10);
+
     function handleWSMessage(ev: any) {
         let msg = parseMessage(JSON.parse(ev.data));
 
@@ -44,7 +47,14 @@ export default defineStore("main", () => {
                 heatStartsResult.value = msg.data;
                 return;
             case InboundMessageType.Logs:
-                logEntries.value = msg.data;
+                const entArr = msg.data;
+                if (entArr.length == 1) {
+                    // entry per push, not requested
+                    logEntriesRolling.unshift(entArr[0]);
+                    logEntries.value = logEntriesRolling.toArray();
+                } else {
+                    logEntries.value = msg.data;
+                }
                 return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);
