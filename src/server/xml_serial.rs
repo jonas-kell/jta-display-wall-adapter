@@ -266,6 +266,10 @@ struct StartlistXML {
     competitors: Vec<HeatCompetitorXML>,
 }
 
+fn default_number_val() -> u32 {
+    0
+}
+
 fn default_str_val() -> String {
     String::from("X")
 }
@@ -283,8 +287,10 @@ pub struct HeatCompetitorXML {
     #[serde(rename = "@Id")]
     id: String,
     #[serde(rename = "@Lane")]
+    #[serde(default = "default_number_val")]
     lane: u32,
     #[serde(rename = "@Bib")]
+    #[serde(default = "default_number_val")]
     bib: u32,
     #[serde(rename = "@Class")]
     #[serde(default = "default_str_val")]
@@ -439,8 +445,10 @@ pub struct CompetitorEvaluatedXML {
     event_id: String,
     // competitor data
     #[serde(rename = "@Lane")]
+    #[serde(default = "default_number_val")]
     lane: u32,
     #[serde(rename = "@Bib")]
+    #[serde(default = "default_number_val")]
     bib: u32,
     #[serde(rename = "@Class")]
     #[serde(default = "default_str_val")]
