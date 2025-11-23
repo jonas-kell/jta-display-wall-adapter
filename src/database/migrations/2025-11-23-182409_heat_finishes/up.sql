@@ -1,0 +1,4 @@
+CREATE TABLE heat_finishes (
+  id VARCHAR NOT NULL PRIMARY KEY,
+  data VARCHAR NOT NULL
+);

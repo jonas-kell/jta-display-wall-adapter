@@ -3,12 +3,13 @@
 
 use crate::database::db::DatabaseError;
 use crate::database::schema::{
-    heat_false_starts, heat_intermediates, heat_start_lists, heat_starts, heat_winds,
-    permanent_storage,
+    heat_false_starts, heat_finishes, heat_intermediates, heat_start_lists, heat_starts,
+    heat_winds, permanent_storage,
 };
 use crate::database::DatabaseManager;
 use crate::server::xml_types::{
-    HeatFalseStart, HeatIntermediate, HeatStart, HeatStartList, HeatWind, HeatWindMissing,
+    HeatFalseStart, HeatFinish, HeatIntermediate, HeatStart, HeatStartList, HeatWind,
+    HeatWindMissing,
 };
 use chrono::NaiveDateTime;
 use chrono::Utc;
@@ -203,6 +204,23 @@ impl_database_serializable!(
     heat_winds::table,
     heat_winds::id,
     |self_obj: &HeatWindMissing| Ok(HeatWindDatabase {
+        id: self_obj.id.to_string(),
+        data: serde_json::to_string(self_obj)?,
+    })
+);
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = heat_finishes)]
+pub struct HeatFinishDatabase {
+    id: String,
+    data: String,
+}
+impl_database_serializable!(
+    HeatFinish,
+    HeatFinishDatabase,
+    heat_finishes::table,
+    heat_finishes::id,
+    |self_obj: &HeatFinish| Ok(HeatFinishDatabase {
         id: self_obj.id.to_string(),
         data: serde_json::to_string(self_obj)?,
     })

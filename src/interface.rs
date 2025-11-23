@@ -196,14 +196,17 @@ impl ServerStateMachine {
                     store_to_database!(false_start, self);
                     // TODO clear starts, intermediates, finish, results, winds, wind_missings, evaluations
                 }
-                InstructionFromCameraProgram::HeatIntermediate(heat_intermediate) => {
-                    store_to_database!(heat_intermediate, self);
+                InstructionFromCameraProgram::HeatIntermediate(intermediate) => {
+                    store_to_database!(intermediate, self);
                 }
                 InstructionFromCameraProgram::HeatWind(wind) => {
                     store_to_database!(wind, self);
                 }
                 InstructionFromCameraProgram::HeatWindMissing(missing_wind) => {
                     store_to_database!(missing_wind, self);
+                }
+                InstructionFromCameraProgram::HeatFinish(finish) => {
+                    store_to_database!(finish, self);
                 }
                 inst => error!("Unhandled instruction from camera program: {:?}", inst),
             },
