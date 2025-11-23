@@ -1,0 +1,4 @@
+CREATE TABLE heat_results (
+  id VARCHAR NOT NULL PRIMARY KEY,
+  data VARCHAR NOT NULL
+);

@@ -208,6 +208,12 @@ impl ServerStateMachine {
                 InstructionFromCameraProgram::HeatFinish(finish) => {
                     store_to_database!(finish, self);
                 }
+                InstructionFromCameraProgram::CompetitorEvaluated(evaluated) => {
+                    store_to_database!(evaluated, self);
+                }
+                InstructionFromCameraProgram::HeatResult(result) => {
+                    store_to_database!(result, self);
+                }
                 inst => error!("Unhandled instruction from camera program: {:?}", inst),
             },
             IncomingInstruction::FromWebControl(inst) => match inst {

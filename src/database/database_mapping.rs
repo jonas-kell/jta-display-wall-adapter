@@ -3,13 +3,13 @@
 
 use crate::database::db::DatabaseError;
 use crate::database::schema::{
-    heat_false_starts, heat_finishes, heat_intermediates, heat_start_lists, heat_starts,
-    heat_winds, permanent_storage,
+    heat_evaluations, heat_false_starts, heat_finishes, heat_intermediates, heat_results,
+    heat_start_lists, heat_starts, heat_winds, permanent_storage,
 };
 use crate::database::DatabaseManager;
 use crate::server::xml_types::{
-    HeatFalseStart, HeatFinish, HeatIntermediate, HeatStart, HeatStartList, HeatWind,
-    HeatWindMissing,
+    CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
+    HeatStartList, HeatWind, HeatWindMissing,
 };
 use chrono::NaiveDateTime;
 use chrono::Utc;
@@ -221,6 +221,42 @@ impl_database_serializable!(
     heat_finishes::table,
     heat_finishes::id,
     |self_obj: &HeatFinish| Ok(HeatFinishDatabase {
+        id: self_obj.id.to_string(),
+        data: serde_json::to_string(self_obj)?,
+    })
+);
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = heat_evaluations)]
+pub struct HeatEvaluationDatabase {
+    id: String,
+    belongs_to_id: String,
+    data: String,
+}
+impl_database_serializable!(
+    CompetitorEvaluated,
+    HeatEvaluationDatabase,
+    heat_evaluations::table,
+    heat_evaluations::id,
+    |self_obj: &CompetitorEvaluated| Ok(HeatEvaluationDatabase {
+        id: Uuid::new_v4().to_string(), // multiple per run are possible
+        belongs_to_id: self_obj.id.to_string(),
+        data: serde_json::to_string(self_obj)?,
+    })
+);
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = heat_results)]
+pub struct HeatResultDatabase {
+    id: String,
+    data: String,
+}
+impl_database_serializable!(
+    HeatResult,
+    HeatResultDatabase,
+    heat_results::table,
+    heat_results::id,
+    |self_obj: &HeatResult| Ok(HeatResultDatabase {
         id: self_obj.id.to_string(),
         data: serde_json::to_string(self_obj)?,
     })

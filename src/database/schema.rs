@@ -1,6 +1,14 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    heat_evaluations (id) {
+        id -> Text,
+        belongs_to_id -> Text,
+        data -> Text,
+    }
+}
+
+diesel::table! {
     heat_false_starts (id) {
         id -> Text,
         data -> Text,
@@ -18,6 +26,13 @@ diesel::table! {
     heat_intermediates (id) {
         id -> Text,
         belongs_to_id -> Text,
+        data -> Text,
+    }
+}
+
+diesel::table! {
+    heat_results (id) {
+        id -> Text,
         data -> Text,
     }
 }
@@ -53,4 +68,4 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    heat_false_starts,heat_finishes,heat_intermediates,heat_start_lists,heat_starts,heat_winds,permanent_storage,);
+    heat_evaluations,heat_false_starts,heat_finishes,heat_intermediates,heat_results,heat_start_lists,heat_starts,heat_winds,permanent_storage,);
