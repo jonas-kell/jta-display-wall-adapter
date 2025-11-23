@@ -2,9 +2,9 @@
 // TODO sqlite has a json type for efficiency
 
 use crate::database::db::DatabaseError;
-use crate::database::schema::{heat_starts, permanent_storage};
+use crate::database::schema::{heat_start_lists, heat_starts, permanent_storage};
 use crate::database::DatabaseManager;
-use crate::server::xml_types::HeatStart;
+use crate::server::xml_types::{HeatStart, HeatStartList};
 use chrono::NaiveDateTime;
 use chrono::Utc;
 use diesel::associations::HasTable;
@@ -53,7 +53,12 @@ macro_rules! impl_database_serializable {
                     .set(&db_model)
                     .execute(&mut conn)?;
                 // permanent storage
-                let name = String::from(std::any::type_name::<$domain>());
+                let name = String::from(
+                    std::any::type_name::<$domain>()
+                        .rsplitn(2, "::")
+                        .next()
+                        .unwrap_or("NOTHING"),
+                );
                 let perm = PermanentStorageDatabase {
                     id: Uuid::new_v4().to_string(),
                     name_key: name,
@@ -113,6 +118,23 @@ impl_database_serializable!(
     heat_starts::table,
     heat_starts::id,
     |self_obj: &HeatStart| Ok(HeatStartDatabase {
+        id: self_obj.id.to_string(),
+        data: serde_json::to_string(self_obj)?,
+    })
+);
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = heat_start_lists)]
+pub struct HeatStartListDatabase {
+    id: String,
+    data: String,
+}
+impl_database_serializable!(
+    HeatStartList,
+    HeatStartListDatabase,
+    heat_start_lists::table,
+    heat_start_lists::id,
+    |self_obj: &HeatStartList| Ok(HeatStartListDatabase {
         id: self_obj.id.to_string(),
         data: serde_json::to_string(self_obj)?,
     })

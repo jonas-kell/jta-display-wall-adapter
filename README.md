@@ -14,7 +14,7 @@ docker compose -f docker-compose.diesel.yml run --rm diesel migration generate i
 # run migrations and print schema to file
 docker compose -f docker-compose.diesel.yml run --rm diesel migration run && docker compose -f docker-compose.diesel.yml run --rm diesel migration redo && docker compose -f docker-compose.diesel.yml down --remove-orphans
 # redo migrations while developing on a running instance
-docker compose -f docker-compose.diesel.yml run --rm diesel migration redo
+docker compose -f docker-compose.diesel.yml run --rm diesel migration run && docker compose -f docker-compose.diesel.yml run --rm diesel migration redo
 ```
 
 Run dev mode

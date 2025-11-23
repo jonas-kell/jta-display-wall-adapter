@@ -1,0 +1,4 @@
+CREATE TABLE heat_start_lists (
+  id VARCHAR NOT NULL PRIMARY KEY,
+  data VARCHAR NOT NULL
+);

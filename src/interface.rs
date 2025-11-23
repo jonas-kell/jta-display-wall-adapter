@@ -3,8 +3,8 @@ use crate::{
     database::{get_log_limited, DatabaseManager, DatabaseSerializable},
     file::read_image_files,
     instructions::{
-        IncomingInstruction, InstructionCommunicationChannel, InstructionFromTimingProgram,
-        InstructionToTimingProgram,
+        IncomingInstruction, InstructionCommunicationChannel, InstructionFromCameraProgram,
+        InstructionFromTimingProgram, InstructionToTimingProgram,
     },
     server::xml_types::HeatStart,
     webserver::{DisplayClientState, MessageFromWebControl, MessageToWebControl},
@@ -186,7 +186,10 @@ impl ServerStateMachine {
                 inst => error!("Unhandled instruction from timing program: {}", inst),
             },
             IncomingInstruction::FromCameraProgram(inst) => match inst {
-                crate::instructions::InstructionFromCameraProgram::HeatStart(start) => {
+                InstructionFromCameraProgram::HeatStartList(list) => {
+                    store_to_database!(list, self);
+                }
+                InstructionFromCameraProgram::HeatStart(start) => {
                     store_to_database!(start, self);
                 }
                 inst => error!("Unhandled instruction from camera program: {:?}", inst),

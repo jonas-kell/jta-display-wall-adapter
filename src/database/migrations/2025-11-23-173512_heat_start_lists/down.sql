@@ -1,0 +1,1 @@
+DROP TABLE heat_start_lists;
