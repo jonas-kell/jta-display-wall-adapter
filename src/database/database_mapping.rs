@@ -2,9 +2,11 @@
 // TODO sqlite has a json type for efficiency
 
 use crate::database::db::DatabaseError;
-use crate::database::schema::{heat_start_lists, heat_starts, permanent_storage};
+use crate::database::schema::{
+    heat_false_starts, heat_start_lists, heat_starts, permanent_storage,
+};
 use crate::database::DatabaseManager;
-use crate::server::xml_types::{HeatStart, HeatStartList};
+use crate::server::xml_types::{HeatFalseStart, HeatStart, HeatStartList};
 use chrono::NaiveDateTime;
 use chrono::Utc;
 use diesel::associations::HasTable;
@@ -135,6 +137,23 @@ impl_database_serializable!(
     heat_start_lists::table,
     heat_start_lists::id,
     |self_obj: &HeatStartList| Ok(HeatStartListDatabase {
+        id: self_obj.id.to_string(),
+        data: serde_json::to_string(self_obj)?,
+    })
+);
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = heat_false_starts)]
+pub struct HeatFalseStartDatabase {
+    id: String,
+    data: String,
+}
+impl_database_serializable!(
+    HeatFalseStart,
+    HeatFalseStartDatabase,
+    heat_false_starts::table,
+    heat_false_starts::id,
+    |self_obj: &HeatFalseStart| Ok(HeatFalseStartDatabase {
         id: self_obj.id.to_string(),
         data: serde_json::to_string(self_obj)?,
     })

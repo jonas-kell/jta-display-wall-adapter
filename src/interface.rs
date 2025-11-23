@@ -192,6 +192,9 @@ impl ServerStateMachine {
                 InstructionFromCameraProgram::HeatStart(start) => {
                     store_to_database!(start, self);
                 }
+                InstructionFromCameraProgram::HeatFalseStart(false_start) => {
+                    store_to_database!(false_start, self);
+                }
                 inst => error!("Unhandled instruction from camera program: {:?}", inst),
             },
             IncomingInstruction::FromWebControl(inst) => match inst {

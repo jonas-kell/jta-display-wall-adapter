@@ -1,0 +1,1 @@
+DROP TABLE heat_false_starts;

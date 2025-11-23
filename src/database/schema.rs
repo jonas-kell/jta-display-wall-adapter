@@ -1,6 +1,13 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    heat_false_starts (id) {
+        id -> Text,
+        data -> Text,
+    }
+}
+
+diesel::table! {
     heat_start_lists (id) {
         id -> Text,
         data -> Text,
@@ -24,4 +31,4 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    heat_start_lists,heat_starts,permanent_storage,);
+    heat_false_starts,heat_start_lists,heat_starts,permanent_storage,);
