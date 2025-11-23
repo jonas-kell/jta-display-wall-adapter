@@ -18,6 +18,8 @@ pub trait DatabaseSerializable: Sized + Serialize + for<'a> Deserialize<'a> {
     fn store_to_database(self, manager: &DatabaseManager) -> Result<(), DatabaseError>;
 
     fn get_from_database_by_id(id: Uuid, manager: &DatabaseManager) -> Result<Self, DatabaseError>;
+
+    fn get_all_from_database(manager: &DatabaseManager) -> Result<Vec<Self>, DatabaseError>;
 }
 
 macro_rules! impl_database_serializable {
@@ -57,6 +59,24 @@ macro_rules! impl_database_serializable {
                     .first(&mut conn)?;
 
                 Self::try_from(data)
+            }
+
+            fn get_all_from_database(
+                manager: &DatabaseManager,
+            ) -> Result<Vec<Self>, DatabaseError> {
+                let mut conn = manager.get_connection()?;
+                let data = <$table>::table().load::<Self::DbModel>(&mut conn)?;
+
+                let collected = match data
+                    .into_iter()
+                    .map(|h| Self::try_from(h))
+                    .collect::<Result<Vec<Self>, DatabaseError>>()
+                {
+                    Ok(a) => a,
+                    Err(e) => return Err(e),
+                };
+
+                Ok(collected)
             }
         }
     };
