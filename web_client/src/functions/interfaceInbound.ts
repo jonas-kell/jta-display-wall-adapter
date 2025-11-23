@@ -7,6 +7,139 @@ export type HeatMeta = {
     scheduled_start_time_string: string;
 };
 
+export type Uuid = string;
+export type NaiveDateTime = string;
+
+export type RaceWind = {
+    /** - is headwind, + is backwind */
+    back_wind: boolean;
+    whole_number_part: number;
+    fraction_part: number; // 0–9
+};
+
+export type DayTime = {
+    hours: number;
+    minutes: number;
+    seconds: number;
+    fractional_part_in_ten_thousands: number | null;
+};
+
+export type RaceTime = {
+    hours: number | null;
+    minutes: number | null;
+    seconds: number;
+    tenths: number;
+    hundrets: number | null;
+    thousands: number | null;
+    ten_thousands: number | null;
+};
+
+export type DisqualificationReason =
+    | { type: "Disqualified" }
+    | { type: "DidNotStart" }
+    | { type: "DidNotFinish" }
+    | { type: "Canceled" }
+    | { type: "Other"; value: string };
+
+export type DifferenceToCandidate = { type: "Winner" } | { type: "Difference"; value: RaceTime };
+
+export type HeatCompetitor = {
+    id: string;
+    lane: number;
+    bib: number;
+    class: string;
+    last_name: string;
+    first_name: string;
+    nation: string;
+    club: string;
+    gender: string;
+    disqualified: DisqualificationReason | null;
+};
+
+export type HeatCompetitorResult = {
+    competitor: HeatCompetitor;
+    distance: number;
+    rank: number;
+    runtime: RaceTime;
+    runtime_full_precision: RaceTime;
+    difference_to_winner: DifferenceToCandidate;
+    difference_to_previous: DifferenceToCandidate;
+    finish_time: DayTime;
+};
+
+export type CompetitorEvaluated = {
+    application: string;
+    version: string;
+    generated: NaiveDateTime;
+    id: Uuid;
+    competitor_result: HeatCompetitorResult;
+};
+
+export type HeatStart = {
+    application: string;
+    version: string;
+    generated: NaiveDateTime;
+    id: Uuid;
+    time: DayTime;
+};
+
+export type HeatFinish = {
+    application: string;
+    version: string;
+    generated: NaiveDateTime;
+    id: Uuid;
+    time: DayTime;
+    race_time: RaceTime;
+};
+
+export type HeatIntermediate = {
+    application: string;
+    version: string;
+    generated: NaiveDateTime;
+    id: Uuid;
+    time: DayTime;
+    intermediate_time_at: RaceTime;
+};
+
+export type HeatWind = {
+    application: string;
+    version: string;
+    generated: NaiveDateTime;
+    id: Uuid;
+    wind: RaceWind;
+};
+
+export type HeatStartList = {
+    name: string;
+    id: Uuid;
+    nr: number;
+    session_nr: number;
+    distance_meters: number;
+    scheduled_start_time: DayTime;
+    competitors: HeatCompetitor[];
+};
+
+export type HeatResult = {
+    id: Uuid;
+    name: string;
+    distance_meters: number;
+    start_time: DayTime;
+    wind: RaceWind | null;
+    competitors_evaluated: HeatCompetitorResult[];
+    competitors_left_to_evaluate: HeatCompetitor[];
+};
+
+export type HeatData = {
+    meta: HeatMeta;
+    start_list: HeatStartList;
+    start: HeatStart | null;
+    intermediates: HeatIntermediate[] | null;
+    wind: HeatWind | null;
+    finishes: HeatFinish | null;
+    evaluations: CompetitorEvaluated[] | null;
+    result: HeatResult | null;
+};
+
 // message formats
 
 export type DisplayClientStateState = {
@@ -36,6 +169,11 @@ export type Logs = {
     data: LogEntry[];
 };
 
+export type HeatDataMessage = {
+    type: "HeatDataMessage";
+    data: HeatData;
+};
+
 export type Unknown = {
     type: "Unknown";
     data: unknown;
@@ -46,9 +184,10 @@ export enum InboundMessageType {
     Unknown = "Unknown",
     HeatsMeta = "HeatsMeta",
     Logs = "Logs",
+    HeatDataMessage = "HeatDataMessage",
 }
 
-export type InboundMessage = DisplayClientState | HeatsMeta | Logs | Unknown;
+export type InboundMessage = DisplayClientState | HeatsMeta | Logs | HeatDataMessage | Unknown;
 
 export function parseMessage(json: unknown): InboundMessage {
     if (typeof json !== "object" || json === null) {
@@ -64,6 +203,8 @@ export function parseMessage(json: unknown): InboundMessage {
             return { type: "HeatsMeta", data: obj.data } as HeatsMeta;
         case InboundMessageType.Logs:
             return { type: "Logs", data: obj.data } as Logs;
+        case InboundMessageType.HeatDataMessage:
+            return { type: "HeatDataMessage", data: obj.data } as HeatDataMessage;
 
         default:
             return { type: "Unknown", data: json } as Unknown;

@@ -1,4 +1,7 @@
-use crate::{database::PermanentlyStoredDataset, server::xml_types::HeatMeta};
+use crate::{
+    database::PermanentlyStoredDataset,
+    server::camera_program_types::{HeatData, HeatMeta},
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -11,6 +14,7 @@ pub enum MessageFromWebControl {
     SwitchMode,
     GetHeats,
     GetLogs(u32),
+    SelectHeat(String),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -26,4 +30,5 @@ pub enum MessageToWebControl {
     DisplayClientState(DisplayClientState),
     HeatsMeta(Vec<HeatMeta>),
     Logs(Vec<PermanentlyStoredDataset>),
+    HeatDataMessage(HeatData),
 }

@@ -7,9 +7,9 @@ use crate::database::schema::{
     heat_start_lists, heat_starts, heat_wind_missings, heat_winds, permanent_storage,
 };
 use crate::database::DatabaseManager;
-use crate::server::xml_types::{
-    CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
-    HeatStartList, HeatWind, HeatWindMissing,
+use crate::server::camera_program_types::{
+    CompetitorEvaluated, HeatData, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult,
+    HeatStart, HeatStartList, HeatWind, HeatWindMissing,
 };
 use chrono::NaiveDateTime;
 use chrono::Utc;
@@ -303,4 +303,19 @@ pub fn get_log_limited(
             stored_at: h.stored_at,
         })
         .collect::<Vec<PermanentlyStoredDataset>>())
+}
+
+pub fn get_heat_data(id: Uuid, manager: &DatabaseManager) -> Result<HeatData, DatabaseError> {
+    let start_list = HeatStartList::get_from_database_by_id(id, manager)?;
+
+    return Ok(HeatData {
+        meta: start_list.clone().into(),
+        start_list: start_list,
+        start: None,
+        intermediates: None,
+        evaluations: None,
+        finishes: None,
+        result: None,
+        wind: None,
+    });
 }

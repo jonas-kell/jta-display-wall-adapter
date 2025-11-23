@@ -8,9 +8,10 @@ import {
     GetLogs,
     Idle,
     RequestDisplayClientState,
+    SelectHeat,
     SwitchMode,
 } from "../functions/interfaceOutbound";
-import { HeatMeta, InboundMessageType, LogEntry, parseMessage } from "../functions/interfaceInbound";
+import { HeatData, HeatMeta, InboundMessageType, LogEntry, parseMessage } from "../functions/interfaceInbound";
 import { CircularBuffer } from "../functions/circularBUffer";
 
 function sleep(ms: number) {
@@ -58,6 +59,9 @@ export default defineStore("main", () => {
                 } else {
                     logEntries.value = msg.data;
                 }
+                return;
+            case InboundMessageType.HeatDataMessage:
+                selectedHeat.value = msg.data;
                 return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);
@@ -183,6 +187,15 @@ export default defineStore("main", () => {
     }
     const logEntries = ref([] as LogEntry[]);
 
+    function sendSelectHeatCommand(id: string) {
+        const packet: SelectHeat = {
+            type: "SelectHeat",
+            data: id,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    const selectedHeat = ref(null as null | HeatData);
+
     const displayCanSwitchMode = computed(() => {
         return displayCanSwitchModeInternal.value && displayConnected.value;
     });
@@ -195,6 +208,8 @@ export default defineStore("main", () => {
         sendFreetextCommand,
         sendGetHeatsCommand,
         sendGetLogsCommand,
+        sendSelectHeatCommand,
+        selectedHeat,
         logEntries,
         heatsMetaResult,
         displayConnected,

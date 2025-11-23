@@ -7,7 +7,7 @@ use crate::server::camera_program_datatypes::{
     HeatCompetitorResult, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
     HeatStartList, HeatWind,
 };
-use crate::server::xml_types::HeatWindMissing;
+use crate::server::camera_program_types::HeatWindMissing;
 use crate::times::{DayTime, RaceTime, RaceWind};
 use chrono::NaiveDateTime;
 use nom::branch::alt;

@@ -21,8 +21,18 @@
     <button @click="mainStore.sendGetHeatsCommand">Get Heats</button>
     <p v-for="heatEntry in mainStore.heatsMetaResult">
         {{ heatEntry.name }}, Nr: {{ heatEntry.number }}, Time: {{ heatEntry.scheduled_start_time_string }}
+        <button @click="mainStore.sendSelectHeatCommand(heatEntry.id)">Select</button>
     </p>
     <p v-if="mainStore.heatsMetaResult.length == 0">No heats loaded/available</p>
+    <br />
+    <br />
+    <template v-if="mainStore.selectedHeat">
+        Heat Selected: {{ mainStore.selectedHeat.meta.name }} <br />
+        <pre>
+            {{ mainStore.selectedHeat }}
+        </pre>
+    </template>
+    <p v-else>No heat selected</p>
     <br />
     <br />
     <button @click="mainStore.sendGetLogsCommand(10000)">Get Logs</button>

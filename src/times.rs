@@ -156,7 +156,7 @@ impl Display for DayTime {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RaceWind {
-    /// - is gegenwind, + is rückenwind aka back wind
+    /// - is gegenwind aka head wind, + is rückenwind aka back wind
     pub back_wind: bool,
     pub whole_number_part: u16,
     pub fraction_part: u8, // 0-9

@@ -1,7 +1,7 @@
 use crate::{
     args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS},
     interface::MessageFromServerToClient,
-    server::xml_types::{
+    server::camera_program_types::{
         CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
         HeatStartList, HeatWind, HeatWindMissing,
     },

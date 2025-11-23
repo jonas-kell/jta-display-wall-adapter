@@ -27,3 +27,8 @@ export type GetLogs = {
     type: "GetLogs";
     data: number;
 };
+
+export type SelectHeat = {
+    type: "SelectHeat";
+    data: string;
+};

@@ -3,7 +3,7 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum DisqualificationReason {
     Disqualified,
     DidNotStart,
@@ -49,7 +49,7 @@ pub struct HeatFalseStart {
     pub id: Uuid,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatStartList {
     pub name: String,
     pub id: Uuid,
@@ -60,7 +60,7 @@ pub struct HeatStartList {
     pub competitors: Vec<HeatCompetitor>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatCompetitor {
     pub id: String,
     pub lane: u32,

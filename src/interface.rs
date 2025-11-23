@@ -1,17 +1,18 @@
 use crate::{
     args::Args,
-    database::{get_log_limited, DatabaseManager, DatabaseSerializable},
+    database::{get_heat_data, get_log_limited, DatabaseManager, DatabaseSerializable},
     file::read_image_files,
     instructions::{
         IncomingInstruction, InstructionCommunicationChannel, InstructionFromCameraProgram,
         InstructionFromTimingProgram, InstructionToTimingProgram,
     },
-    server::xml_types::{HeatStart, HeatStartList},
+    server::camera_program_types::HeatStartList,
     webserver::{DisplayClientState, MessageFromWebControl, MessageToWebControl},
 };
 use images_core::images::{AnimationPlayer, ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ServerImposedSettings {
@@ -270,6 +271,28 @@ impl ServerStateMachine {
                 MessageFromWebControl::GetLogs(how_many) => {
                     trace!("{} Logs were requested", how_many);
                     self.send_out_latest_n_logs_to_webclient(how_many);
+                }
+                MessageFromWebControl::SelectHeat(id_as_string) => {
+                    let id = match Uuid::parse_str(&id_as_string) {
+                        Err(e) => {
+                            error!(
+                                "Received request for uuid that could not be parsed as uuid: {} ( {} )",
+                                e, id_as_string
+                            );
+                            return;
+                        }
+                        Ok(u) => u,
+                    };
+
+                    let data = match get_heat_data(id, &self.database_manager) {
+                        Ok(d) => d,
+                        Err(e) => {
+                            error!("Error when reading heat data from the database: {}", e);
+                            return;
+                        }
+                    };
+
+                    self.send_message_to_web_control(MessageToWebControl::HeatDataMessage(data));
                 }
             },
         }
