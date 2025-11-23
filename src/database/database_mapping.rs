@@ -1,4 +1,5 @@
 // to avoid mapping this into the database for real (as we only basically process the datatypes in rust and make really no computations on the database) we just store everything serealized
+// TODO sqlite has a json type for efficiency
 
 use crate::database::db::DatabaseError;
 use crate::database::schema::{heat_starts, permanent_storage};
