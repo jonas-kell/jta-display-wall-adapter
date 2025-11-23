@@ -43,6 +43,9 @@ export default defineStore("main", () => {
                 displayConnected.value = msg.data.alive;
                 displayExternalPassthrough.value = msg.data.external_passthrough_mode;
                 displayCanSwitchModeInternal.value = msg.data.can_switch_mode;
+
+                // this is kind of an init also, as this gets requested on connection establish:
+                sendGetHeatsCommand();
                 return;
             case InboundMessageType.HeatsMeta:
                 heatsMetaResult.value = msg.data;
@@ -59,6 +62,7 @@ export default defineStore("main", () => {
                 } else {
                     logEntries.value = msg.data;
                 }
+                sendGetHeatsCommand();
                 sendSelectHeatCommandInternal();
                 return;
             case InboundMessageType.HeatDataMessage:
