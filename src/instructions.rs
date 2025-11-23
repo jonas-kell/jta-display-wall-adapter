@@ -3,7 +3,7 @@ use crate::{
     interface::MessageFromServerToClient,
     server::xml_types::{
         CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
-        HeatStartList, HeatWind,
+        HeatStartList, HeatWind, HeatWindMissing,
     },
     times::{DayTime, RaceTime},
     webserver::{MessageFromWebControl, MessageToWebControl},
@@ -46,7 +46,7 @@ pub enum InstructionFromCameraProgram {
     HeatFalseStart(HeatFalseStart),
     HeatStartList(HeatStartList),
     HeatWind(HeatWind),
-    HeatWindMissing,
+    HeatWindMissing(HeatWindMissing),
     HeatIntermediate(HeatIntermediate),
     HeatFinish(HeatFinish),
     CompetitorEvaluated(CompetitorEvaluated),

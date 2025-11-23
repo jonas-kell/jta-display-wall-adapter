@@ -84,6 +84,14 @@ pub struct HeatWind {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct HeatWindMissing {
+    pub application: String,
+    pub version: String,
+    pub generated: NaiveDateTime,
+    pub id: Uuid,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CompetitorEvaluated {
     pub application: String,
     pub version: String,

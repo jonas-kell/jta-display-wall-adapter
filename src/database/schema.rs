@@ -30,6 +30,13 @@ diesel::table! {
 }
 
 diesel::table! {
+    heat_winds (id) {
+        id -> Text,
+        data -> Text,
+    }
+}
+
+diesel::table! {
     permanent_storage (id) {
         id -> Text,
         name_key -> Text,
@@ -39,4 +46,4 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    heat_false_starts,heat_intermediates,heat_start_lists,heat_starts,permanent_storage,);
+    heat_false_starts,heat_intermediates,heat_start_lists,heat_starts,heat_winds,permanent_storage,);

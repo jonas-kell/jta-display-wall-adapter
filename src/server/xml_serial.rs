@@ -7,6 +7,7 @@ use crate::server::camera_program_datatypes::{
     HeatCompetitorResult, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
     HeatStartList, HeatWind,
 };
+use crate::server::xml_types::HeatWindMissing;
 use crate::times::{DayTime, RaceTime, RaceWind};
 use chrono::NaiveDateTime;
 use nom::branch::alt;
@@ -405,6 +406,20 @@ impl TryFrom<HeatWindXML> for HeatWind {
     }
     type Error = String;
 }
+impl From<HeatWindXML> for HeatWindMissing {
+    fn from(value: HeatWindXML) -> Self {
+        let _ = value.heat_id; // drop because we get inconsistent type from source
+        let _ = value.session_id;
+        let _ = value.event_id;
+
+        Self {
+            id: value.id,
+            application: value.application,
+            generated: value.generated.0,
+            version: value.version,
+        }
+    }
+}
 
 #[derive(Deserialize)]
 pub struct CompetitorEvaluatedXML {
@@ -723,7 +738,7 @@ fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, Stri
             Ok(dec) => {
                 if dec.wind.is_none() {
                     // detached wind sensor or somethingth
-                    return Ok(InstructionFromCameraProgram::HeatWindMissing);
+                    return Ok(InstructionFromCameraProgram::HeatWindMissing(dec.into()));
                 }
                 match HeatWind::try_from(dec) {
                     Ok(dec) => return Ok(InstructionFromCameraProgram::HeatWind(dec)),
