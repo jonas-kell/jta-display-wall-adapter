@@ -28,9 +28,7 @@
     <br />
     <template v-if="mainStore.selectedHeat">
         Heat Selected: {{ mainStore.selectedHeat.meta.name }} <br />
-        <pre>
-            {{ mainStore.selectedHeat }}
-        </pre>
+        <pre>{{ mainStore.selectedHeat }}</pre>
     </template>
     <p v-else>No heat selected</p>
     <br />

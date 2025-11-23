@@ -306,16 +306,77 @@ pub fn get_log_limited(
 }
 
 pub fn get_heat_data(id: Uuid, manager: &DatabaseManager) -> Result<HeatData, DatabaseError> {
+    let mut conn = manager.get_connection()?;
     let start_list = HeatStartList::get_from_database_by_id(id, manager)?;
+    let id_str = id.to_string();
+
+    let data_intermediates = heat_intermediates::table::table()
+        .filter(heat_intermediates::belongs_to_id.eq(id_str.clone()))
+        .load::<HeatIntermediateDatabase>(&mut conn)?;
+    let intermediates_collected = data_intermediates
+        .into_iter()
+        .filter_map(|h| HeatIntermediate::try_from(h).ok())
+        .collect::<Vec<HeatIntermediate>>();
+    let data_evaluations = heat_evaluations::table::table()
+        .filter(heat_evaluations::belongs_to_id.eq(id_str))
+        .load::<HeatEvaluationDatabase>(&mut conn)?;
+    let evaluations_collected = data_evaluations
+        .into_iter()
+        .filter_map(|h| CompetitorEvaluated::try_from(h).ok())
+        .collect::<Vec<CompetitorEvaluated>>();
+
+    // database error here basically always is not found error -> this is fine
+    let heat_start = HeatStart::get_from_database_by_id(id, manager).ok();
+    let heat_finish = HeatFinish::get_from_database_by_id(id, manager).ok();
+    let heat_result = HeatResult::get_from_database_by_id(id, manager).ok();
+    let heat_wind = HeatWind::get_from_database_by_id(id, manager).ok();
 
     return Ok(HeatData {
         meta: start_list.clone().into(),
         start_list: start_list,
-        start: None,
-        intermediates: None,
-        evaluations: None,
-        finishes: None,
-        result: None,
-        wind: None,
+        start: heat_start,
+        intermediates: if intermediates_collected.is_empty() {
+            None
+        } else {
+            Some(intermediates_collected)
+        },
+        evaluations: if evaluations_collected.is_empty() {
+            None
+        } else {
+            Some(evaluations_collected)
+        },
+        finish: heat_finish,
+        result: heat_result,
+        wind: heat_wind,
     });
+}
+
+/// clear starts, intermediates, finish, results, winds, wind_missings, evaluations
+pub fn purge_heat_data(id: Uuid, manager: &DatabaseManager) -> Result<(), DatabaseError> {
+    let mut conn = manager.get_connection()?;
+
+    // start list will egt ovrwritten immediately. Do not delete to avoid race conditions
+    diesel::delete(heat_starts::table::table().filter(heat_starts::id.eq(id.to_string())))
+        .execute(&mut conn)?;
+    diesel::delete(
+        heat_intermediates::table::table()
+            .filter(heat_intermediates::belongs_to_id.eq(id.to_string())),
+    )
+    .execute(&mut conn)?;
+    diesel::delete(heat_finishes::table::table().filter(heat_finishes::id.eq(id.to_string())))
+        .execute(&mut conn)?;
+    diesel::delete(heat_results::table::table().filter(heat_results::id.eq(id.to_string())))
+        .execute(&mut conn)?;
+    diesel::delete(heat_winds::table::table().filter(heat_winds::id.eq(id.to_string())))
+        .execute(&mut conn)?;
+    diesel::delete(
+        heat_wind_missings::table::table().filter(heat_wind_missings::id.eq(id.to_string())),
+    )
+    .execute(&mut conn)?;
+    diesel::delete(
+        heat_evaluations::table::table().filter(heat_evaluations::belongs_to_id.eq(id.to_string())),
+    )
+    .execute(&mut conn)?;
+
+    Ok(())
 }

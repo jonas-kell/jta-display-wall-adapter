@@ -1,6 +1,8 @@
 use crate::{
     args::Args,
-    database::{get_heat_data, get_log_limited, DatabaseManager, DatabaseSerializable},
+    database::{
+        get_heat_data, get_log_limited, purge_heat_data, DatabaseManager, DatabaseSerializable,
+    },
     file::read_image_files,
     instructions::{
         IncomingInstruction, InstructionCommunicationChannel, InstructionFromCameraProgram,
@@ -194,8 +196,15 @@ impl ServerStateMachine {
                     store_to_database!(start, self);
                 }
                 InstructionFromCameraProgram::HeatFalseStart(false_start) => {
+                    let id = false_start.id;
                     store_to_database!(false_start, self);
-                    // TODO clear starts, intermediates, finish, results, winds, wind_missings, evaluations
+
+                    match purge_heat_data(id, &self.database_manager) {
+                        Ok(()) => (),
+                        Err(e) => {
+                            error!("Error when purging heat data: {}", e);
+                        }
+                    }
                 }
                 InstructionFromCameraProgram::HeatIntermediate(intermediate) => {
                     store_to_database!(intermediate, self);

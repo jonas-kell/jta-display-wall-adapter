@@ -135,7 +135,7 @@ export type HeatData = {
     start: HeatStart | null;
     intermediates: HeatIntermediate[] | null;
     wind: HeatWind | null;
-    finishes: HeatFinish | null;
+    finish: HeatFinish | null;
     evaluations: CompetitorEvaluated[] | null;
     result: HeatResult | null;
 };

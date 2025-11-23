@@ -156,7 +156,7 @@ pub struct HeatData {
     pub start: Option<HeatStart>,
     pub intermediates: Option<Vec<HeatIntermediate>>,
     pub wind: Option<HeatWind>,
-    pub finishes: Option<HeatFinish>,
+    pub finish: Option<HeatFinish>,
     pub evaluations: Option<Vec<CompetitorEvaluated>>,
     pub result: Option<HeatResult>,
 }

@@ -59,6 +59,7 @@ export default defineStore("main", () => {
                 } else {
                     logEntries.value = msg.data;
                 }
+                sendSelectHeatCommandInternal();
                 return;
             case InboundMessageType.HeatDataMessage:
                 selectedHeat.value = msg.data;
@@ -188,12 +189,19 @@ export default defineStore("main", () => {
     const logEntries = ref([] as LogEntry[]);
 
     function sendSelectHeatCommand(id: string) {
-        const packet: SelectHeat = {
-            type: "SelectHeat",
-            data: id,
-        };
-        sendWSCommand(JSON.stringify(packet));
+        selectHeatId = id;
+        sendSelectHeatCommandInternal();
     }
+    function sendSelectHeatCommandInternal() {
+        if (selectHeatId) {
+            const packet: SelectHeat = {
+                type: "SelectHeat",
+                data: selectHeatId,
+            };
+            sendWSCommand(JSON.stringify(packet));
+        }
+    }
+    let selectHeatId = null as null | string;
     const selectedHeat = ref(null as null | HeatData);
 
     const displayCanSwitchMode = computed(() => {
