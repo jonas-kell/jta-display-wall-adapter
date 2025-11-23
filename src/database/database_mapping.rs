@@ -9,7 +9,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-pub trait DatabaseSerializable: Sized + Serialize + for<'a> Deserialize<'a> {
+pub trait DatabaseSerializable: Serialize + for<'a> Deserialize<'a> {
     type DbTable: Table + HasTable<Table = Self::DbTable>;
     type DbModel: Insertable<Self::DbTable>;
 
