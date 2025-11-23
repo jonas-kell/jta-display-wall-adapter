@@ -92,7 +92,7 @@ export default defineStore("main", () => {
             connected.value = true;
             reconnecting = false;
 
-            console.log("Socket connceted");
+            console.log("Socket connected");
 
             // only assign the handlers if actually open
             if (ws) {
