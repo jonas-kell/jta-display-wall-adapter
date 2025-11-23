@@ -18,3 +18,7 @@ export type RequestDisplayClientState = {
 export type SwitchMode = {
     type: "SwitchMode";
 };
+
+export type GetHeatStarts = {
+    type: "GetHeatStarts";
+};

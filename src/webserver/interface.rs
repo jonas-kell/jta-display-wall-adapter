@@ -1,3 +1,4 @@
+use crate::server::xml_types::HeatStart;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -8,6 +9,7 @@ pub enum MessageFromWebControl {
     FreeText(String),
     RequestDisplayClientState,
     SwitchMode,
+    GetHeatStarts,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,4 +23,5 @@ pub struct DisplayClientState {
 #[serde(tag = "type", content = "data")]
 pub enum MessageToWebControl {
     DisplayClientState(DisplayClientState),
+    HeatStarts(Vec<HeatStart>),
 }

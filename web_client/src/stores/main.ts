@@ -1,8 +1,15 @@
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
 import { WS_URL } from "../functions/environment";
-import { Advertisements, FreeText, Idle, RequestDisplayClientState, SwitchMode } from "../functions/interfaceOutbound";
-import { InboundMessageType, parseMessage } from "../functions/interfaceInbound";
+import {
+    Advertisements,
+    FreeText,
+    GetHeatStarts,
+    Idle,
+    RequestDisplayClientState,
+    SwitchMode,
+} from "../functions/interfaceOutbound";
+import { HeatStarts, InboundMessageType, parseMessage } from "../functions/interfaceInbound";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -31,11 +38,15 @@ export default defineStore("main", () => {
                 displayConnected.value = msg.data.alive;
                 displayExternalPassthrough.value = msg.data.external_passthrough_mode;
                 displayCanSwitchModeInternal.value = msg.data.can_switch_mode;
-                break;
+                return;
+            case InboundMessageType.HeatStarts:
+                heatStartsResult.value = msg.data;
+                return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);
-                break;
+                return;
         }
+        console.error("Received unhandled message type:", msg);
     }
 
     async function initWS() {
@@ -133,6 +144,14 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
 
+    function sendGetHeatStartsCommand() {
+        const packet: GetHeatStarts = {
+            type: "GetHeatStarts",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    const heatStartsResult = ref(null as null | HeatStarts);
+
     const displayCanSwitchMode = computed(() => {
         return displayCanSwitchModeInternal.value && displayConnected.value;
     });
@@ -143,6 +162,8 @@ export default defineStore("main", () => {
         sendAdvertisementsCommand,
         sendIdleCommand,
         sendFreetextCommand,
+        sendGetHeatStartsCommand,
+        heatStartsResult,
         displayConnected,
         displayExternalPassthrough,
         displayCanSwitchMode,

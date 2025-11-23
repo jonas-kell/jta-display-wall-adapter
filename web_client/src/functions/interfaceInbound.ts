@@ -9,6 +9,11 @@ export type DisplayClientState = {
     data: DisplayClientStateState;
 };
 
+export type HeatStarts = {
+    type: "HeatStarts";
+    data: any;
+};
+
 export type Unknown = {
     type: "Unknown";
     data: unknown;
@@ -17,9 +22,10 @@ export type Unknown = {
 export enum InboundMessageType {
     DisplayClientState = "DisplayClientState",
     Unknown = "Unknown",
+    HeatStarts = "HeatStarts",
 }
 
-export type InboundMessage = DisplayClientState | Unknown;
+export type InboundMessage = DisplayClientState | HeatStarts | Unknown;
 
 export function parseMessage(json: unknown): InboundMessage {
     if (typeof json !== "object" || json === null) {
@@ -31,6 +37,8 @@ export function parseMessage(json: unknown): InboundMessage {
     switch (obj.type) {
         case InboundMessageType.DisplayClientState:
             return { type: "DisplayClientState", data: obj.data } as DisplayClientState;
+        case InboundMessageType.HeatStarts:
+            return { type: "HeatStarts", data: obj.data } as HeatStarts;
 
         default:
             return { type: "Unknown", data: json } as Unknown;

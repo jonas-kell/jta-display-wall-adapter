@@ -6,6 +6,7 @@ use crate::{
         IncomingInstruction, InstructionCommunicationChannel, InstructionFromTimingProgram,
         InstructionToTimingProgram,
     },
+    server::xml_types::HeatStart,
     webserver::{DisplayClientState, MessageFromWebControl, MessageToWebControl},
 };
 use images_core::images::{AnimationPlayer, ImageMeta, ImagesStorage};
@@ -221,6 +222,17 @@ impl ServerStateMachine {
                         self.send_message_to_client(MessageFromServerToClient::Clear);
                     } else {
                         self.state = ServerState::PassthroughClient;
+                    }
+                }
+                MessageFromWebControl::GetHeatStarts => {
+                    trace!("Heat Starts were requested");
+                    match HeatStart::get_all_from_database(&self.database_manager) {
+                        Ok(data) => {
+                            self.send_message_to_web_control(MessageToWebControl::HeatStarts(data));
+                        }
+                        Err(e) => {
+                            error!("Database loading error: {}", e);
+                        }
                     }
                 }
             },
