@@ -86,6 +86,7 @@ impl TimingStateMachine {
         match rtu {
             TimingUpdate::Reset => {
                 self.timing_state = TimingState::Stopped;
+                self.held_time_state = None; // make sure, to clear this
             }
             TimingUpdate::Running(rt) => {
                 self.update_reference_computation_time(&rt);
