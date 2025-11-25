@@ -2,6 +2,7 @@ use crate::{
     client::TimingSettings,
     database::PermanentlyStoredDataset,
     server::camera_program_types::{HeatData, HeatMeta},
+    times::DayTime,
 };
 use serde::{Deserialize, Serialize};
 
@@ -19,6 +20,7 @@ pub enum MessageFromWebControl {
     Timing,
     UpdateTimingSettings(TimingSettings),
     RequestTimingSettings,
+    Clock(DayTime),
 }
 
 #[derive(Debug, Serialize, Deserialize)]

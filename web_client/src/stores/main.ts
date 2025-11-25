@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from "vue";
 import { WS_URL } from "../functions/environment";
 import {
     Advertisements,
+    Clock,
     FreeText,
     GetHeats,
     GetLogs,
@@ -191,6 +192,24 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
 
+    function sendClockCommand() {
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const seconds = now.getSeconds();
+
+        const packet: Clock = {
+            type: "Clock",
+            data: {
+                fractional_part_in_ten_thousands: now.getMilliseconds() * 10,
+                hours,
+                minutes,
+                seconds,
+            },
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+
     function sendGetHeatsCommand() {
         const packet: GetHeats = {
             type: "GetHeats",
@@ -271,6 +290,7 @@ export default defineStore("main", () => {
         sendGetLogsCommand,
         sendSelectHeatCommand,
         sendTimingCommand,
+        sendClockCommand,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,

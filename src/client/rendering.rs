@@ -171,5 +171,17 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
                 }
             }
         }
+        ClientState::Clock(clock_state) => {
+            fill_with_color(JTA_COLOR, meta);
+
+            draw_text("Clock:", 10.0, 10.0, 20.0, meta);
+            draw_text(
+                &clock_state.get_currently_computed_day_time().to_string(),
+                10.0,
+                30.0,
+                20.0,
+                meta,
+            );
+        }
     }
 }

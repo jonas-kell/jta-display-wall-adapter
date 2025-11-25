@@ -30,7 +30,7 @@ export type RaceTime = {
     hours: number | null;
     minutes: number | null;
     seconds: number;
-    tenths: number;
+    tenths: number | null;
     hundrets: number | null;
     thousands: number | null;
     ten_thousands: number | null;

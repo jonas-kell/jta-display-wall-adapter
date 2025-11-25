@@ -1,3 +1,4 @@
+import { DayTime } from "./interfaceInbound";
 import { TimingSettings } from "./interfaceShared";
 
 export type Idle = {
@@ -37,6 +38,11 @@ export type SelectHeat = {
 
 export type Timing = {
     type: "Timing";
+};
+
+export type Clock = {
+    type: "Clock";
+    data: DayTime;
 };
 
 export type UpdateTimingSettings = {

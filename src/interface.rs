@@ -1,6 +1,6 @@
 use crate::{
     args::Args,
-    client::{TimingSettings, TimingStateMachine, TimingUpdate},
+    client::{ClockState, TimingSettings, TimingStateMachine, TimingUpdate},
     database::{
         get_heat_data, get_log_limited, purge_heat_data, DatabaseManager, DatabaseSerializable,
     },
@@ -10,6 +10,7 @@ use crate::{
         InstructionFromTimingProgram, InstructionToTimingProgram,
     },
     server::camera_program_types::HeatStartList,
+    times::DayTime,
     webserver::{DisplayClientState, MessageFromWebControl, MessageToWebControl},
 };
 use images_core::images::{ImageMeta, ImagesStorage};
@@ -37,6 +38,7 @@ pub enum MessageFromServerToClient {
     TimingStateUpdate(TimingUpdate),
     TimingSettingsUpdate(TimingSettings),
     RequestTimingSettings,
+    Clock(DayTime),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -256,7 +258,11 @@ impl ServerStateMachine {
                         TimingUpdate::Intermediate(rt),
                     ));
                 }
-                inst => error!("Unhandled instruction from camera program: {:?}", inst),
+                InstructionFromCameraProgram::DayTime(dt) => {
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::Clock(dt));
+                    }
+                }
             },
             IncomingInstruction::FromWebControl(inst) => match inst {
                 MessageFromWebControl::Advertisements => {
@@ -348,6 +354,11 @@ impl ServerStateMachine {
                 MessageFromWebControl::RequestTimingSettings => {
                     self.send_message_to_client(MessageFromServerToClient::RequestTimingSettings);
                 }
+                MessageFromWebControl::Clock(dt) => {
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::Clock(dt));
+                    }
+                }
             },
         }
     }
@@ -415,6 +426,7 @@ pub enum ClientState {
     Advertisements,
     Timing(TimingStateMachine),
     TimingEmptyInit, // will immediately switch to Timing, but read the state machine from self.timing_state_machine_storage
+    Clock(ClockState),
 }
 
 static STORAGE_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/image_storage.bin"));
@@ -591,6 +603,9 @@ impl ClientStateMachine {
                 self.push_new_message(MessageFromClientToServer::TimingSettingsState(
                     self.timing_settings_template.clone(),
                 ));
+            }
+            MessageFromServerToClient::Clock(dt) => {
+                self.state = ClientState::Clock(ClockState::new(&dt));
             }
         }
     }

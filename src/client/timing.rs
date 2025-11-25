@@ -1,8 +1,10 @@
-use std::time::{Duration, Instant};
-
-use crate::{args::Args, times::RaceTime};
+use crate::{
+    args::Args,
+    times::{DayTime, RaceTime},
+};
 use images_core::images::{Animation, AnimationPlayer, ImagesStorage};
 use serde::{Deserialize, Serialize};
+use std::time::{Duration, Instant};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TimingSettings {
@@ -216,5 +218,23 @@ impl TimingStateMachine {
 
     pub fn overwrite_settings(&mut self, settings: &TimingSettings) {
         self.settings = settings.clone()
+    }
+}
+
+pub struct ClockState {
+    reference_computation_time: Instant,
+    corresponding_clock_time: DayTime,
+}
+impl ClockState {
+    pub fn new(clock_time: &DayTime) -> Self {
+        Self {
+            reference_computation_time: Instant::now(),
+            corresponding_clock_time: clock_time.clone(),
+        }
+    }
+
+    pub fn get_currently_computed_day_time(&self) -> DayTime {
+        let diff = Instant::now().saturating_duration_since(self.reference_computation_time);
+        self.corresponding_clock_time.add_duration(diff)
     }
 }

@@ -10,6 +10,7 @@
 
     <button @click="mainStore.sendAdvertisementsCommand">Advertisements</button>
     <button @click="mainStore.sendIdleCommand">Idle</button>
+    <button @click="mainStore.sendClockCommand">Clock</button>
     <button @click="mainStore.sendTimingCommand">Timing</button>
     <br />
     <br />

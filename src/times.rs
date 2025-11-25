@@ -1,6 +1,6 @@
 use crate::hex::parse_race_time;
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, time::Duration};
+use std::{fmt::Display, ops::Add, time::Duration};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RaceTime {
@@ -305,6 +305,7 @@ pub struct DayTime {
     pub fractional_part_in_ten_thousands: Option<u32>,
 }
 impl DayTime {
+    #[allow(dead_code)]
     pub fn to_exact_string(&self) -> String {
         format!(
             "{}.{:04}",
@@ -337,6 +338,11 @@ impl DayTime {
             Err(e) => Err(e.to_string()),
         }
     }
+
+    pub fn add_duration(&self, duration: Duration) -> Self {
+        let start: Duration = self.clone().into();
+        start.add(duration).into()
+    }
 }
 impl Display for DayTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -344,6 +350,29 @@ impl Display for DayTime {
             f,
             "{:02}:{:02}:{:02}",
             self.hours, self.minutes, self.seconds
+        )
+    }
+}
+impl From<Duration> for DayTime {
+    fn from(value: Duration) -> Self {
+        let rt_equiv: RaceTime = value.into();
+
+        Self {
+            fractional_part_in_ten_thousands: Some((rt_equiv.into_ten_thousands() % 10000) as u32),
+            hours: rt_equiv.hours.unwrap_or(0) % 24,
+            minutes: rt_equiv.minutes.unwrap_or(0),
+            seconds: rt_equiv.seconds,
+        }
+    }
+}
+impl From<DayTime> for Duration {
+    fn from(value: DayTime) -> Self {
+        Duration::from_micros(
+            (value.hours as u64 * 10000 * 60 * 60
+                + value.minutes as u64 * 10000 * 60
+                + value.seconds as u64 * 10000
+                + value.fractional_part_in_ten_thousands.unwrap_or(0) as u64)
+                * 100,
         )
     }
 }
