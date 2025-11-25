@@ -9,6 +9,7 @@ pub struct TimingSettings {
     pub fireworks_on_intermediate: bool,
     pub fireworks_on_finish: bool,
     pub max_decimal_places_after_comma: i8,
+    pub hold_time_ms: u32,
 }
 impl TimingSettings {
     pub fn new(args: &Args) -> Self {
@@ -16,16 +17,30 @@ impl TimingSettings {
             fireworks_on_intermediate: args.fireworks_on_intermediate,
             fireworks_on_finish: args.fireworks_on_finish,
             max_decimal_places_after_comma: args.max_decimal_place_after_comma,
+            hold_time_ms: args.hold_time_ms,
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct HeldTimeState {
+    settings: TimingSettings,
     holding_start_time: Instant,
     pub held_at_m: Option<u32>,
     pub held_at_time: RaceTime,
     pub race_was_finished: bool,
+}
+impl HeldTimeState {
+    fn holding_has_elapsed(&self) -> bool {
+        let now = Instant::now();
+        let diff = now.saturating_duration_since(self.holding_start_time);
+
+        if diff.as_millis() > self.settings.hold_time_ms as u128 {
+            return true;
+        }
+
+        return false;
+    }
 }
 
 pub enum TimingState {
@@ -72,24 +87,47 @@ impl TimingStateMachine {
             }
             TimingUpdate::Running(rt) => {
                 self.update_reference_computation_time(&rt);
-                self.timing_state = TimingState::Running;
+
+                match &self.timing_state {
+                    TimingState::Stopped | TimingState::Running => {
+                        self.timing_state = TimingState::Running;
+                    }
+                    TimingState::Held => {
+                        if let Some(hts) = &self.held_time_state {
+                            if hts.holding_has_elapsed() {
+                                // keep holding, if camera program tries to interrupt holding prematurely
+                                self.timing_state = TimingState::Running;
+                            }
+                        }
+                    }
+                    TimingState::Finished(_) => {} // we can not come back from finished. // TODO maybe add option for this. At least think about it.
+                };
             }
             TimingUpdate::Intermediate(rt) => {
                 self.update_reference_computation_time(&rt);
-                self.timing_state = TimingState::Held;
-                self.held_time_state = Some(HeldTimeState {
-                    holding_start_time: Instant::now(),
-                    held_at_m: None, // TODO add logic
-                    held_at_time: rt,
-                    race_was_finished: false, // TODO add logic
-                });
 
-                if self.settings.fireworks_on_intermediate {
-                    self.play_animation_over_top(AnimationPlayer::new(
-                        &self.fireworks_animation,
-                        false,
-                    ));
-                }
+                match &self.timing_state {
+                    TimingState::Stopped | TimingState::Running | TimingState::Held => {
+                        self.timing_state = TimingState::Held;
+
+                        self.timing_state = TimingState::Held;
+                        self.held_time_state = Some(HeldTimeState {
+                            settings: self.settings.clone(),
+                            holding_start_time: Instant::now(),
+                            held_at_m: None, // TODO add logic
+                            held_at_time: rt,
+                            race_was_finished: false, // TODO add logic
+                        });
+
+                        if self.settings.fireworks_on_intermediate {
+                            self.play_animation_over_top(AnimationPlayer::new(
+                                &self.fireworks_animation,
+                                false,
+                            ));
+                        }
+                    }
+                    TimingState::Finished(_) => {} // we can not come back from finished. // TODO maybe add option for this. At least think about it.
+                };
             }
             TimingUpdate::End(rt) => {
                 self.update_reference_computation_time(&rt);
@@ -105,7 +143,27 @@ impl TimingStateMachine {
         }
     }
 
-    pub fn get_main_display_race_time(&self) -> RaceTime {
+    /// also pushes the hold time state out, if necessary
+    pub fn get_main_display_race_time(&mut self) -> RaceTime {
+        match &self.timing_state {
+            TimingState::Held => {
+                match &self.held_time_state {
+                    Some(hts) => {
+                        if hts.holding_has_elapsed() {
+                            // kick out earlier from holding than what we get from camera program
+                            self.timing_state = TimingState::Running;
+                        }
+                    }
+                    None => {
+                        // this should not happen. On hold transition this always gets set
+                        error!("Invalid state encountered. Attempting fix.");
+                        self.timing_state = TimingState::Running;
+                    }
+                }
+            }
+            _ => {}
+        };
+
         match &self.timing_state {
             TimingState::Stopped => RaceTime::get_zero_time(),
             TimingState::Running => self.get_currently_computed_race_time(),
@@ -141,8 +199,7 @@ impl TimingStateMachine {
     }
 
     fn get_currently_computed_race_time(&self) -> RaceTime {
-        let diff = Instant::now().duration_since(self.reference_computation_time);
-
+        let diff = Instant::now().saturating_duration_since(self.reference_computation_time);
         diff.into()
     }
 

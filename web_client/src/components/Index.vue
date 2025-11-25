@@ -43,6 +43,11 @@
                     step="1"
                 />
             </p>
+
+            <p>
+                Hold time ms:
+                <input type="number" min="0" max="15000" v-model="mainStore.timingSettings.hold_time_ms" step="100" />
+            </p>
         </div>
     </template>
     <p v-else>Not loaded</p>

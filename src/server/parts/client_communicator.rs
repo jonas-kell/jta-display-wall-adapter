@@ -138,7 +138,7 @@ pub async fn client_communicator(
                                 Ok(Err(e)) => return Err(e.to_string()),
                                 Ok(Ok(msg)) => match serializer.send(msg).await {
                                     Ok(()) => {
-                                        trace!("Communication to client was sent out");
+                                        // trace!("Communication to client was sent out"); // during timing this is even too much for tracing
                                         continue;
                                     }
                                     Err(e) => return Err(e.to_string()),

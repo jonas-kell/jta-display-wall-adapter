@@ -87,6 +87,9 @@ pub struct Args {
     /// Timing control variable for display of after comma decimals (initial for client, will get sent from server to client, can be set over webcontrol)
     #[arg(long, default_value_t = 2)]
     pub max_decimal_place_after_comma: i8,
+    /// Timing control variable holding times (initial for client, will get sent from server to client, can be set over webcontrol)
+    #[arg(long, default_value_t = 2000)]
+    pub hold_time_ms: u32,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
