@@ -536,7 +536,8 @@ impl ClientStateMachine {
                             tsm.update_race_time(update);
                         }
                         _ => {
-                            let mut new_timing_state_machine = TimingStateMachine::new();
+                            let mut new_timing_state_machine =
+                                TimingStateMachine::new(&self.permanent_images_storage);
                             new_timing_state_machine.update_race_time(update);
 
                             // there was no timing state machine to update
@@ -571,7 +572,9 @@ impl ClientStateMachine {
                         self.state = ClientState::Timing(timing_sm);
                     }
                     None => {
-                        self.state = ClientState::Timing(TimingStateMachine::new());
+                        self.state = ClientState::Timing(TimingStateMachine::new(
+                            &self.permanent_images_storage,
+                        ));
                     }
                 }
             }

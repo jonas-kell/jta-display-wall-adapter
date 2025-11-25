@@ -11,7 +11,7 @@ use crate::{
 };
 
 pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMachine) {
-    match &state.state {
+    match &mut state.state {
         ClientState::Created | ClientState::TimingEmptyInit => {
             clear(meta);
         }
@@ -146,7 +146,7 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
                 }
             }
 
-            if let Some(over_top_player) = &timing_state_machine.over_top_animation {
+            if let Some(over_top_player) = &mut timing_state_machine.over_top_animation {
                 match over_top_player.get_current_frame(
                     meta.texture_width as u32,
                     meta.texture_height as u32,

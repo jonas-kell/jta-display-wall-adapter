@@ -277,46 +277,54 @@ impl Animation {
 }
 
 pub struct AnimationPlayer {
-    has_started_on_global_frame: u64,
+    has_started_on_global_frame: Option<u64>,
     animation: Animation,
     loop_animation: bool,
 }
 
 impl AnimationPlayer {
-    pub fn new(animation: &Animation, global_frame: u64, loop_animation: bool) -> AnimationPlayer {
+    pub fn new(animation: &Animation, loop_animation: bool) -> AnimationPlayer {
         return AnimationPlayer {
-            has_started_on_global_frame: global_frame,
+            has_started_on_global_frame: None,
             animation: animation.clone(), // that should be an acceptable cost for now
             loop_animation,
         };
     }
 
     pub fn get_current_frame(
-        &self,
+        &mut self,
         width: u32,
         height: u32,
         global_frame: u64,
         rescaler: &mut CachedImageScaler,
     ) -> Option<ImageMeta> {
-        let number_frames = self.animation.data.len() as u64;
-        let real_frames_since_start =
-            global_frame - std::cmp::min(global_frame, self.has_started_on_global_frame);
-        let animation_frames_since_start =
-            real_frames_since_start / self.animation.real_frames_per_frame as u64;
-
-        if animation_frames_since_start > number_frames && !self.loop_animation {
-            // animation is over
-            return None;
+        if self.has_started_on_global_frame.is_none() {
+            self.has_started_on_global_frame = Some(global_frame)
         }
 
-        let index = animation_frames_since_start % number_frames;
+        if let Some(has_started_on_global_frame) = self.has_started_on_global_frame {
+            let number_frames = self.animation.data.len() as u64;
+            let real_frames_since_start =
+                global_frame - std::cmp::min(global_frame, has_started_on_global_frame);
+            let animation_frames_since_start =
+                real_frames_since_start / self.animation.real_frames_per_frame as u64;
 
-        let image_to_use = match self.animation.data.get(index as usize) {
-            None => return None,
-            Some(img) => img,
-        };
+            if animation_frames_since_start > number_frames && !self.loop_animation {
+                // animation is over
+                return None;
+            }
 
-        return Some(rescaler.scale_cached(image_to_use, width, height));
+            let index = animation_frames_since_start % number_frames;
+
+            let image_to_use = match self.animation.data.get(index as usize) {
+                None => return None,
+                Some(img) => img,
+            };
+
+            return Some(rescaler.scale_cached(image_to_use, width, height));
+        } else {
+            return None;
+        }
     }
 }
 
