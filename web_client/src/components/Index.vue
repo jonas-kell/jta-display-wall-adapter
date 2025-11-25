@@ -33,6 +33,16 @@
                     Toggle
                 </button>
             </p>
+            <p>
+                Timing decimal places:
+                <input
+                    type="number"
+                    min="-1"
+                    max="4"
+                    v-model="mainStore.timingSettings.max_decimal_places_after_comma"
+                    step="1"
+                />
+            </p>
         </div>
     </template>
     <p v-else>Not loaded</p>

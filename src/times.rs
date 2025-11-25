@@ -7,13 +7,16 @@ pub struct RaceTime {
     pub hours: Option<u16>,
     pub minutes: Option<u16>,
     pub seconds: u16,
-    pub tenths: u16,
+    pub tenths: Option<u16>,
     pub hundrets: Option<u16>,
     pub thousands: Option<u16>,
     pub ten_thousands: Option<u16>,
 }
 impl RaceTime {
-    pub fn optimize_representation_for_display(&self) -> Self {
+    pub fn optimize_representation_for_display(
+        &self,
+        force_number_of_decimal_places: Option<i8>,
+    ) -> Self {
         let mut hours_out = self.hours;
         if let Some(hours_out_val) = hours_out {
             if hours_out_val == 0 {
@@ -30,6 +33,7 @@ impl RaceTime {
             }
         }
 
+        let mut tenths_out = self.tenths;
         let mut hundrets_out = self.hundrets;
         let mut thousands_out = self.thousands;
         let mut ten_thousands_out = self.ten_thousands;
@@ -41,11 +45,50 @@ impl RaceTime {
             ten_thousands_out = None;
         }
 
+        if let Some(force_number_of_decimal_places) = force_number_of_decimal_places {
+            match force_number_of_decimal_places {
+                -1 => {
+                    // way to ignore setting if it is set (== None)
+                }
+                0 => {
+                    tenths_out = None;
+                    hundrets_out = None;
+                    thousands_out = None;
+                    ten_thousands_out = None;
+                }
+                1 => {
+                    tenths_out = Some(self.tenths.unwrap_or(0));
+                    hundrets_out = None;
+                    thousands_out = None;
+                    ten_thousands_out = None;
+                }
+                2 => {
+                    tenths_out = Some(self.tenths.unwrap_or(0));
+                    hundrets_out = Some(self.hundrets.unwrap_or(0));
+                    thousands_out = None;
+                    ten_thousands_out = None;
+                }
+                3 => {
+                    tenths_out = Some(self.tenths.unwrap_or(0));
+                    hundrets_out = Some(self.hundrets.unwrap_or(0));
+                    thousands_out = Some(self.thousands.unwrap_or(0));
+                    ten_thousands_out = None;
+                }
+                4 => {
+                    tenths_out = Some(self.tenths.unwrap_or(0));
+                    hundrets_out = Some(self.hundrets.unwrap_or(0));
+                    thousands_out = Some(self.thousands.unwrap_or(0));
+                    ten_thousands_out = Some(self.ten_thousands.unwrap_or(0));
+                }
+                _ => {}
+            }
+        }
+
         Self {
             hours: hours_out,
             minutes: minutes_out,
             seconds: self.seconds,
-            tenths: self.tenths,
+            tenths: tenths_out,
             hundrets: hundrets_out,
             thousands: thousands_out,
             ten_thousands: ten_thousands_out,
@@ -63,7 +106,7 @@ impl Display for RaceTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}{}{}.{}{}{}{}",
+            "{}{}{}{}{}{}{}{}",
             if let Some(hours) = self.hours {
                 format!("{}:", hours)
             } else {
@@ -83,16 +126,44 @@ impl Display for RaceTime {
             } else {
                 format!("{}", self.seconds)
             },
-            format!("{}", self.tenths % 10),
+            if self.tenths.is_some()
+                || self.hundrets.is_some()
+                || self.thousands.is_some()
+                || self.ten_thousands.is_some()
+            {
+                "."
+            } else {
+                ""
+            },
+            if let Some(tenths) = self.tenths {
+                format!("{}", tenths % 10)
+            } else {
+                if self.hundrets.is_some()
+                    || self.thousands.is_some()
+                    || self.ten_thousands.is_some()
+                {
+                    String::from("0")
+                } else {
+                    String::from("")
+                }
+            },
             if let Some(hundrets) = self.hundrets {
                 format!("{}", hundrets % 10)
             } else {
-                String::from("")
+                if self.thousands.is_some() || self.ten_thousands.is_some() {
+                    String::from("0")
+                } else {
+                    String::from("")
+                }
             },
             if let Some(thousands) = self.thousands {
                 format!("{}", thousands % 10)
             } else {
-                String::from("")
+                if self.ten_thousands.is_some() {
+                    String::from("0")
+                } else {
+                    String::from("")
+                }
             },
             if let Some(ten_thousands) = self.ten_thousands {
                 format!("{}", ten_thousands % 10)
@@ -128,7 +199,7 @@ impl DayTime {
 
                 let hours = rt.hours.unwrap_or(0);
                 let minutes = rt.minutes.unwrap_or(0);
-                let fractional_part_in_ten_thousands: u32 = rt.tenths as u32 * 1000
+                let fractional_part_in_ten_thousands: u32 = rt.tenths.unwrap_or(0) as u32 * 1000
                     + rt.hundrets.unwrap_or(0) as u32 * 100
                     + rt.thousands.unwrap_or(0) as u32 * 10
                     + rt.ten_thousands.unwrap_or(0) as u32;

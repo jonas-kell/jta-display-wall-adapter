@@ -134,7 +134,11 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
             match &timing_state_machine.timing_state {
                 TimingState::Running(time) => {
                     draw_text(
-                        &time.optimize_representation_for_display().to_string(),
+                        &time
+                            .optimize_representation_for_display(Some(
+                                timing_state_machine.settings.max_decimal_places_after_comma,
+                            ))
+                            .to_string(),
                         10.0,
                         10.0,
                         20.0,

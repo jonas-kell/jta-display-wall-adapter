@@ -6,12 +6,14 @@ use serde::{Deserialize, Serialize};
 pub struct TimingSettings {
     pub fireworks_on_intermediate: bool,
     pub fireworks_on_finish: bool,
+    pub max_decimal_places_after_comma: i8,
 }
 impl TimingSettings {
     pub fn new(args: &Args) -> Self {
         Self {
             fireworks_on_intermediate: args.fireworks_on_intermediate,
             fireworks_on_finish: args.fireworks_on_finish,
+            max_decimal_places_after_comma: args.max_decimal_place_after_comma,
         }
     }
 }
@@ -34,7 +36,7 @@ pub struct TimingStateMachine {
     pub timing_state: TimingState,
     pub title: Option<String>,
     fireworks_animation: Animation,
-    settings: TimingSettings,
+    pub settings: TimingSettings,
 }
 impl TimingStateMachine {
     pub fn new(images_storage: &ImagesStorage, settings: &TimingSettings) -> TimingStateMachine {

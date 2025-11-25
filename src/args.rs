@@ -84,6 +84,9 @@ pub struct Args {
     /// Timing control variable for fireworks (initial for client, will get sent from server to client, can be set over webcontrol)
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub fireworks_on_finish: bool,
+    /// Timing control variable for display of after comma decimals (initial for client, will get sent from server to client, can be set over webcontrol)
+    #[arg(long, default_value_t = 2)]
+    pub max_decimal_place_after_comma: i8,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]

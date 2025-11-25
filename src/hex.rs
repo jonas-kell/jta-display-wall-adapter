@@ -86,7 +86,7 @@ pub fn parse_race_time(input: &[u8]) -> IResult<&[u8], RaceTime> {
             hours,
             minutes,
             seconds,
-            tenths,
+            tenths: Some(tenths), // in all parsed representations they are there, but we may choose to omit for display pusposes
             hundrets,
             thousands,
             ten_thousands,
