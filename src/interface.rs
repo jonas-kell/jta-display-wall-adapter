@@ -116,6 +116,10 @@ impl ServerStateMachine {
                             .slideshow_transition_duration_nr_ms,
                     },
                 ));
+                // init-impose the timing settings from the server
+                self.send_message_to_client(MessageFromServerToClient::TimingSettingsUpdate(
+                    TimingSettings::new(&self.args),
+                ));
 
                 // send client advertisement images
                 let folder_path = Path::new("advertisement_container");
