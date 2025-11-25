@@ -127,6 +127,7 @@ impl DisqualificationReason {
 }
 
 #[derive(Deserialize, Clone)]
+// #[serde(deny_unknown_fields)] // deactivated, used for xml schema debug
 struct HeatEventXML {
     #[serde(rename = "@Application")]
     application: String,
@@ -236,6 +237,7 @@ impl TryFrom<HeatEventXML> for HeatFalseStart {
 }
 
 #[derive(Deserialize)]
+// #[serde(deny_unknown_fields)] // deactivated, used for xml schema debug
 struct HeatStartListXML {
     #[serde(rename = "@Name")]
     name: String,
@@ -260,6 +262,7 @@ struct HeatStartListXML {
 }
 
 #[derive(Deserialize)]
+// #[serde(deny_unknown_fields)] // deactivated, used for xml schema debug
 struct StartlistXML {
     #[serde(default)]
     #[serde(rename = "Competitor")]
@@ -283,6 +286,7 @@ fn default_str_nation() -> String {
 }
 
 #[derive(Deserialize, Clone)]
+// #[serde(deny_unknown_fields)] // deactivated, used for xml schema debug
 struct HeatCompetitorXML {
     #[serde(rename = "@Id")]
     id: String,
@@ -327,6 +331,8 @@ struct HeatCompetitorXML {
     difference_to_previous: Option<String>,
     #[serde(rename = "@Finishtime")] // this is called differently in Evaluated!!
     finish_time: Option<HeatTime>,
+    #[serde(rename = "@Starttime")]
+    start_time: Option<HeatTime>,
 }
 impl From<HeatStartListXML> for HeatStartList {
     fn from(value: HeatStartListXML) -> Self {
@@ -352,6 +358,8 @@ impl From<HeatStartListXML> for HeatStartList {
 }
 impl From<HeatCompetitorXML> for HeatCompetitor {
     fn from(value: HeatCompetitorXML) -> Self {
+        let _ = value.start_time; // all out people start at the same times. -> this is stored in the meta // also it is not there, always
+
         Self {
             id: value.id,
             lane: value.lane,
@@ -370,6 +378,7 @@ impl From<HeatCompetitorXML> for HeatCompetitor {
 }
 
 #[derive(Deserialize)]
+// #[serde(deny_unknown_fields)] // deactivated, used for xml schema debug
 struct HeatWindXML {
     #[serde(rename = "@Application")]
     application: String,
@@ -428,6 +437,7 @@ impl From<HeatWindXML> for HeatWindMissing {
 }
 
 #[derive(Deserialize)]
+// #[serde(deny_unknown_fields)] // deactivated, used for xml schema debug
 struct CompetitorEvaluatedXML {
     #[serde(rename = "@Application")]
     application: String,
@@ -485,6 +495,8 @@ struct CompetitorEvaluatedXML {
     difference_to_previous: String,
     #[serde(rename = "@Time")] // this is called differently in general Competitor parser
     finish_time: HeatTime,
+    #[serde(rename = "@Starttime")]
+    start_time: Option<HeatTime>,
 }
 impl TryFrom<CompetitorEvaluatedXML> for CompetitorEvaluated {
     fn try_from(value: CompetitorEvaluatedXML) -> Result<Self, Self::Error> {
@@ -519,6 +531,7 @@ impl TryFrom<CompetitorEvaluatedXML> for CompetitorEvaluated {
         let _ = value.heat_id; // drop because we get inconsistent type from source
         let _ = value.session_id;
         let _ = value.event_id;
+        let _ = value.start_time; // all out people start at the same times. -> this is stored in the meta
 
         Ok(Self {
             id: value.id,
@@ -597,6 +610,7 @@ impl TryFrom<HeatCompetitorXML> for HeatCompetitorResult {
 }
 
 #[derive(Deserialize)]
+// #[serde(deny_unknown_fields)] // deactivated, used for xml schema debug
 struct HeatResultXML {
     #[serde(rename = "@Id")]
     id: Uuid,
@@ -623,6 +637,7 @@ struct HeatResultXML {
 }
 
 #[derive(Deserialize)]
+// #[serde(deny_unknown_fields)] // deactivated, used for xml schema debug
 struct ResultsXML {
     #[serde(default)]
     #[serde(rename = "Competitor")]
