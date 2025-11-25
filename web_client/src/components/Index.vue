@@ -1,22 +1,45 @@
 <template>
     <h1>JTA Display Wall Adapter</h1>
-
-    <button @click="mainStore.sendAdvertisementsCommand">Advertisements</button>
-    <button @click="mainStore.sendIdleCommand">Idle</button>
-    <button @click="mainStore.sendTimingCommand">Timing</button>
-
-    <br />
-    <br />
-    <input type="text" v-model="freetext" />
-    <button @click="mainStore.sendFreetextCommand(freetext)">Freetext</button>
-    <br />
-    <br />
     Connected: {{ mainStore.connected }}
-    <br />
     <br />
     Display Connected: {{ mainStore.displayConnected }}, Mode:
     {{ mainStore.displayExternalPassthrough ? "External Passthrough" : "Default client" }}
     <button @click="mainStore.sendSwitchModeCommand" :disabled="!mainStore.displayCanSwitchMode">Switch Mode</button>
+    <br />
+    <br />
+
+    <button @click="mainStore.sendAdvertisementsCommand">Advertisements</button>
+    <button @click="mainStore.sendIdleCommand">Idle</button>
+    <button @click="mainStore.sendTimingCommand">Timing</button>
+    <br />
+    <br />
+    Timing Settings:
+    <br />
+    <template v-if="mainStore.timingSettings">
+        <div style="margin-left: 1cm">
+            <p>
+                Intermediate Fireworks: {{ mainStore.timingSettings.fireworks_on_intermediate ? "yes" : "no" }}
+                <button
+                    @click="
+                        mainStore.timingSettings.fireworks_on_intermediate = !mainStore.timingSettings.fireworks_on_intermediate
+                    "
+                >
+                    Toggle
+                </button>
+            </p>
+            <p>
+                Finish Fireworks: {{ mainStore.timingSettings.fireworks_on_finish ? "yes" : "no" }}
+                <button @click="mainStore.timingSettings.fireworks_on_finish = !mainStore.timingSettings.fireworks_on_finish">
+                    Toggle
+                </button>
+            </p>
+        </div>
+    </template>
+    <p v-else>Not loaded</p>
+    <br />
+
+    <input type="text" v-model="freetext" />
+    <button @click="mainStore.sendFreetextCommand(freetext)">Freetext</button>
     <br />
     <br />
     <button @click="mainStore.sendGetHeatsCommand">Get Heats</button>

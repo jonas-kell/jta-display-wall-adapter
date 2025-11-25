@@ -1,5 +1,7 @@
 // server Datatype formats (keep in sync with "./../../../src/server/camera_program_datatypes.rs")
 
+import { TimingSettings } from "./interfaceShared";
+
 export type HeatMeta = {
     id: string;
     name: string;
@@ -174,6 +176,11 @@ export type HeatDataMessage = {
     data: HeatData;
 };
 
+export type TimingSettingsState = {
+    type: "TimingSettingsState";
+    data: TimingSettings;
+};
+
 export type Unknown = {
     type: "Unknown";
     data: unknown;
@@ -185,9 +192,10 @@ export enum InboundMessageType {
     HeatsMeta = "HeatsMeta",
     Logs = "Logs",
     HeatDataMessage = "HeatDataMessage",
+    TimingSettingsState = "TimingSettingsState",
 }
 
-export type InboundMessage = DisplayClientState | HeatsMeta | Logs | HeatDataMessage | Unknown;
+export type InboundMessage = DisplayClientState | HeatsMeta | Logs | HeatDataMessage | TimingSettingsState | Unknown;
 
 export function parseMessage(json: unknown): InboundMessage {
     if (typeof json !== "object" || json === null) {
@@ -205,6 +213,8 @@ export function parseMessage(json: unknown): InboundMessage {
             return { type: "Logs", data: obj.data } as Logs;
         case InboundMessageType.HeatDataMessage:
             return { type: "HeatDataMessage", data: obj.data } as HeatDataMessage;
+        case InboundMessageType.TimingSettingsState:
+            return { type: "TimingSettingsState", data: obj.data } as TimingSettingsState;
 
         default:
             return { type: "Unknown", data: json } as Unknown;

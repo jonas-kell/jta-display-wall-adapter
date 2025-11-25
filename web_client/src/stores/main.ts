@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { WS_URL } from "../functions/environment";
 import {
     Advertisements,
@@ -8,12 +8,15 @@ import {
     GetLogs,
     Idle,
     RequestDisplayClientState,
+    RequestTimingSettings,
     SelectHeat,
     SwitchMode,
     Timing,
+    UpdateTimingSettings,
 } from "../functions/interfaceOutbound";
 import { HeatData, HeatMeta, InboundMessageType, LogEntry, parseMessage } from "../functions/interfaceInbound";
-import { CircularBuffer } from "../functions/circularBUffer";
+import { CircularBuffer } from "../functions/circularBuffer";
+import { TimingSettings } from "../functions/interfaceShared";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -44,9 +47,6 @@ export default defineStore("main", () => {
                 displayConnected.value = msg.data.alive;
                 displayExternalPassthrough.value = msg.data.external_passthrough_mode;
                 displayCanSwitchModeInternal.value = msg.data.can_switch_mode;
-
-                // this is kind of an init also, as this gets requested on connection establish:
-                sendGetHeatsCommand();
                 return;
             case InboundMessageType.HeatsMeta:
                 heatsMetaResult.value = msg.data;
@@ -68,6 +68,15 @@ export default defineStore("main", () => {
                 return;
             case InboundMessageType.HeatDataMessage:
                 selectedHeat.value = msg.data;
+                return;
+            case InboundMessageType.TimingSettingsState:
+                timingSettingsBeingChanged.value = true;
+                nextTick(() => {
+                    timingSettings.value = msg.data;
+                    nextTick(() => {
+                        timingSettingsBeingChanged.value = false;
+                    });
+                });
                 return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);
@@ -106,6 +115,10 @@ export default defineStore("main", () => {
             reconnecting = false;
 
             console.log("Socket connected");
+
+            // this is kind of an init also, as this gets requested on connection establish:
+            sendGetHeatsCommand();
+            sendRequestTimingSettingsCommand();
 
             // only assign the handlers if actually open
             if (ws) {
@@ -185,6 +198,12 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
     const heatsMetaResult = ref([] as HeatMeta[]);
+    function sendRequestTimingSettingsCommand() {
+        const packet: RequestTimingSettings = {
+            type: "RequestTimingSettings",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
 
     function sendGetLogsCommand(how_many: number) {
         if (how_many < 0) {
@@ -216,8 +235,30 @@ export default defineStore("main", () => {
     let selectHeatId = null as null | string;
     const selectedHeat = ref(null as null | HeatData);
 
+    const timingSettings = ref(null as null | TimingSettings);
+    const timingSettingsBeingChanged = ref(true); // initial change
+    watch(
+        timingSettings,
+        () => {
+            if (timingSettings.value && timingSettingsBeingChanged.value == false) {
+                timingSettingsBeingChanged.value = true;
+                const packet: UpdateTimingSettings = {
+                    type: "UpdateTimingSettings",
+                    data: timingSettings.value,
+                };
+                sendWSCommand(JSON.stringify(packet));
+            }
+        },
+        {
+            deep: true,
+        }
+    );
+
     const displayCanSwitchMode = computed(() => {
         return displayCanSwitchModeInternal.value && displayConnected.value;
+    });
+    const canEditTimingSettings = computed(() => {
+        return timingSettingsBeingChanged.value && timingSettings.value != null;
     });
 
     return {
@@ -230,6 +271,8 @@ export default defineStore("main", () => {
         sendGetLogsCommand,
         sendSelectHeatCommand,
         sendTimingCommand,
+        canEditTimingSettings,
+        timingSettings,
         selectedHeat,
         logEntries,
         heatsMetaResult,

@@ -1,6 +1,6 @@
 use crate::{
     args::Args,
-    client::{TimingStateMachine, TimingUpdate},
+    client::{TimingSettings, TimingStateMachine, TimingUpdate},
     database::{
         get_heat_data, get_log_limited, purge_heat_data, DatabaseManager, DatabaseSerializable,
     },
@@ -35,12 +35,15 @@ pub enum MessageFromServerToClient {
     Advertisements,
     Timing,
     TimingStateUpdate(TimingUpdate),
+    TimingSettingsUpdate(TimingSettings),
+    RequestTimingSettings,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum MessageFromClientToServer {
     Version(String),
     CurrentWindow(Vec<u8>),
+    TimingSettingsState(TimingSettings),
 }
 
 #[derive(PartialEq, Eq, Clone)]
@@ -138,6 +141,9 @@ impl ServerStateMachine {
                     self.get_display_client_state(),
                 ));
             }
+            MessageFromClientToServer::TimingSettingsState(set) => {
+                self.send_message_to_web_control(MessageToWebControl::TimingSettingsState(set));
+            }
         }
     }
 
@@ -227,25 +233,21 @@ impl ServerStateMachine {
                     store_to_database!(result, self);
                 }
                 InstructionFromCameraProgram::ZeroTime => {
-                    info!("Zero time"); // TODO remove
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::Reset,
                     ));
                 }
                 InstructionFromCameraProgram::RaceTime(rt) => {
-                    info!("Update time"); // TODO remove
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::Running(rt),
                     ));
                 }
                 InstructionFromCameraProgram::EndTime(rt) => {
-                    info!("End time"); // TODO remove
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::End(rt),
                     ));
                 }
                 InstructionFromCameraProgram::IntermediateTime(rt) => {
-                    info!("Intermediate time"); // TODO remove
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::Intermediate(rt),
                     ));
@@ -334,6 +336,14 @@ impl ServerStateMachine {
                         self.send_message_to_client(MessageFromServerToClient::Timing);
                     }
                 }
+                MessageFromWebControl::UpdateTimingSettings(set) => {
+                    self.send_message_to_client(MessageFromServerToClient::TimingSettingsUpdate(
+                        set,
+                    ));
+                }
+                MessageFromWebControl::RequestTimingSettings => {
+                    self.send_message_to_client(MessageFromServerToClient::RequestTimingSettings);
+                }
             },
         }
     }
@@ -415,6 +425,7 @@ pub struct ClientStateMachine {
     pub slideshow_duration_nr_ms: u32,
     pub slideshow_transition_duration_nr_ms: u32,
     timing_state_machine_storage: Option<TimingStateMachine>,
+    timing_settings_template: TimingSettings,
 }
 impl ClientStateMachine {
     pub fn new(args: &Args) -> Self {
@@ -432,6 +443,7 @@ impl ClientStateMachine {
             slideshow_duration_nr_ms: args.slideshow_duration_nr_ms,
             slideshow_transition_duration_nr_ms: args.slideshow_transition_duration_nr_ms,
             timing_state_machine_storage: None,
+            timing_settings_template: TimingSettings::new(args),
         }
     }
 
@@ -445,7 +457,10 @@ impl ClientStateMachine {
                 }
                 self.push_new_message(MessageFromClientToServer::Version(String::from(
                     "TODO: THIS SHOULD BE COMPUTED",
-                )))
+                )));
+                self.push_new_message(MessageFromClientToServer::TimingSettingsState(
+                    self.timing_settings_template.clone(),
+                ));
             }
             MessageFromServerToClient::DisplayText(text) => {
                 debug!("Server requested display mode to be switched to text");
@@ -536,8 +551,10 @@ impl ClientStateMachine {
                             tsm.update_race_time(update);
                         }
                         _ => {
-                            let mut new_timing_state_machine =
-                                TimingStateMachine::new(&self.permanent_images_storage);
+                            let mut new_timing_state_machine = TimingStateMachine::new(
+                                &self.permanent_images_storage,
+                                &self.timing_settings_template,
+                            );
                             new_timing_state_machine.update_race_time(update);
 
                             // there was no timing state machine to update
@@ -545,6 +562,31 @@ impl ClientStateMachine {
                         }
                     }
                 }
+            }
+            MessageFromServerToClient::TimingSettingsUpdate(set) => {
+                // force the new timing settings into possibly existing Timing state machines:
+                if let Some(tsm) = &mut self.timing_state_machine_storage {
+                    tsm.overwrite_settings(&set);
+                }
+                match &mut self.state {
+                    ClientState::Timing(tsm) => {
+                        tsm.overwrite_settings(&set);
+                    }
+                    _ => {}
+                };
+
+                // update template so is timing mode gets re-initialized, the settings are applied
+                self.timing_settings_template = set;
+
+                // notify of the successful update
+                self.push_new_message(MessageFromClientToServer::TimingSettingsState(
+                    self.timing_settings_template.clone(),
+                ));
+            }
+            MessageFromServerToClient::RequestTimingSettings => {
+                self.push_new_message(MessageFromClientToServer::TimingSettingsState(
+                    self.timing_settings_template.clone(),
+                ));
             }
         }
     }
@@ -574,6 +616,7 @@ impl ClientStateMachine {
                     None => {
                         self.state = ClientState::Timing(TimingStateMachine::new(
                             &self.permanent_images_storage,
+                            &self.timing_settings_template,
                         ));
                     }
                 }

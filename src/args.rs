@@ -78,6 +78,12 @@ pub struct Args {
     /// Name of the database file (do not include /s that probably breaks shit)
     #[arg(long, default_value_t = String::from("db.db"))]
     pub database_file_name: String,
+    /// Timing control variable for fireworks (initial for client, will get sent from server to client, can be set over webcontrol)
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub fireworks_on_intermediate: bool,
+    /// Timing control variable for fireworks (initial for client, will get sent from server to client, can be set over webcontrol)
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub fireworks_on_finish: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]

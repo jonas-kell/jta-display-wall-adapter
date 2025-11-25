@@ -1,3 +1,5 @@
+import { TimingSettings } from "./interfaceShared";
+
 export type Idle = {
     type: "Idle";
 };
@@ -35,4 +37,13 @@ export type SelectHeat = {
 
 export type Timing = {
     type: "Timing";
+};
+
+export type UpdateTimingSettings = {
+    type: "UpdateTimingSettings";
+    data: TimingSettings;
+};
+
+export type RequestTimingSettings = {
+    type: "RequestTimingSettings";
 };

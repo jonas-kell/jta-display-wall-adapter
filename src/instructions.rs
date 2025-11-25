@@ -133,6 +133,8 @@ impl InstructionCommunicationChannel {
             outbound_sender_web_control: sw,
             outbound_receiver_web_control: rw,
         }
+
+        // TODO all outbound communication that could hit multiple endpoints (definitely websockets) should use a broadcast based 1 -> all communication
     }
 
     pub fn take_in_command_from_timing_program(

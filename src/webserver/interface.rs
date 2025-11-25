@@ -1,4 +1,5 @@
 use crate::{
+    client::TimingSettings,
     database::PermanentlyStoredDataset,
     server::camera_program_types::{HeatData, HeatMeta},
 };
@@ -16,6 +17,8 @@ pub enum MessageFromWebControl {
     GetLogs(u32),
     SelectHeat(String),
     Timing,
+    UpdateTimingSettings(TimingSettings),
+    RequestTimingSettings,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -32,4 +35,5 @@ pub enum MessageToWebControl {
     HeatsMeta(Vec<HeatMeta>),
     Logs(Vec<PermanentlyStoredDataset>),
     HeatDataMessage(HeatData),
+    TimingSettingsState(TimingSettings),
 }
