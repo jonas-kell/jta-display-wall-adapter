@@ -1,4 +1,3 @@
-use super::timing::TimingState;
 use crate::{
     client::{
         rasterizing::{
@@ -131,23 +130,33 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
                 draw_text(title, 10.0, 10.0, 20.0, meta);
             }
 
-            match &timing_state_machine.timing_state {
-                TimingState::Running(time) => {
-                    draw_text(
-                        &time
-                            .optimize_representation_for_display(Some(
-                                timing_state_machine.settings.max_decimal_places_after_comma,
-                            ))
-                            .to_string(),
-                        10.0,
-                        10.0,
-                        20.0,
-                        meta,
-                    );
-                }
-                TimingState::Stopped => {
-                    draw_text("zero", 10.0, 10.0, 20.0, meta);
-                }
+            if timing_state_machine.race_finished() {
+                draw_text("Finished", 10.0, 10.0, 20.0, meta);
+            }
+            draw_text(
+                &timing_state_machine
+                    .get_main_display_race_time()
+                    .optimize_representation_for_display(Some(
+                        timing_state_machine.settings.max_decimal_places_after_comma,
+                    ))
+                    .to_string(),
+                10.0,
+                30.0,
+                20.0,
+                meta,
+            );
+            if let Some(hts) = timing_state_machine.get_held_display_race_time() {
+                draw_text(
+                    &hts.held_at_time
+                        .optimize_representation_for_display(Some(
+                            timing_state_machine.settings.max_decimal_places_after_comma,
+                        ))
+                        .to_string(),
+                    10.0,
+                    50.0,
+                    20.0,
+                    meta,
+                );
             }
 
             if let Some(over_top_player) = &mut timing_state_machine.over_top_animation {

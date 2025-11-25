@@ -1,6 +1,6 @@
 use crate::hex::parse_race_time;
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
+use std::{fmt::Display, time::Duration};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RaceTime {
@@ -13,6 +13,27 @@ pub struct RaceTime {
     pub ten_thousands: Option<u16>,
 }
 impl RaceTime {
+    // how many 1/10000th fractions per unit
+    const TEN_THOUSAND: u64 = 1;
+    const THOUSAND: u64 = 10;
+    const HUNDRED: u64 = 100;
+    const TENTH: u64 = 1000;
+    const SECOND: u64 = 10000;
+    const MINUTE: u64 = 60 * 10000;
+    const HOUR: u64 = 60 * 60 * 10000;
+
+    pub fn get_zero_time() -> Self {
+        Self {
+            hours: None,
+            minutes: None,
+            seconds: 0,
+            tenths: Some(0),
+            hundrets: None,
+            thousands: None,
+            ten_thousands: None,
+        }
+    }
+
     pub fn optimize_representation_for_display(
         &self,
         force_number_of_decimal_places: Option<i8>,
@@ -69,6 +90,13 @@ impl RaceTime {
             real_force_number_of_decimal_places = 0;
         }
 
+        Self::from_ten_thousands(
+            self.into_ten_thousands(),
+            real_force_number_of_decimal_places as u8,
+        )
+    }
+
+    pub fn into_ten_thousands(&self) -> u64 {
         let hours_calc = self.hours.unwrap_or(0);
         let minutes_calc = self.minutes.unwrap_or(0);
         let seconds_calc = self.seconds;
@@ -77,59 +105,56 @@ impl RaceTime {
         let thousands_calc = self.thousands.unwrap_or(0);
         let ten_thousands_calc = self.ten_thousands.unwrap_or(0);
 
-        // how many 1/10000th fractions per unit
-        const TEN_THOUSAND: u64 = 1;
-        const THOUSAND: u64 = 10;
-        const HUNDRED: u64 = 100;
-        const TENTH: u64 = 1000;
-        const SECOND: u64 = 10000;
-        const MINUTE: u64 = 60 * 10000;
-        const HOUR: u64 = 60 * 60 * 10000;
+        let accumulated_time_in_ten_thousands: u64 = ten_thousands_calc as u64 * Self::TEN_THOUSAND
+            + thousands_calc as u64 * Self::THOUSAND
+            + hundrets_calc as u64 * Self::HUNDRED
+            + tenths_calc as u64 * Self::TENTH
+            + seconds_calc as u64 * Self::SECOND
+            + minutes_calc as u64 * Self::MINUTE
+            + hours_calc as u64 * Self::HOUR;
 
-        let mut accumulated_time_in_ten_thousands: u64 = ten_thousands_calc as u64 * TEN_THOUSAND
-            + thousands_calc as u64 * THOUSAND
-            + hundrets_calc as u64 * HUNDRED
-            + tenths_calc as u64 * TENTH
-            + seconds_calc as u64 * SECOND
-            + minutes_calc as u64 * MINUTE
-            + hours_calc as u64 * HOUR;
+        accumulated_time_in_ten_thousands
+    }
+
+    pub fn from_ten_thousands(ten_thousands: u64, digits_precision: u8) -> Self {
+        let mut ten_thousands = ten_thousands;
 
         // ----- ROUNDING -----
 
         // digits: 0 = seconds only, 1 = +tenths, 2 = +hundreds, 3 = +thousands, 4+ = +ten_thousands
-        let rounding_unit = match real_force_number_of_decimal_places {
-            0 => SECOND,
-            1 => TENTH,
-            2 => HUNDRED,
-            3 => THOUSAND,
-            _ => TEN_THOUSAND,
+        let rounding_unit = match digits_precision {
+            0 => Self::SECOND,
+            1 => Self::TENTH,
+            2 => Self::HUNDRED,
+            3 => Self::THOUSAND,
+            _ => Self::TEN_THOUSAND,
         };
 
-        let remainder = accumulated_time_in_ten_thousands % rounding_unit;
+        let remainder = ten_thousands % rounding_unit;
 
         if remainder * 2 >= rounding_unit {
             // round upward
-            accumulated_time_in_ten_thousands += rounding_unit - remainder;
+            ten_thousands += rounding_unit - remainder;
         } else {
             // round downward
-            accumulated_time_in_ten_thousands -= remainder;
+            ten_thousands -= remainder;
         }
 
         // ----- DECOMPOSE -----
 
-        let hours_calc = (accumulated_time_in_ten_thousands / HOUR) as u16;
-        accumulated_time_in_ten_thousands %= HOUR;
-        let minutes_calc = (accumulated_time_in_ten_thousands / MINUTE) as u16;
-        accumulated_time_in_ten_thousands %= MINUTE;
-        let seconds_calc = (accumulated_time_in_ten_thousands / SECOND) as u16;
-        accumulated_time_in_ten_thousands %= SECOND;
-        let tenths_calc = (accumulated_time_in_ten_thousands / TENTH) as u16;
-        accumulated_time_in_ten_thousands %= TENTH;
-        let hundrets_calc = (accumulated_time_in_ten_thousands / HUNDRED) as u16;
-        accumulated_time_in_ten_thousands %= HUNDRED;
-        let thousands_calc = (accumulated_time_in_ten_thousands / THOUSAND) as u16;
-        accumulated_time_in_ten_thousands %= THOUSAND;
-        let ten_thousands_calc = accumulated_time_in_ten_thousands as u16;
+        let hours_calc = (ten_thousands / Self::HOUR) as u16;
+        ten_thousands %= Self::HOUR;
+        let minutes_calc = (ten_thousands / Self::MINUTE) as u16;
+        ten_thousands %= Self::MINUTE;
+        let seconds_calc = (ten_thousands / Self::SECOND) as u16;
+        ten_thousands %= Self::SECOND;
+        let tenths_calc = (ten_thousands / Self::TENTH) as u16;
+        ten_thousands %= Self::TENTH;
+        let hundrets_calc = (ten_thousands / Self::HUNDRED) as u16;
+        ten_thousands %= Self::HUNDRED;
+        let thousands_calc = (ten_thousands / Self::THOUSAND) as u16;
+        ten_thousands %= Self::THOUSAND;
+        let ten_thousands_calc = ten_thousands as u16;
 
         // ----- HIDE LEADING ZEROS -----
         let mut hours_out = Some(hours_calc);
@@ -148,22 +173,22 @@ impl RaceTime {
 
         // ----- TRIM DECIMAL DIGITS  -----
 
-        let tenths_opt = if real_force_number_of_decimal_places >= 1 {
+        let tenths_opt = if digits_precision >= 1 {
             Some(tenths_calc)
         } else {
             None
         };
-        let hundrets_opt = if real_force_number_of_decimal_places >= 2 {
+        let hundrets_opt = if digits_precision >= 2 {
             Some(hundrets_calc)
         } else {
             None
         };
-        let thousands_opt = if real_force_number_of_decimal_places >= 3 {
+        let thousands_opt = if digits_precision >= 3 {
             Some(thousands_calc)
         } else {
             None
         };
-        let ten_thousands_opt = if real_force_number_of_decimal_places >= 4 {
+        let ten_thousands_opt = if digits_precision >= 4 {
             Some(ten_thousands_calc)
         } else {
             None
@@ -262,6 +287,13 @@ impl Display for RaceTime {
                 String::from("")
             },
         )
+    }
+}
+impl From<Duration> for RaceTime {
+    fn from(value: Duration) -> Self {
+        let ten_thousands = (value.as_micros() / 100) as u64;
+
+        Self::from_ten_thousands(ten_thousands, 4)
     }
 }
 

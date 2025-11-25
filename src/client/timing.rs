@@ -1,3 +1,5 @@
+use std::time::{Duration, Instant};
+
 use crate::{args::Args, times::RaceTime};
 use images_core::images::{Animation, AnimationPlayer, ImagesStorage};
 use serde::{Deserialize, Serialize};
@@ -18,9 +20,19 @@ impl TimingSettings {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct HeldTimeState {
+    holding_start_time: Instant,
+    pub held_at_m: Option<u32>,
+    pub held_at_time: RaceTime,
+    pub race_was_finished: bool,
+}
+
 pub enum TimingState {
     Stopped,
-    Running(RaceTime),
+    Running,
+    Held,
+    Finished(RaceTime),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -32,20 +44,24 @@ pub enum TimingUpdate {
 }
 
 pub struct TimingStateMachine {
-    pub over_top_animation: Option<AnimationPlayer>,
-    pub timing_state: TimingState,
-    pub title: Option<String>,
     fireworks_animation: Animation,
+    pub over_top_animation: Option<AnimationPlayer>,
+    pub title: Option<String>,
     pub settings: TimingSettings,
+    timing_state: TimingState,
+    held_time_state: Option<HeldTimeState>,
+    reference_computation_time: Instant,
 }
 impl TimingStateMachine {
     pub fn new(images_storage: &ImagesStorage, settings: &TimingSettings) -> TimingStateMachine {
         TimingStateMachine {
             over_top_animation: None,
-            timing_state: TimingState::Stopped,
             title: None,
             fireworks_animation: images_storage.fireworks_animation.clone(), // animations can be lightweightly cloned
             settings: settings.clone(),
+            timing_state: TimingState::Stopped,
+            held_time_state: None,
+            reference_computation_time: Instant::now(),
         }
     }
 
@@ -55,10 +71,18 @@ impl TimingStateMachine {
                 self.timing_state = TimingState::Stopped;
             }
             TimingUpdate::Running(rt) => {
-                self.timing_state = TimingState::Running(rt);
+                self.update_reference_computation_time(&rt);
+                self.timing_state = TimingState::Running;
             }
             TimingUpdate::Intermediate(rt) => {
-                self.timing_state = TimingState::Running(rt);
+                self.update_reference_computation_time(&rt);
+                self.timing_state = TimingState::Held;
+                self.held_time_state = Some(HeldTimeState {
+                    holding_start_time: Instant::now(),
+                    held_at_m: None, // TODO add logic
+                    held_at_time: rt,
+                    race_was_finished: false, // TODO add logic
+                });
 
                 if self.settings.fireworks_on_intermediate {
                     self.play_animation_over_top(AnimationPlayer::new(
@@ -68,7 +92,8 @@ impl TimingStateMachine {
                 }
             }
             TimingUpdate::End(rt) => {
-                self.timing_state = TimingState::Running(rt);
+                self.update_reference_computation_time(&rt);
+                self.timing_state = TimingState::Finished(rt);
 
                 if self.settings.fireworks_on_finish {
                     self.play_animation_over_top(AnimationPlayer::new(
@@ -77,6 +102,54 @@ impl TimingStateMachine {
                     ));
                 }
             }
+        }
+    }
+
+    pub fn get_main_display_race_time(&self) -> RaceTime {
+        match &self.timing_state {
+            TimingState::Stopped => RaceTime::get_zero_time(),
+            TimingState::Running => self.get_currently_computed_race_time(),
+            TimingState::Held => match &self.held_time_state {
+                Some(hts) => hts.held_at_time.clone(),
+                None => self.get_currently_computed_race_time(), // this should not happen. On hold transition this always gets set
+            },
+            TimingState::Finished(finish_time) => finish_time.clone(),
+        }
+    }
+
+    pub fn race_finished(&self) -> bool {
+        match &self.timing_state {
+            TimingState::Finished(_) => {
+                return true;
+            }
+            _ => {}
+        };
+
+        // TODO add case, that finished but still intermediates there
+
+        return false;
+    }
+
+    fn update_reference_computation_time(&mut self, race_time: &RaceTime) {
+        let ten_thousands = race_time.into_ten_thousands();
+
+        if let Some(time) = Instant::now().checked_sub(Duration::from_micros(ten_thousands * 100)) {
+            self.reference_computation_time = time;
+        } else {
+            error!("Could not correct reference computation time");
+        }
+    }
+
+    fn get_currently_computed_race_time(&self) -> RaceTime {
+        let diff = Instant::now().duration_since(self.reference_computation_time);
+
+        diff.into()
+    }
+
+    pub fn get_held_display_race_time(&self) -> Option<HeldTimeState> {
+        match &self.timing_state {
+            TimingState::Stopped | TimingState::Finished(_) => None, // per definition on a real finish, no held time exists (otherwise it wouldbee held with race_finished = true)
+            TimingState::Held | TimingState::Running => self.held_time_state.clone(),
         }
     }
 
