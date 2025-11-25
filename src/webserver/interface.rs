@@ -15,6 +15,7 @@ pub enum MessageFromWebControl {
     GetHeats,
     GetLogs(u32),
     SelectHeat(String),
+    Timing,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

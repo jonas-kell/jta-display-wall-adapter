@@ -1,5 +1,6 @@
 use crate::{
     args::Args,
+    client::{TimingStateMachine, TimingUpdate},
     database::{
         get_heat_data, get_log_limited, purge_heat_data, DatabaseManager, DatabaseSerializable,
     },
@@ -11,7 +12,7 @@ use crate::{
     server::camera_program_types::HeatStartList,
     webserver::{DisplayClientState, MessageFromWebControl, MessageToWebControl},
 };
-use images_core::images::{AnimationPlayer, ImageMeta, ImagesStorage};
+use images_core::images::{ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use uuid::Uuid;
@@ -33,6 +34,7 @@ pub enum MessageFromServerToClient {
     AdvertisementImages(Vec<(String, Vec<u8>)>),
     Advertisements,
     Timing,
+    TimingStateUpdate(TimingUpdate),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -224,6 +226,30 @@ impl ServerStateMachine {
                 InstructionFromCameraProgram::HeatResult(result) => {
                     store_to_database!(result, self);
                 }
+                InstructionFromCameraProgram::ZeroTime => {
+                    info!("Zero time"); // TODO remove
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::Reset,
+                    ));
+                }
+                InstructionFromCameraProgram::RaceTime(rt) => {
+                    info!("Update time"); // TODO remove
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::Running(rt),
+                    ));
+                }
+                InstructionFromCameraProgram::EndTime(rt) => {
+                    info!("End time"); // TODO remove
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::End(rt),
+                    ));
+                }
+                InstructionFromCameraProgram::IntermediateTime(rt) => {
+                    info!("Intermediate time"); // TODO remove
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::Intermediate(rt),
+                    ));
+                }
                 inst => error!("Unhandled instruction from camera program: {:?}", inst),
             },
             IncomingInstruction::FromWebControl(inst) => match inst {
@@ -303,6 +329,11 @@ impl ServerStateMachine {
 
                     self.send_message_to_web_control(MessageToWebControl::HeatDataMessage(data));
                 }
+                MessageFromWebControl::Timing => {
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::Timing);
+                    }
+                }
             },
         }
     }
@@ -368,7 +399,8 @@ pub enum ClientState {
     DisplayText(String),
     DisplayExternalFrame(ImageMeta),
     Advertisements,
-    TestAnimation(AnimationPlayer),
+    Timing(TimingStateMachine),
+    TimingEmptyInit, // will immediately switch to Timing, but read the state machine from self.timing_state_machine_storage
 }
 
 static STORAGE_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/image_storage.bin"));
@@ -382,6 +414,7 @@ pub struct ClientStateMachine {
     pub current_frame_dimensions: Option<(u32, u32)>,
     pub slideshow_duration_nr_ms: u32,
     pub slideshow_transition_duration_nr_ms: u32,
+    timing_state_machine_storage: Option<TimingStateMachine>,
 }
 impl ClientStateMachine {
     pub fn new(args: &Args) -> Self {
@@ -398,6 +431,7 @@ impl ClientStateMachine {
             current_frame_dimensions: None,
             slideshow_duration_nr_ms: args.slideshow_duration_nr_ms,
             slideshow_transition_duration_nr_ms: args.slideshow_transition_duration_nr_ms,
+            timing_state_machine_storage: None,
         }
     }
 
@@ -406,6 +440,7 @@ impl ClientStateMachine {
             MessageFromServerToClient::RequestVersion => {
                 info!("Version was requested. Communication established!!");
                 if matches!(self.state, ClientState::Created) {
+                    // initial setting, there is no relevant timing state to cache
                     self.state = ClientState::Idle;
                 }
                 self.push_new_message(MessageFromClientToServer::Version(String::from(
@@ -414,7 +449,7 @@ impl ClientStateMachine {
             }
             MessageFromServerToClient::DisplayText(text) => {
                 debug!("Server requested display mode to be switched to text");
-                self.state = ClientState::DisplayText(text)
+                self.switch_mode_with_stashing_timing_state(ClientState::DisplayText(text));
             }
             MessageFromServerToClient::ServerImposedSettings(settings) => {
                 let (x, y, w, h) = settings.position;
@@ -440,7 +475,7 @@ impl ClientStateMachine {
                 debug!("DONE rescaling Animations");
             }
             MessageFromServerToClient::Clear => {
-                self.state = ClientState::Idle;
+                self.switch_mode_with_stashing_timing_state(ClientState::Idle);
             }
             MessageFromServerToClient::DisplayExternalFrame(data) => {
                 // data is bmp file data
@@ -454,9 +489,13 @@ impl ClientStateMachine {
 
                 if let Some((w, h)) = self.current_frame_dimensions {
                     // store rescaled to dynamically cache
-                    self.state = ClientState::DisplayExternalFrame(image.get_rescaled(w, h));
+                    self.switch_mode_with_stashing_timing_state(ClientState::DisplayExternalFrame(
+                        image.get_rescaled(w, h),
+                    ));
                 } else {
-                    self.state = ClientState::DisplayExternalFrame(image);
+                    self.switch_mode_with_stashing_timing_state(ClientState::DisplayExternalFrame(
+                        image,
+                    ));
                 }
             }
             MessageFromServerToClient::AdvertisementImages(new_images) => {
@@ -483,15 +522,61 @@ impl ClientStateMachine {
                 }
             }
             MessageFromServerToClient::Advertisements => {
-                self.state = ClientState::Advertisements;
+                self.switch_mode_with_stashing_timing_state(ClientState::Advertisements);
             }
             MessageFromServerToClient::Timing => {
-                // TODO this is only for testing
-                self.state = ClientState::TestAnimation(AnimationPlayer::new(
-                    &self.permanent_images_storage.fireworks_animation,
-                    self.frame_counter,
-                    false,
-                ));
+                self.switch_mode_with_stashing_timing_state(ClientState::TimingEmptyInit);
+            }
+            MessageFromServerToClient::TimingStateUpdate(update) => {
+                if let Some(tsm) = &mut self.timing_state_machine_storage {
+                    tsm.update_race_time(update);
+                } else {
+                    match &mut self.state {
+                        ClientState::Timing(tsm) => {
+                            tsm.update_race_time(update);
+                        }
+                        _ => {
+                            let mut new_timing_state_machine = TimingStateMachine::new();
+                            new_timing_state_machine.update_race_time(update);
+
+                            // there was no timing state machine to update
+                            self.timing_state_machine_storage = Some(new_timing_state_machine);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fn switch_mode_with_stashing_timing_state(&mut self, new_state: ClientState) {
+        match std::mem::replace(&mut self.state, ClientState::TimingEmptyInit) {
+            ClientState::Timing(timing_sm) => {
+                self.timing_state_machine_storage = Some(timing_sm);
+            }
+            other => {
+                // restore the previous state
+                self.state = other;
+            }
+        }
+
+        match new_state {
+            ClientState::Timing(t) => {
+                self.timing_state_machine_storage = None;
+
+                self.state = ClientState::Timing(t);
+            }
+            ClientState::TimingEmptyInit => {
+                match std::mem::replace(&mut self.timing_state_machine_storage, None) {
+                    Some(timing_sm) => {
+                        self.state = ClientState::Timing(timing_sm);
+                    }
+                    None => {
+                        self.state = ClientState::Timing(TimingStateMachine::new());
+                    }
+                }
+            }
+            s => {
+                self.state = s;
             }
         }
     }

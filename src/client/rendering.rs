@@ -1,3 +1,4 @@
+use super::timing::TimingState;
 use crate::{
     client::{
         rasterizing::{
@@ -11,7 +12,7 @@ use crate::{
 
 pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMachine) {
     match &state.state {
-        ClientState::Created => {
+        ClientState::Created | ClientState::TimingEmptyInit => {
             clear(meta);
         }
         ClientState::Idle => {
@@ -123,17 +124,38 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
                 draw_text("No images", 10.0, 10.0, 20.0, meta);
             }
         }
-        ClientState::TestAnimation(player) => {
+        ClientState::Timing(timing_state_machine) => {
             fill_with_color(JTA_COLOR, meta);
 
-            match player.get_current_frame(
-                meta.texture_width as u32,
-                meta.texture_height as u32,
-                state.frame_counter,
-                &mut state.permanent_images_storage.cached_rescaler,
-            ) {
-                Some(frame) => draw_image(0, 0, &frame, meta),
-                None => (),
+            if let Some(title) = &timing_state_machine.title {
+                draw_text(title, 10.0, 10.0, 20.0, meta);
+            }
+
+            match &timing_state_machine.timing_state {
+                TimingState::Running(time) => {
+                    draw_text(
+                        &time.optimize_representation_for_display().to_string(),
+                        10.0,
+                        10.0,
+                        20.0,
+                        meta,
+                    );
+                }
+                TimingState::Stopped => {
+                    draw_text("zero", 10.0, 10.0, 20.0, meta);
+                }
+            }
+
+            if let Some(over_top_player) = &timing_state_machine.over_top_animation {
+                match over_top_player.get_current_frame(
+                    meta.texture_width as u32,
+                    meta.texture_height as u32,
+                    state.frame_counter,
+                    &mut state.permanent_images_storage.cached_rescaler,
+                ) {
+                    Some(frame) => draw_image(0, 0, &frame, meta),
+                    None => (),
+                }
             }
         }
     }

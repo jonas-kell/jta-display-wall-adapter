@@ -32,3 +32,7 @@ export type SelectHeat = {
     type: "SelectHeat";
     data: string;
 };
+
+export type Timing = {
+    type: "Timing";
+};

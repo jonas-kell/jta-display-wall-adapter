@@ -10,6 +10,7 @@ import {
     RequestDisplayClientState,
     SelectHeat,
     SwitchMode,
+    Timing,
 } from "../functions/interfaceOutbound";
 import { HeatData, HeatMeta, InboundMessageType, LogEntry, parseMessage } from "../functions/interfaceInbound";
 import { CircularBuffer } from "../functions/circularBUffer";
@@ -147,6 +148,13 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
 
+    function sendTimingCommand() {
+        const packet: Timing = {
+            type: "Timing",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+
     function sendIdleCommand() {
         const packet: Idle = {
             type: "Idle",
@@ -221,6 +229,7 @@ export default defineStore("main", () => {
         sendGetHeatsCommand,
         sendGetLogsCommand,
         sendSelectHeatCommand,
+        sendTimingCommand,
         selectedHeat,
         logEntries,
         heatsMetaResult,
