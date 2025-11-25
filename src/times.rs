@@ -201,7 +201,7 @@ impl Display for RaceTime {
             },
             if let Some(minutes) = self.minutes {
                 if let Some(_) = self.hours {
-                    format!("{:02}:", minutes)
+                    format!("{:02}:", minutes % 60)
                 } else {
                     format!("{}:", minutes)
                 }
@@ -213,7 +213,7 @@ impl Display for RaceTime {
                 }
             },
             if self.minutes.is_some() || self.hours.is_some() {
-                format!("{:02}", self.seconds)
+                format!("{:02}", self.seconds % 60)
             } else {
                 format!("{}", self.seconds)
             },
