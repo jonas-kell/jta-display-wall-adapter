@@ -24,11 +24,11 @@ pub async fn run_network_task(
         .expect("Invalid internal communication address");
 
     let listener = TcpListener::bind(listen_addr).await?;
-    debug!("TCP listener started on {}", listen_addr);
+    info!("TCP listener started on {}", listen_addr);
 
     loop {
         if shutdown_marker.load(Ordering::SeqCst) {
-            debug!("Shutdown requested, stopping listener on {}", listen_addr);
+            info!("Shutdown requested, stopping listener on {}", listen_addr);
             break;
         }
 
@@ -40,7 +40,7 @@ pub async fn run_network_task(
         .await
         {
             Ok(Ok((inbound, client_addr))) => {
-                debug!("Accepted connection from {}", client_addr);
+                info!("Accepted connection from {}", client_addr);
 
                 let (read_half, write_half) = inbound.into_split();
                 let mut deserializer: Framed<

@@ -26,18 +26,22 @@ fn is_port_in_use(port: &str) -> bool {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    std::env::set_var(
-        "RUST_LOG",
-        "debug,actix=off,reqwest=off,hyper=off,mio=off,wgpu_core=info,wgpu_hal=info,naga=info,calloop=info,neli=info,tracing=off",
-    );
+    const THIRD_PARTY_LOG_LEVELS: &str = "actix=off,reqwest=off,hyper=off,mio=off,wgpu_core=info,wgpu_hal=info,naga=info,calloop=info,neli=info,tracing=off";
 
     let args = Args::parse();
-    if args.verbose {
-        std::env::set_var(
-            "RUST_LOG",
-            "trace,actix=off,reqwest=off,hyper=off,mio=off,wgpu_core=info,wgpu_hal=info,naga=info,calloop=info,neli=info,tracing=off",
-        );
-        // more logs!!
+    match args.verbose {
+        0 => {
+            std::env::set_var("RUST_LOG", format!("info,{}", THIRD_PARTY_LOG_LEVELS));
+        }
+        1 => {
+            std::env::set_var("RUST_LOG", format!("debug,{}", THIRD_PARTY_LOG_LEVELS));
+        }
+        2 => {
+            std::env::set_var("RUST_LOG", format!("trace,{}", THIRD_PARTY_LOG_LEVELS));
+        }
+        _ => {
+            std::env::set_var("RUST_LOG", format!("trace"));
+        }
     }
 
     env_logger::init();

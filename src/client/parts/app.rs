@@ -118,7 +118,7 @@ impl ApplicationHandler for App {
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
         match event {
             WindowEvent::CloseRequested => {
-                info!("The close button was pressed; Sadly that is not how this works");
+                warn!("The close button was pressed; Sadly that is not how this works");
             }
             WindowEvent::Resized(new_size) => {
                 // this emits the original size on Wayland with sway window manager ?
@@ -140,7 +140,7 @@ impl ApplicationHandler for App {
                             new_size.width, new_size.height, width, height
                         );
                     } else {
-                        debug!("The resize dimensions from manager match what was expected");
+                        warn!("The resize dimensions from manager match what was expected");
                     }
                 }
 
@@ -149,7 +149,7 @@ impl ApplicationHandler for App {
                 self.re_initialize_pixels(new_size.width, new_size.height);
             }
             WindowEvent::Moved(p) => {
-                info!("The window was moved: {:?}", p);
+                debug!("The window was moved: {:?}", p);
             }
             WindowEvent::RedrawRequested => {
                 // schedule next wakeup after we just finished a redraw session
@@ -258,7 +258,7 @@ impl App {
     fn process_state(&mut self, event_loop: &ActiveEventLoop) {
         // check for shutdown
         if self.shutdown_marker.load(Ordering::SeqCst) {
-            debug!("Shutdown requested, stopping display app");
+            info!("Shutdown requested, stopping display app");
             event_loop.exit();
         }
 
@@ -294,7 +294,7 @@ impl App {
                 window.set_max_inner_size(Some(PhysicalSize::new(w, h)));
                 window.set_min_inner_size(Some(PhysicalSize::new(w, h)));
                 match window.request_inner_size(PhysicalSize::new(w, h)) {
-                    None => info!("Window resizing request went to the display system"), // this triggers the WindowEvent::Resized above
+                    None => debug!("Window resizing request went to the display system"), // this triggers the WindowEvent::Resized above
                     Some(size) => {
                         // if this is the same as before, it failed, if it is a different one, we were successful
                         info!(

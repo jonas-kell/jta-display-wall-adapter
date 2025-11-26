@@ -143,12 +143,12 @@ fn check_nrbf_termination_bytes(possible_packet: &[u8]) -> bool {
 /// Decode the message custom action
 fn decode_single_nrbf(args: &Args, packet: &[u8]) -> Result<InstructionFromTimingProgram, String> {
     match parse_any_known_command(packet) {
-        Err(e) => trace!("Nom parser Error: {}", e.to_string()),
+        Err(e) => warn!("Nom parser Error: {}", e.to_string()),
         Ok((_, command)) => return Ok(command),
     }
 
     if args.hexdump_incoming_communication {
-        debug!("No command could be parsed from the following:");
+        warn!("No command could be parsed from the following:");
         text_log_bytes(packet);
     }
 

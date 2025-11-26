@@ -28,7 +28,7 @@ pub async fn tcp_client_camera_program(
 
         loop {
             if shutdown_marker_timing.load(Ordering::SeqCst) {
-                debug!(
+                info!(
                     "Shutdown requested, stopping trying to connect to {}",
                     timing_addr
                 );
@@ -43,7 +43,7 @@ pub async fn tcp_client_camera_program(
             .await
             {
                 Ok(Ok(mut timing_stream)) => {
-                    debug!("Connected to timing target {}", timing_addr);
+                    info!("Connected to timing target {}", timing_addr);
                     let mut parser = BufferedParserSerial::new(&args_timing);
 
                     loop {
@@ -123,7 +123,7 @@ pub async fn tcp_client_camera_program(
 
         loop {
             if shutdown_marker_xml.load(Ordering::SeqCst) {
-                debug!(
+                info!(
                     "Shutdown requested, stopping trying to connect to {}",
                     xml_addr
                 );
@@ -138,7 +138,7 @@ pub async fn tcp_client_camera_program(
             .await
             {
                 Ok(Ok(mut xml_stream)) => {
-                    debug!("Connected to xml target {}", xml_addr);
+                    info!("Connected to xml target {}", xml_addr);
                     let mut parser = BufferedParserXML::new();
 
                     loop {
@@ -215,7 +215,7 @@ pub async fn tcp_client_camera_program(
 
         loop {
             if shutdown_marker_data.load(Ordering::SeqCst) {
-                debug!(
+                info!(
                     "Shutdown requested, stopping trying to connect to {}",
                     data_addr
                 );
@@ -230,7 +230,7 @@ pub async fn tcp_client_camera_program(
             .await
             {
                 Ok(Ok(mut data_stream)) => {
-                    debug!("Connected to data target {}", data_addr);
+                    info!("Connected to data target {}", data_addr);
                     let mut parser = BufferedParserXML::new();
 
                     loop {

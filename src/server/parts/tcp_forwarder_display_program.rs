@@ -34,7 +34,7 @@ pub async fn tcp_forwarder_display_program(
 
     loop {
         if shutdown_marker.load(Ordering::SeqCst) {
-            debug!(
+            info!(
                 "Shutdown requested, stopping trying to connect to {}",
                 passthrough_target_addr
             );
@@ -49,7 +49,7 @@ pub async fn tcp_forwarder_display_program(
         .await
         {
             Ok(Ok(outbound)) => {
-                debug!("Connected to forwarding target {}", passthrough_target_addr);
+                info!("Connected to forwarding target {}", passthrough_target_addr);
 
                 let (mut ro, mut wo) = outbound.into_split();
 

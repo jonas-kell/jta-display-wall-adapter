@@ -898,7 +898,7 @@ fn decode_single_serial(
     }
 
     if args.hexdump_incoming_communication {
-        debug!("No serial command could be parsed from the following:");
+        warn!("No serial command could be parsed from the following:");
         hex_log_bytes(packet);
     }
 

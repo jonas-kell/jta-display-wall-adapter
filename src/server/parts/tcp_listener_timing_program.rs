@@ -38,11 +38,11 @@ pub async fn tcp_listener_timing_program(
     };
 
     let listener = TcpListener::bind(listen_addr).await?;
-    debug!("TCP listener started on {}", listen_addr);
+    info!("TCP listener started on {}", listen_addr);
 
     loop {
         if shutdown_marker.load(Ordering::SeqCst) {
-            debug!("Shutdown requested, stopping listener on {}", listen_addr);
+            info!("Shutdown requested, stopping listener on {}", listen_addr);
             break;
         }
 
@@ -54,7 +54,7 @@ pub async fn tcp_listener_timing_program(
         .await
         {
             Ok(Ok((inbound, client_addr))) => {
-                debug!("Accepted connection from {}", client_addr);
+                info!("Accepted connection from {}", client_addr);
 
                 let (mut ri, mut wi) = inbound.into_split();
 
@@ -108,14 +108,14 @@ pub async fn tcp_listener_timing_program(
                                 }
                             };
 
-                            // Decoding takes care of logging if requested, as there the message is split up to provide more info!!
+                            // Decoding does NOT log anything. Consider doing so yourself depending on reasonability
                             match parser.feed_bytes(&buf[..n]) {
                                 Some(res) => match res {
                                     Err(err) => {
                                         error!("Error when Decoding Inbound Communication: {}", err)
                                     }
                                     Ok(parsed) => {
-                                        debug!("Decoded Inbound Communication: {}", parsed);
+                                        trace!("Decoded Inbound Communication: {}", parsed);
                                         match comm_channel_read
                                             .take_in_command_from_timing_program(parsed)
                                         {

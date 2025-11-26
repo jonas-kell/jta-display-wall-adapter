@@ -29,7 +29,7 @@ pub async fn client_communicator(
     let client_exchange_task = tokio::spawn(async move {
         loop {
             if shutdown_marker_exchange.load(Ordering::SeqCst) {
-                debug!("Shutdown requested, stopping listener on {}", client_addr);
+                info!("Shutdown requested, stopping listener on {}", client_addr);
                 break;
             }
             {
@@ -45,7 +45,7 @@ pub async fn client_communicator(
             .await
             {
                 Ok(Ok(client_stream)) => {
-                    debug!("Connected to client at {}", client_addr);
+                    info!("Connected to client at {}", client_addr);
 
                     // on connection first request version to initiate communication
                     {
@@ -192,7 +192,7 @@ pub async fn client_communicator(
     let intake_commands_task = tokio::spawn(async move {
         loop {
             if shutdown_marker_intake.load(Ordering::SeqCst) {
-                debug!("Shutdown requested, stopping client communicator");
+                info!("Shutdown requested, stopping client communicator");
                 break;
             }
 

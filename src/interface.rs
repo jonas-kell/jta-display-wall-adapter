@@ -13,6 +13,7 @@ use crate::{
     times::DayTime,
     webserver::{DisplayClientState, MessageFromWebControl, MessageToWebControl},
 };
+use clap::crate_version;
 use images_core::images::{ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
@@ -94,10 +95,19 @@ impl ServerStateMachine {
         // handle all messages
         match msg {
             MessageFromClientToServer::Version(version) => {
-                error!("Client reported to have version: '{}'", version); // TODO compare and error if not compatible
+                info!("Client reported to have version: '{}'", version);
+                let our_version = String::from(crate_version!());
+                if version == our_version {
+                    info!("That is a version match. Communication established!");
+                } else {
+                    error!("CAUTION: the client version is NOT the same version as we expected. This might cause the program to misbehave or outright not work!");
+                    error!("Client: {}; Server: {}", version, our_version);
+                }
 
-                // report the timing program our fake version
-                self.send_message_to_timing_program(InstructionToTimingProgram::SendServerInfo);
+                if self.args.listen_to_timing_program {
+                    // report the timing program our fake version
+                    self.send_message_to_timing_program(InstructionToTimingProgram::SendServerInfo);
+                }
 
                 // get client to respect window position and size
                 debug!(
@@ -137,7 +147,9 @@ impl ServerStateMachine {
                 ));
             }
             MessageFromClientToServer::CurrentWindow(data) => {
-                if self.state == ServerState::PassthroughClient {
+                if self.state == ServerState::PassthroughClient
+                    && self.args.listen_to_timing_program
+                {
                     self.send_message_to_timing_program(InstructionToTimingProgram::SendFrame(
                         data,
                     ));
@@ -199,6 +211,9 @@ impl ServerStateMachine {
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::Timing);
                     }
+                }
+                InstructionFromTimingProgram::SetProperty => {
+                    // this is purposefully ignored -> there is no info we can get from it
                 }
                 inst => error!("Unhandled instruction from timing program: {}", inst),
             },
@@ -378,7 +393,8 @@ impl ServerStateMachine {
         DisplayClientState {
             alive: self.display_connected,
             external_passthrough_mode: self.state == ServerState::PassthroughDisplayProgram,
-            can_switch_mode: self.args.passthrough_to_display_program,
+            can_switch_mode: self.args.passthrough_to_display_program
+                && self.args.listen_to_timing_program,
         }
     }
 
@@ -472,7 +488,7 @@ impl ClientStateMachine {
                     self.state = ClientState::Idle;
                 }
                 self.push_new_message(MessageFromClientToServer::Version(String::from(
-                    "TODO: THIS SHOULD BE COMPUTED",
+                    crate_version!(),
                 )));
                 self.push_new_message(MessageFromClientToServer::TimingSettingsState(
                     self.timing_settings_template.clone(),
@@ -605,6 +621,7 @@ impl ClientStateMachine {
                 ));
             }
             MessageFromServerToClient::Clock(dt) => {
+                trace!("Switch to clock mode"); // this is called often if the camera program is in clock mode, so only trace
                 self.state = ClientState::Clock(ClockState::new(&dt));
             }
         }

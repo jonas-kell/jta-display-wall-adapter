@@ -87,6 +87,11 @@ pub async fn run_server(args: &Args) -> () {
         args.internal_webcontrol_port
     );
 
+    // check settings allowed / make sense
+    if args.passthrough_to_display_program && !args.listen_to_timing_program {
+        error!("Can not passthrough to display program if not listening to timing program");
+        return;
+    }
     // avoid ports doubling and inform about where to run external display program
     if args.passthrough_to_display_program && args.listen_to_timing_program {
         if args.passthrough_address_display_program == "127.0.0.1"
