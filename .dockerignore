@@ -6,7 +6,6 @@
 *.txt
 /docker
 *.yml
-*.md
 *.sh
 *.bat
 /move_container

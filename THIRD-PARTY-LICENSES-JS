@@ -1,0 +1,2637 @@
+├─ @apideck/better-ajv-errors@0.3.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/apideck-libraries/better-ajv-errors
+│  ├─ publisher: Apideck
+│  ├─ email: support@apideck.com
+│  ├─ url: https://apideck.com/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@apideck/better-ajv-errors
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@apideck/better-ajv-errors/LICENSE
+├─ @babel/code-frame@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/code-frame
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/code-frame/LICENSE
+├─ @babel/compat-data@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/compat-data
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/compat-data/LICENSE
+├─ @babel/core@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/core
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/core/LICENSE
+├─ @babel/generator@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/generator
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/generator/LICENSE
+├─ @babel/helper-annotate-as-pure@7.27.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-annotate-as-pure
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-annotate-as-pure/LICENSE
+├─ @babel/helper-compilation-targets@7.27.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-compilation-targets
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-compilation-targets/LICENSE
+├─ @babel/helper-create-class-features-plugin@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-create-class-features-plugin
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-create-class-features-plugin/LICENSE
+├─ @babel/helper-create-regexp-features-plugin@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-create-regexp-features-plugin
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-create-regexp-features-plugin/LICENSE
+├─ @babel/helper-define-polyfill-provider@0.6.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel-polyfills
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-define-polyfill-provider
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-define-polyfill-provider/LICENSE
+├─ @babel/helper-globals@7.28.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-globals
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-globals/LICENSE
+├─ @babel/helper-member-expression-to-functions@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-member-expression-to-functions
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-member-expression-to-functions/LICENSE
+├─ @babel/helper-module-imports@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-module-imports
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-module-imports/LICENSE
+├─ @babel/helper-module-transforms@7.28.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-module-transforms
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-module-transforms/LICENSE
+├─ @babel/helper-optimise-call-expression@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-optimise-call-expression
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-optimise-call-expression/LICENSE
+├─ @babel/helper-plugin-utils@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-plugin-utils
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-plugin-utils/LICENSE
+├─ @babel/helper-remap-async-to-generator@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-remap-async-to-generator
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-remap-async-to-generator/LICENSE
+├─ @babel/helper-replace-supers@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-replace-supers
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-replace-supers/LICENSE
+├─ @babel/helper-skip-transparent-expression-wrappers@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-skip-transparent-expression-wrappers
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-skip-transparent-expression-wrappers/LICENSE
+├─ @babel/helper-string-parser@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-string-parser
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-string-parser/LICENSE
+├─ @babel/helper-validator-identifier@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-validator-identifier
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-validator-identifier/LICENSE
+├─ @babel/helper-validator-option@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-validator-option
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-validator-option/LICENSE
+├─ @babel/helper-wrap-function@7.28.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-wrap-function
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helper-wrap-function/LICENSE
+├─ @babel/helpers@7.28.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helpers
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/helpers/LICENSE
+├─ @babel/parser@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/parser
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/parser/LICENSE
+├─ @babel/plugin-bugfix-firefox-class-in-computed-class-key@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-bugfix-firefox-class-in-computed-class-key
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-bugfix-firefox-class-in-computed-class-key/LICENSE
+├─ @babel/plugin-bugfix-safari-class-field-initializer-scope@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-bugfix-safari-class-field-initializer-scope
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-bugfix-safari-class-field-initializer-scope/LICENSE
+├─ @babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression/LICENSE
+├─ @babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining/LICENSE
+├─ @babel/plugin-bugfix-v8-static-class-fields-redefine-readonly@7.28.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-bugfix-v8-static-class-fields-redefine-readonly
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-bugfix-v8-static-class-fields-redefine-readonly/LICENSE
+├─ @babel/plugin-proposal-private-property-in-object@7.21.0-placeholder-for-preset-env.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel-plugin-proposal-private-property-in-object
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-proposal-private-property-in-object
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-proposal-private-property-in-object/LICENSE
+├─ @babel/plugin-syntax-import-assertions@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-syntax-import-assertions
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-syntax-import-assertions/LICENSE
+├─ @babel/plugin-syntax-import-attributes@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-syntax-import-attributes
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-syntax-import-attributes/LICENSE
+├─ @babel/plugin-syntax-unicode-sets-regex@7.18.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-syntax-unicode-sets-regex
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-syntax-unicode-sets-regex/LICENSE
+├─ @babel/plugin-transform-arrow-functions@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-arrow-functions
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-arrow-functions/LICENSE
+├─ @babel/plugin-transform-async-generator-functions@7.28.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-async-generator-functions
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-async-generator-functions/LICENSE
+├─ @babel/plugin-transform-async-to-generator@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-async-to-generator
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-async-to-generator/LICENSE
+├─ @babel/plugin-transform-block-scoped-functions@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-block-scoped-functions
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-block-scoped-functions/LICENSE
+├─ @babel/plugin-transform-block-scoping@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-block-scoping
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-block-scoping/LICENSE
+├─ @babel/plugin-transform-class-properties@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-class-properties
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-class-properties/LICENSE
+├─ @babel/plugin-transform-class-static-block@7.28.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-class-static-block
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-class-static-block/LICENSE
+├─ @babel/plugin-transform-classes@7.28.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-classes
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-classes/LICENSE
+├─ @babel/plugin-transform-computed-properties@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-computed-properties
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-computed-properties/LICENSE
+├─ @babel/plugin-transform-destructuring@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-destructuring
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-destructuring/LICENSE
+├─ @babel/plugin-transform-dotall-regex@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-dotall-regex
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-dotall-regex/LICENSE
+├─ @babel/plugin-transform-duplicate-keys@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-duplicate-keys
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-duplicate-keys/LICENSE
+├─ @babel/plugin-transform-duplicate-named-capturing-groups-regex@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-duplicate-named-capturing-groups-regex
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-duplicate-named-capturing-groups-regex/LICENSE
+├─ @babel/plugin-transform-dynamic-import@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-dynamic-import
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-dynamic-import/LICENSE
+├─ @babel/plugin-transform-explicit-resource-management@7.28.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-explicit-resource-management
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-explicit-resource-management/LICENSE
+├─ @babel/plugin-transform-exponentiation-operator@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-exponentiation-operator
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-exponentiation-operator/LICENSE
+├─ @babel/plugin-transform-export-namespace-from@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-export-namespace-from
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-export-namespace-from/LICENSE
+├─ @babel/plugin-transform-for-of@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-for-of
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-for-of/LICENSE
+├─ @babel/plugin-transform-function-name@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-function-name
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-function-name/LICENSE
+├─ @babel/plugin-transform-json-strings@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-json-strings
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-json-strings/LICENSE
+├─ @babel/plugin-transform-literals@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-literals
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-literals/LICENSE
+├─ @babel/plugin-transform-logical-assignment-operators@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-logical-assignment-operators
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-logical-assignment-operators/LICENSE
+├─ @babel/plugin-transform-member-expression-literals@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-member-expression-literals
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-member-expression-literals/LICENSE
+├─ @babel/plugin-transform-modules-amd@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-modules-amd
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-modules-amd/LICENSE
+├─ @babel/plugin-transform-modules-commonjs@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-modules-commonjs
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-modules-commonjs/LICENSE
+├─ @babel/plugin-transform-modules-systemjs@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-modules-systemjs
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-modules-systemjs/LICENSE
+├─ @babel/plugin-transform-modules-umd@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-modules-umd
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-modules-umd/LICENSE
+├─ @babel/plugin-transform-named-capturing-groups-regex@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-named-capturing-groups-regex
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-named-capturing-groups-regex/LICENSE
+├─ @babel/plugin-transform-new-target@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-new-target
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-new-target/LICENSE
+├─ @babel/plugin-transform-nullish-coalescing-operator@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-nullish-coalescing-operator
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-nullish-coalescing-operator/LICENSE
+├─ @babel/plugin-transform-numeric-separator@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-numeric-separator
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-numeric-separator/LICENSE
+├─ @babel/plugin-transform-object-rest-spread@7.28.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-object-rest-spread
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-object-rest-spread/LICENSE
+├─ @babel/plugin-transform-object-super@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-object-super
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-object-super/LICENSE
+├─ @babel/plugin-transform-optional-catch-binding@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-optional-catch-binding
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-optional-catch-binding/LICENSE
+├─ @babel/plugin-transform-optional-chaining@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-optional-chaining
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-optional-chaining/LICENSE
+├─ @babel/plugin-transform-parameters@7.27.7
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-parameters
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-parameters/LICENSE
+├─ @babel/plugin-transform-private-methods@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-private-methods
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-private-methods/LICENSE
+├─ @babel/plugin-transform-private-property-in-object@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-private-property-in-object
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-private-property-in-object/LICENSE
+├─ @babel/plugin-transform-property-literals@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-property-literals
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-property-literals/LICENSE
+├─ @babel/plugin-transform-regenerator@7.28.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-regenerator
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-regenerator/LICENSE
+├─ @babel/plugin-transform-regexp-modifiers@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-regexp-modifiers
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-regexp-modifiers/LICENSE
+├─ @babel/plugin-transform-reserved-words@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-reserved-words
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-reserved-words/LICENSE
+├─ @babel/plugin-transform-shorthand-properties@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-shorthand-properties
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-shorthand-properties/LICENSE
+├─ @babel/plugin-transform-spread@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-spread
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-spread/LICENSE
+├─ @babel/plugin-transform-sticky-regex@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-sticky-regex
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-sticky-regex/LICENSE
+├─ @babel/plugin-transform-template-literals@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-template-literals
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-template-literals/LICENSE
+├─ @babel/plugin-transform-typeof-symbol@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-typeof-symbol
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-typeof-symbol/LICENSE
+├─ @babel/plugin-transform-unicode-escapes@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-unicode-escapes
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-unicode-escapes/LICENSE
+├─ @babel/plugin-transform-unicode-property-regex@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-unicode-property-regex
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-unicode-property-regex/LICENSE
+├─ @babel/plugin-transform-unicode-regex@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-unicode-regex
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-unicode-regex/LICENSE
+├─ @babel/plugin-transform-unicode-sets-regex@7.27.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-unicode-sets-regex
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/plugin-transform-unicode-sets-regex/LICENSE
+├─ @babel/preset-env@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/preset-env
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/preset-env/LICENSE
+├─ @babel/preset-modules@0.1.6-no-external-plugins
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/preset-modules
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/preset-modules
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/preset-modules/LICENSE
+├─ @babel/runtime@7.28.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/runtime
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/runtime/LICENSE
+├─ @babel/template@7.27.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/template
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/template/LICENSE
+├─ @babel/traverse@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/traverse
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/traverse/LICENSE
+├─ @babel/types@7.28.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel
+│  ├─ publisher: The Babel Team
+│  ├─ url: https://babel.dev/team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/types
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@babel/types/LICENSE
+├─ @esbuild/linux-x64@0.21.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/evanw/esbuild
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@esbuild/linux-x64
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@esbuild/linux-x64/README.md
+├─ @jridgewell/gen-mapping@0.3.13
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jridgewell/sourcemaps
+│  ├─ publisher: Justin Ridgewell
+│  ├─ email: justin@ridgewell.name
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/gen-mapping
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/gen-mapping/LICENSE
+├─ @jridgewell/remapping@2.3.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jridgewell/sourcemaps
+│  ├─ publisher: Justin Ridgewell
+│  ├─ email: justin@ridgewell.name
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/remapping
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/remapping/LICENSE
+├─ @jridgewell/resolve-uri@3.1.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jridgewell/resolve-uri
+│  ├─ publisher: Justin Ridgewell
+│  ├─ email: justin@ridgewell.name
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/resolve-uri
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/resolve-uri/LICENSE
+├─ @jridgewell/source-map@0.3.11
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jridgewell/sourcemaps
+│  ├─ publisher: Justin Ridgewell
+│  ├─ email: justin@ridgewell.name
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/source-map
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/source-map/LICENSE
+├─ @jridgewell/sourcemap-codec@1.5.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jridgewell/sourcemaps
+│  ├─ publisher: Justin Ridgewell
+│  ├─ email: justin@ridgewell.name
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/sourcemap-codec
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/sourcemap-codec/LICENSE
+├─ @jridgewell/trace-mapping@0.3.31
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jridgewell/sourcemaps
+│  ├─ publisher: Justin Ridgewell
+│  ├─ email: justin@ridgewell.name
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/trace-mapping
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@jridgewell/trace-mapping/LICENSE
+├─ @nodelib/fs.scandir@2.1.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/nodelib/nodelib/tree/master/packages/fs/fs.scandir
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@nodelib/fs.scandir
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@nodelib/fs.scandir/LICENSE
+├─ @nodelib/fs.stat@2.0.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/nodelib/nodelib/tree/master/packages/fs/fs.stat
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@nodelib/fs.stat
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@nodelib/fs.stat/LICENSE
+├─ @nodelib/fs.walk@1.2.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/nodelib/nodelib/tree/master/packages/fs/fs.walk
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@nodelib/fs.walk
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@nodelib/fs.walk/LICENSE
+├─ @rollup/plugin-babel@5.3.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rollup/plugins
+│  ├─ publisher: Rich Harris
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/@rollup/plugin-babel
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/@rollup/plugin-babel/LICENSE
+├─ @rollup/plugin-node-resolve@15.3.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rollup/plugins
+│  ├─ publisher: Rich Harris
+│  ├─ email: richard.a.harris@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/plugin-node-resolve
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/plugin-node-resolve/LICENSE
+├─ @rollup/plugin-replace@2.4.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rollup/plugins
+│  ├─ publisher: Rich Harris
+│  ├─ email: richard.a.harris@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/@rollup/plugin-replace
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/@rollup/plugin-replace/LICENSE
+├─ @rollup/plugin-terser@0.4.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rollup/plugins
+│  ├─ publisher: Peter Placzek
+│  ├─ email: peter.placzek1996@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/plugin-terser
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/plugin-terser/README.md
+├─ @rollup/pluginutils@3.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rollup/plugins
+│  ├─ publisher: Rich Harris
+│  ├─ email: richard.a.harris@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/@rollup/pluginutils
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/@rollup/pluginutils/LICENSE
+├─ @rollup/pluginutils@5.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rollup/plugins
+│  ├─ publisher: Rich Harris
+│  ├─ email: richard.a.harris@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/pluginutils
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/pluginutils/LICENSE
+├─ @rollup/rollup-linux-x64-gnu@4.53.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rollup/rollup
+│  ├─ publisher: Lukas Taegert-Atkinson
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/rollup-linux-x64-gnu
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/rollup-linux-x64-gnu/README.md
+├─ @rollup/rollup-linux-x64-musl@4.53.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rollup/rollup
+│  ├─ publisher: Lukas Taegert-Atkinson
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/rollup-linux-x64-musl
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/rollup-linux-x64-musl/README.md
+├─ @surma/rollup-plugin-off-main-thread@2.2.3
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/surma/rollup-plugin-off-main-thread
+│  ├─ publisher: Surma
+│  ├─ email: surma@google.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@surma/rollup-plugin-off-main-thread
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@surma/rollup-plugin-off-main-thread/LICENSE
+├─ @types/estree@0.0.39
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/@types/estree
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/@types/estree/LICENSE
+├─ @types/estree@1.0.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/estree
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/estree/LICENSE
+├─ @types/node@24.10.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/node
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/node/LICENSE
+├─ @types/resolve@1.20.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/resolve
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/resolve/LICENSE
+├─ @types/trusted-types@2.0.7
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/trusted-types
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/trusted-types/LICENSE
+├─ @vitejs/plugin-vue@5.2.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vitejs/vite-plugin-vue
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vitejs/plugin-vue
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vitejs/plugin-vue/LICENSE
+├─ @volar/language-core@2.4.15
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/volarjs/volar.js
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@volar/language-core
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@volar/language-core/LICENSE
+├─ @volar/source-map@2.4.15
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/volarjs/volar.js
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@volar/source-map
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@volar/source-map/LICENSE
+├─ @volar/typescript@2.4.15
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/volarjs/volar.js
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@volar/typescript
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@volar/typescript/LICENSE
+├─ @vue/compiler-core@3.5.24
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/core
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/compiler-core
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/compiler-core/LICENSE
+├─ @vue/compiler-dom@3.5.24
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/core
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/compiler-dom
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/compiler-dom/LICENSE
+├─ @vue/compiler-sfc@3.5.24
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/core
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/compiler-sfc
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/compiler-sfc/LICENSE
+├─ @vue/compiler-ssr@3.5.24
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/core
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/compiler-ssr
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/compiler-ssr/LICENSE
+├─ @vue/compiler-vue2@2.7.16
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/vue
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/compiler-vue2
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/compiler-vue2/README.md
+├─ @vue/devtools-api@6.6.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/vue-devtools
+│  ├─ publisher: Guillaume Chau
+│  └─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/devtools-api
+├─ @vue/language-core@2.2.12
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/language-tools
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/language-core
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/language-core/LICENSE
+├─ @vue/reactivity@3.5.24
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/core
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/reactivity
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/reactivity/LICENSE
+├─ @vue/runtime-core@3.5.24
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/core
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/runtime-core
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/runtime-core/LICENSE
+├─ @vue/runtime-dom@3.5.24
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/core
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/runtime-dom
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/runtime-dom/LICENSE
+├─ @vue/server-renderer@3.5.24
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/core
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/server-renderer
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/server-renderer/LICENSE
+├─ @vue/shared@3.5.24
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/core
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/shared
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@vue/shared/LICENSE
+├─ acorn@8.15.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/acornjs/acorn
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/acorn
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/acorn/LICENSE
+├─ ajv@8.17.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ajv-validator/ajv
+│  ├─ publisher: Evgeny Poberezkin
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/ajv
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/ajv/LICENSE
+├─ alien-signals@1.0.13
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/johnsoncodehk/signals
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/alien-signals
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/alien-signals/LICENSE
+├─ array-buffer-byte-length@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/array-buffer-byte-length
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/array-buffer-byte-length
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/array-buffer-byte-length/LICENSE
+├─ arraybuffer.prototype.slice@1.0.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/es-shims/ArrayBuffer.prototype.slice
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/arraybuffer.prototype.slice
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/arraybuffer.prototype.slice/LICENSE
+├─ async-function@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/async-function
+│  ├─ publisher: Jordan Harbamd
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/async-function
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/async-function/LICENSE
+├─ async@3.2.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/caolan/async
+│  ├─ publisher: Caolan McMahon
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/async
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/async/LICENSE
+├─ at-least-node@1.0.0
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/RyanZim/at-least-node
+│  ├─ publisher: Ryan Zimmerman
+│  ├─ email: opensrc@ryanzim.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/at-least-node
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/at-least-node/LICENSE
+├─ available-typed-arrays@1.0.7
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/available-typed-arrays
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/available-typed-arrays
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/available-typed-arrays/LICENSE
+├─ babel-plugin-polyfill-corejs2@0.4.14
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel-polyfills
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/babel-plugin-polyfill-corejs2
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/babel-plugin-polyfill-corejs2/LICENSE
+├─ babel-plugin-polyfill-corejs3@0.13.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel-polyfills
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/babel-plugin-polyfill-corejs3
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/babel-plugin-polyfill-corejs3/LICENSE
+├─ babel-plugin-polyfill-regenerator@0.6.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/babel/babel-polyfills
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/babel-plugin-polyfill-regenerator
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/babel-plugin-polyfill-regenerator/LICENSE
+├─ balanced-match@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/juliangruber/balanced-match
+│  ├─ publisher: Julian Gruber
+│  ├─ email: mail@juliangruber.com
+│  ├─ url: http://juliangruber.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/balanced-match
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/balanced-match/LICENSE.md
+├─ baseline-browser-mapping@2.8.29
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/web-platform-dx/baseline-browser-mapping
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/baseline-browser-mapping
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/baseline-browser-mapping/LICENSE.txt
+├─ brace-expansion@1.1.12
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/juliangruber/brace-expansion
+│  ├─ publisher: Julian Gruber
+│  ├─ email: mail@juliangruber.com
+│  ├─ url: http://juliangruber.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/glob/node_modules/brace-expansion
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/glob/node_modules/brace-expansion/LICENSE
+├─ brace-expansion@2.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/juliangruber/brace-expansion
+│  ├─ publisher: Julian Gruber
+│  ├─ email: mail@juliangruber.com
+│  ├─ url: http://juliangruber.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/brace-expansion
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/brace-expansion/LICENSE
+├─ braces@3.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/micromatch/braces
+│  ├─ publisher: Jon Schlinkert
+│  ├─ url: https://github.com/jonschlinkert
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/braces
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/braces/LICENSE
+├─ browserslist@4.28.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/browserslist/browserslist
+│  ├─ publisher: Andrey Sitnik
+│  ├─ email: andrey@sitnik.ru
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/browserslist
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/browserslist/LICENSE
+├─ buffer-from@1.1.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/LinusU/buffer-from
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/buffer-from
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/buffer-from/LICENSE
+├─ call-bind-apply-helpers@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/call-bind-apply-helpers
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/call-bind-apply-helpers
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/call-bind-apply-helpers/LICENSE
+├─ call-bind@1.0.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/call-bind
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/call-bind
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/call-bind/LICENSE
+├─ call-bound@1.0.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/call-bound
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/call-bound
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/call-bound/LICENSE
+├─ caniuse-lite@1.0.30001755
+│  ├─ licenses: CC-BY-4.0
+│  ├─ repository: https://github.com/browserslist/caniuse-lite
+│  ├─ publisher: Ben Briggs
+│  ├─ email: beneb.info@gmail.com
+│  ├─ url: http://beneb.info
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/caniuse-lite
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/caniuse-lite/LICENSE
+├─ commander@2.20.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/tj/commander.js
+│  ├─ publisher: TJ Holowaychuk
+│  ├─ email: tj@vision-media.ca
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/commander
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/commander/LICENSE
+├─ common-tags@1.8.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/zspecza/common-tags
+│  ├─ publisher: Declan de Wet
+│  ├─ email: declandewet@me.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/common-tags
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/common-tags/license.md
+├─ concat-map@0.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/substack/node-concat-map
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/concat-map
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/concat-map/LICENSE
+├─ convert-source-map@2.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/thlorenz/convert-source-map
+│  ├─ publisher: Thorsten Lorenz
+│  ├─ email: thlorenz@gmx.de
+│  ├─ url: http://thlorenz.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/convert-source-map
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/convert-source-map/LICENSE
+├─ core-js-compat@3.47.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/zloirock/core-js
+│  ├─ publisher: Denis Pushkarev
+│  ├─ email: zloirock@zloirock.ru
+│  ├─ url: http://zloirock.ru
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/core-js-compat
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/core-js-compat/LICENSE
+├─ crypto-random-string@2.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/crypto-random-string
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/crypto-random-string
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/crypto-random-string/license
+├─ csstype@3.2.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/frenic/csstype
+│  ├─ publisher: Fredrik Nicol
+│  ├─ email: fredrik.nicol@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/csstype
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/csstype/LICENSE
+├─ data-view-buffer@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/data-view-buffer
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/data-view-buffer
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/data-view-buffer/LICENSE
+├─ data-view-byte-length@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/data-view-byte-length
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/data-view-byte-length
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/data-view-byte-length/LICENSE
+├─ data-view-byte-offset@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/data-view-byte-offset
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/data-view-byte-offset
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/data-view-byte-offset/LICENSE
+├─ de-indent@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/yyx990803/de-indent
+│  ├─ publisher: Evan You
+│  └─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/de-indent
+├─ debug@4.4.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/debug-js/debug
+│  ├─ publisher: Josh Junon
+│  ├─ url: https://github.com/qix-
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/debug
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/debug/LICENSE
+├─ deepmerge@4.3.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/TehShrike/deepmerge
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/deepmerge
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/deepmerge/license.txt
+├─ define-data-property@1.1.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/define-data-property
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/define-data-property
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/define-data-property/LICENSE
+├─ define-properties@1.2.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/define-properties
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/define-properties
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/define-properties/LICENSE
+├─ dunder-proto@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/es-shims/dunder-proto
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/dunder-proto
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/dunder-proto/LICENSE
+├─ ejs@3.1.10
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/mde/ejs
+│  ├─ publisher: Matthew Eernisse
+│  ├─ email: mde@fleegix.org
+│  ├─ url: http://fleegix.org
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/ejs
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/ejs/LICENSE
+├─ electron-to-chromium@1.5.255
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/kilian/electron-to-chromium
+│  ├─ publisher: Kilian Valkhof
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/electron-to-chromium
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/electron-to-chromium/LICENSE
+├─ entities@4.5.0
+│  ├─ licenses: BSD-2-Clause
+│  ├─ repository: https://github.com/fb55/entities
+│  ├─ publisher: Felix Boehm
+│  ├─ email: me@feedic.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/entities
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/entities/LICENSE
+├─ es-abstract@1.24.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/es-abstract
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ url: http://ljharb.codes
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-abstract
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-abstract/LICENSE
+├─ es-define-property@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/es-define-property
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-define-property
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-define-property/LICENSE
+├─ es-errors@1.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/es-errors
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-errors
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-errors/LICENSE
+├─ es-object-atoms@1.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/es-object-atoms
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-object-atoms
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-object-atoms/LICENSE
+├─ es-set-tostringtag@2.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/es-shims/es-set-tostringtag
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-set-tostringtag
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-set-tostringtag/LICENSE
+├─ es-to-primitive@1.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/es-to-primitive
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-to-primitive
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/es-to-primitive/LICENSE
+├─ esbuild@0.21.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/evanw/esbuild
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/esbuild
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/esbuild/LICENSE.md
+├─ escalade@3.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lukeed/escalade
+│  ├─ publisher: Luke Edwards
+│  ├─ email: luke.edwards05@gmail.com
+│  ├─ url: https://lukeed.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/escalade
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/escalade/license
+├─ estree-walker@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/Rich-Harris/estree-walker
+│  ├─ publisher: Rich Harris
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/estree-walker
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/estree-walker/README.md
+├─ estree-walker@2.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/Rich-Harris/estree-walker
+│  ├─ publisher: Rich Harris
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/estree-walker
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/estree-walker/LICENSE
+├─ esutils@2.0.3
+│  ├─ licenses: BSD-2-Clause
+│  ├─ repository: https://github.com/estools/esutils
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/esutils
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/esutils/LICENSE.BSD
+├─ fast-deep-equal@3.1.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/epoberezkin/fast-deep-equal
+│  ├─ publisher: Evgeny Poberezkin
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fast-deep-equal
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fast-deep-equal/LICENSE
+├─ fast-glob@3.3.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mrmlnc/fast-glob
+│  ├─ publisher: Denis Malinochkin
+│  ├─ url: https://mrmlnc.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fast-glob
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fast-glob/LICENSE
+├─ fast-json-stable-stringify@2.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/epoberezkin/fast-json-stable-stringify
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fast-json-stable-stringify
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fast-json-stable-stringify/LICENSE
+├─ fast-uri@3.1.0
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/fastify/fast-uri
+│  ├─ publisher: Vincent Le Goff
+│  ├─ email: vince.legoff@gmail.com
+│  ├─ url: https://github.com/zekth
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fast-uri
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fast-uri/LICENSE
+├─ fastq@1.19.1
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/mcollina/fastq
+│  ├─ publisher: Matteo Collina
+│  ├─ email: hello@matteocollina.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fastq
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fastq/LICENSE
+├─ filelist@1.0.4
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/mde/filelist
+│  ├─ publisher: Matthew Eernisse
+│  ├─ email: mde@fleegix.org
+│  ├─ url: http://fleegix.org
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/filelist
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/filelist/README.md
+├─ fill-range@7.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jonschlinkert/fill-range
+│  ├─ publisher: Jon Schlinkert
+│  ├─ url: https://github.com/jonschlinkert
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fill-range
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fill-range/LICENSE
+├─ for-each@0.3.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/Raynos/for-each
+│  ├─ publisher: Raynos
+│  ├─ email: raynos2@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/for-each
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/for-each/LICENSE
+├─ fs-extra@9.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jprichardson/node-fs-extra
+│  ├─ publisher: JP Richardson
+│  ├─ email: jprichardson@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fs-extra
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fs-extra/LICENSE
+├─ fs.realpath@1.0.0
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/fs.realpath
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fs.realpath
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/fs.realpath/LICENSE
+├─ function-bind@1.1.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/Raynos/function-bind
+│  ├─ publisher: Raynos
+│  ├─ email: raynos2@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/function-bind
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/function-bind/LICENSE
+├─ function.prototype.name@1.1.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/es-shims/Function.prototype.name
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/function.prototype.name
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/function.prototype.name/LICENSE
+├─ functions-have-names@1.2.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/functions-have-names
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/functions-have-names
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/functions-have-names/LICENSE
+├─ generator-function@2.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/TimothyGu/generator-function
+│  ├─ publisher: Jordan Harbamd
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/generator-function
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/generator-function/LICENSE.md
+├─ gensync@1.0.0-beta.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/loganfsmyth/gensync
+│  ├─ publisher: Logan Smyth
+│  ├─ email: loganfsmyth@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/gensync
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/gensync/LICENSE
+├─ get-intrinsic@1.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/get-intrinsic
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/get-intrinsic
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/get-intrinsic/LICENSE
+├─ get-own-enumerable-property-symbols@3.0.2
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/mightyiam/get-own-enumerable-property-symbols
+│  ├─ publisher: Shahar Or
+│  ├─ email: mightyiampresence@gmail.com
+│  ├─ url: mightyiam
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/get-own-enumerable-property-symbols
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/get-own-enumerable-property-symbols/LICENSE
+├─ get-proto@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/get-proto
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/get-proto
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/get-proto/LICENSE
+├─ get-symbol-description@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/get-symbol-description
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/get-symbol-description
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/get-symbol-description/LICENSE
+├─ glob-parent@5.1.2
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/gulpjs/glob-parent
+│  ├─ publisher: Gulp Team
+│  ├─ email: team@gulpjs.com
+│  ├─ url: https://gulpjs.com/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/glob-parent
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/glob-parent/LICENSE
+├─ glob@7.2.3
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/node-glob
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/glob
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/glob/LICENSE
+├─ globalthis@1.0.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/System.global
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/globalthis
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/globalthis/LICENSE
+├─ gopd@1.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/gopd
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/gopd
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/gopd/LICENSE
+├─ graceful-fs@4.2.11
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/node-graceful-fs
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/graceful-fs
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/graceful-fs/LICENSE
+├─ has-bigints@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/has-bigints
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/has-bigints
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/has-bigints/LICENSE
+├─ has-property-descriptors@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/has-property-descriptors
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/has-property-descriptors
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/has-property-descriptors/LICENSE
+├─ has-proto@1.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/has-proto
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/has-proto
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/has-proto/LICENSE
+├─ has-symbols@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/has-symbols
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ url: http://ljharb.codes
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/has-symbols
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/has-symbols/LICENSE
+├─ has-tostringtag@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/has-tostringtag
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ url: http://ljharb.codes
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/has-tostringtag
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/has-tostringtag/LICENSE
+├─ hasown@2.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/hasOwn
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/hasown
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/hasown/LICENSE
+├─ he@1.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mathiasbynens/he
+│  ├─ publisher: Mathias Bynens
+│  ├─ url: https://mathiasbynens.be/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/he
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/he/LICENSE-MIT.txt
+├─ idb@7.1.1
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/jakearchibald/idb
+│  ├─ publisher: Jake Archibald
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/idb
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/idb/LICENSE
+├─ inflight@1.0.6
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/npm/inflight
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/inflight
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/inflight/LICENSE
+├─ inherits@2.0.4
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/inherits
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/inherits
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/inherits/LICENSE
+├─ internal-slot@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/internal-slot
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/internal-slot
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/internal-slot/LICENSE
+├─ is-array-buffer@3.0.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-array-buffer
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-array-buffer
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-array-buffer/LICENSE
+├─ is-async-function@2.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-async-function
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-async-function
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-async-function/LICENSE
+├─ is-bigint@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-bigint
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-bigint
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-bigint/LICENSE
+├─ is-boolean-object@1.2.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-boolean-object
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-boolean-object
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-boolean-object/LICENSE
+├─ is-callable@1.2.7
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-callable
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ url: http://ljharb.codes
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-callable
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-callable/LICENSE
+├─ is-core-module@2.16.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-core-module
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-core-module
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-core-module/LICENSE
+├─ is-data-view@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-data-view
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-data-view
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-data-view/LICENSE
+├─ is-date-object@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-date-object
+│  ├─ publisher: Jordan Harband
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-date-object
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-date-object/LICENSE
+├─ is-extglob@2.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jonschlinkert/is-extglob
+│  ├─ publisher: Jon Schlinkert
+│  ├─ url: https://github.com/jonschlinkert
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-extglob
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-extglob/LICENSE
+├─ is-finalizationregistry@1.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-finalizationregistry
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-finalizationregistry
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-finalizationregistry/LICENSE
+├─ is-generator-function@1.1.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-generator-function
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-generator-function
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-generator-function/LICENSE
+├─ is-glob@4.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/micromatch/is-glob
+│  ├─ publisher: Jon Schlinkert
+│  ├─ url: https://github.com/jonschlinkert
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-glob
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-glob/LICENSE
+├─ is-map@2.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-map
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-map
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-map/LICENSE
+├─ is-module@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/component/is-module
+│  ├─ publisher: Jonathan Ong
+│  ├─ email: me@jongleberry.com
+│  ├─ url: http://jongleberry.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-module
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-module/README.md
+├─ is-negative-zero@2.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-negative-zero
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-negative-zero
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-negative-zero/LICENSE
+├─ is-number-object@1.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-number-object
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-number-object
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-number-object/LICENSE
+├─ is-number@7.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jonschlinkert/is-number
+│  ├─ publisher: Jon Schlinkert
+│  ├─ url: https://github.com/jonschlinkert
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-number
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-number/LICENSE
+├─ is-obj@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/is-obj
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-obj
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-obj/license
+├─ is-regex@1.2.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-regex
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-regex
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-regex/LICENSE
+├─ is-regexp@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/is-regexp
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: http://sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-regexp
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-regexp/readme.md
+├─ is-set@2.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-set
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-set
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-set/LICENSE
+├─ is-shared-array-buffer@1.0.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-shared-array-buffer
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ url: http://ljharb.codes
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-shared-array-buffer
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-shared-array-buffer/LICENSE
+├─ is-stream@2.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/is-stream
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: https://sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-stream
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-stream/license
+├─ is-string@1.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-string
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-string
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-string/LICENSE
+├─ is-symbol@1.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-symbol
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-symbol
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-symbol/LICENSE
+├─ is-typed-array@1.1.15
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-typed-array
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ url: http://ljharb.codes
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-typed-array
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-typed-array/LICENSE
+├─ is-weakmap@2.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-weakmap
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-weakmap
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-weakmap/LICENSE
+├─ is-weakref@1.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-weakref
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-weakref
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-weakref/LICENSE
+├─ is-weakset@2.0.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/is-weakset
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-weakset
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/is-weakset/LICENSE
+├─ isarray@2.0.5
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/juliangruber/isarray
+│  ├─ publisher: Julian Gruber
+│  ├─ email: mail@juliangruber.com
+│  ├─ url: http://juliangruber.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/isarray
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/isarray/LICENSE
+├─ jake@10.9.4
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/jakejs/jake
+│  ├─ publisher: Matthew Eernisse
+│  ├─ email: mde@fleegix.org
+│  ├─ url: http://fleegix.org
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/jake
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/jake/README.md
+├─ js-tokens@4.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lydell/js-tokens
+│  ├─ publisher: Simon Lydell
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/js-tokens
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/js-tokens/LICENSE
+├─ jsesc@3.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mathiasbynens/jsesc
+│  ├─ publisher: Mathias Bynens
+│  ├─ url: https://mathiasbynens.be/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/jsesc
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/jsesc/LICENSE-MIT.txt
+├─ json-schema-traverse@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/epoberezkin/json-schema-traverse
+│  ├─ publisher: Evgeny Poberezkin
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/json-schema-traverse
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/json-schema-traverse/LICENSE
+├─ json-schema@0.4.0
+│  ├─ licenses: (AFL-2.1 OR BSD-3-Clause)
+│  ├─ repository: https://github.com/kriszyp/json-schema
+│  ├─ publisher: Kris Zyp
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/json-schema
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/json-schema/LICENSE
+├─ json5@2.2.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/json5/json5
+│  ├─ publisher: Aseem Kishore
+│  ├─ email: aseem.kishore@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/json5
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/json5/LICENSE.md
+├─ jsonfile@6.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jprichardson/node-jsonfile
+│  ├─ publisher: JP Richardson
+│  ├─ email: jprichardson@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/jsonfile
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/jsonfile/LICENSE
+├─ jsonpointer@5.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/janl/node-jsonpointer
+│  ├─ publisher: Jan Lehnardt
+│  ├─ email: jan@apache.org
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/jsonpointer
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/jsonpointer/LICENSE.md
+├─ jta-display-wall-adapter@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jonas-kell/jta-display-wall-adapter
+│  ├─ publisher: jonas-kell
+│  └─ path: /home/jonas/github/jta-display-wall-adapter/web_client
+├─ leven@3.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/leven
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/leven
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/leven/license
+├─ lodash.debounce@4.0.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/lodash.debounce
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/lodash.debounce/LICENSE
+├─ lodash.sortby@4.7.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ url: http://allyoucanleet.com/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/lodash.sortby
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/lodash.sortby/LICENSE
+├─ lodash@4.17.21
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/lodash/lodash
+│  ├─ publisher: John-David Dalton
+│  ├─ email: john.david.dalton@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/lodash
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/lodash/LICENSE
+├─ lru-cache@5.1.1
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/node-lru-cache
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/lru-cache
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/lru-cache/LICENSE
+├─ magic-string@0.25.9
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rich-harris/magic-string
+│  ├─ publisher: Rich Harris
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/magic-string
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/magic-string/LICENSE
+├─ magic-string@0.30.21
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/Rich-Harris/magic-string
+│  ├─ publisher: Rich Harris
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/magic-string
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/magic-string/LICENSE
+├─ math-intrinsics@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/es-shims/math-intrinsics
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/math-intrinsics
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/math-intrinsics/LICENSE
+├─ merge2@1.4.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/teambition/merge2
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/merge2
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/merge2/LICENSE
+├─ micromatch@4.0.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/micromatch/micromatch
+│  ├─ publisher: Jon Schlinkert
+│  ├─ url: https://github.com/jonschlinkert
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/micromatch
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/micromatch/LICENSE
+├─ minimatch@3.1.2
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/minimatch
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/glob/node_modules/minimatch
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/glob/node_modules/minimatch/LICENSE
+├─ minimatch@5.1.6
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/minimatch
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/filelist/node_modules/minimatch
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/filelist/node_modules/minimatch/LICENSE
+├─ minimatch@9.0.5
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/minimatch
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/minimatch
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/minimatch/LICENSE
+├─ ms@2.1.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vercel/ms
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/ms
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/ms/license.md
+├─ muggle-string@0.4.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/johnsoncodehk/muggle-string
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/muggle-string
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/muggle-string/LICENSE
+├─ nanoid@3.3.11
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ai/nanoid
+│  ├─ publisher: Andrey Sitnik
+│  ├─ email: andrey@sitnik.ru
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/nanoid
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/nanoid/LICENSE
+├─ node-releases@2.0.27
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/chicoxyzzy/node-releases
+│  ├─ publisher: Sergey Rubanov
+│  ├─ email: chi187@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/node-releases
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/node-releases/LICENSE
+├─ object-inspect@1.13.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/object-inspect
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/object-inspect
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/object-inspect/LICENSE
+├─ object-keys@1.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/object-keys
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ url: http://ljharb.codes
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/object-keys
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/object-keys/LICENSE
+├─ object.assign@4.1.7
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/object.assign
+│  ├─ publisher: Jordan Harband
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/object.assign
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/object.assign/LICENSE
+├─ once@1.4.0
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/isaacs/once
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/once
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/once/LICENSE
+├─ own-keys@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/own-keys
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/own-keys
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/own-keys/LICENSE
+├─ path-browserify@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/browserify/path-browserify
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/path-browserify
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/path-browserify/LICENSE
+├─ path-is-absolute@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/path-is-absolute
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/path-is-absolute
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/path-is-absolute/license
+├─ path-parse@1.0.7
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jbgutierrez/path-parse
+│  ├─ publisher: Javier Blanco
+│  ├─ email: http://jbgutierrez.info
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/path-parse
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/path-parse/LICENSE
+├─ picocolors@1.1.1
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/alexeyraspopov/picocolors
+│  ├─ publisher: Alexey Raspopov
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/picocolors
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/picocolors/LICENSE
+├─ picomatch@2.3.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/micromatch/picomatch
+│  ├─ publisher: Jon Schlinkert
+│  ├─ url: https://github.com/jonschlinkert
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/picomatch
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/picomatch/LICENSE
+├─ picomatch@4.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/micromatch/picomatch
+│  ├─ publisher: Jon Schlinkert
+│  ├─ url: https://github.com/jonschlinkert
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/pluginutils/node_modules/picomatch
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@rollup/pluginutils/node_modules/picomatch/LICENSE
+├─ pinia@2.3.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/pinia
+│  ├─ publisher: Eduardo San Martin Morote
+│  ├─ email: posva13@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/pinia
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/pinia/LICENSE
+├─ possible-typed-array-names@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/possible-typed-array-names
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/possible-typed-array-names
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/possible-typed-array-names/LICENSE
+├─ postcss@8.5.6
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/postcss/postcss
+│  ├─ publisher: Andrey Sitnik
+│  ├─ email: andrey@sitnik.ru
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/postcss
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/postcss/LICENSE
+├─ pretty-bytes@5.6.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/pretty-bytes
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: https://sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/pretty-bytes
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/pretty-bytes/license
+├─ pretty-bytes@6.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/pretty-bytes
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: https://sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/pretty-bytes
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/pretty-bytes/license
+├─ punycode@2.3.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mathiasbynens/punycode.js
+│  ├─ publisher: Mathias Bynens
+│  ├─ url: https://mathiasbynens.be/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/punycode
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/punycode/LICENSE-MIT.txt
+├─ queue-microtask@1.2.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/feross/queue-microtask
+│  ├─ publisher: Feross Aboukhadijeh
+│  ├─ email: feross@feross.org
+│  ├─ url: https://feross.org
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/queue-microtask
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/queue-microtask/LICENSE
+├─ randombytes@2.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/crypto-browserify/randombytes
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/randombytes
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/randombytes/LICENSE
+├─ reflect.getprototypeof@1.0.10
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/es-shims/Reflect.getPrototypeOf
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/reflect.getprototypeof
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/reflect.getprototypeof/LICENSE
+├─ regenerate-unicode-properties@10.2.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mathiasbynens/regenerate-unicode-properties
+│  ├─ publisher: Mathias Bynens
+│  ├─ url: https://mathiasbynens.be/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regenerate-unicode-properties
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regenerate-unicode-properties/LICENSE-MIT.txt
+├─ regenerate@1.4.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mathiasbynens/regenerate
+│  ├─ publisher: Mathias Bynens
+│  ├─ url: https://mathiasbynens.be/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regenerate
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regenerate/LICENSE-MIT.txt
+├─ regexp.prototype.flags@1.5.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/es-shims/RegExp.prototype.flags
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regexp.prototype.flags
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regexp.prototype.flags/LICENSE
+├─ regexpu-core@6.4.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mathiasbynens/regexpu-core
+│  ├─ publisher: Mathias Bynens
+│  ├─ url: https://mathiasbynens.be/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regexpu-core
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regexpu-core/LICENSE-MIT.txt
+├─ regjsgen@0.8.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/bnjmnt4n/regjsgen
+│  ├─ publisher: Benjamin Tan
+│  ├─ url: https://ofcr.se/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regjsgen
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regjsgen/LICENSE-MIT.txt
+├─ regjsparser@0.13.0
+│  ├─ licenses: BSD-2-Clause
+│  ├─ repository: https://github.com/jviereck/regjsparser
+│  ├─ publisher: 'Julian Viereck'
+│  ├─ email: julian.viereck@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regjsparser
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/regjsparser/LICENSE.BSD
+├─ require-from-string@2.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/floatdrop/require-from-string
+│  ├─ publisher: Vsevolod Strukchinsky
+│  ├─ email: floatdrop@gmail.com
+│  ├─ url: github.com/floatdrop
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/require-from-string
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/require-from-string/license
+├─ resolve@1.22.11
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/browserify/resolve
+│  ├─ publisher: James Halliday
+│  ├─ email: mail@substack.net
+│  ├─ url: http://substack.net
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/resolve
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/resolve/LICENSE
+├─ reusify@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mcollina/reusify
+│  ├─ publisher: Matteo Collina
+│  ├─ email: hello@matteocollina.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/reusify
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/reusify/LICENSE
+├─ rollup@2.79.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rollup/rollup
+│  ├─ publisher: Rich Harris
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/rollup
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/node_modules/rollup/LICENSE.md
+├─ rollup@4.53.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/rollup/rollup
+│  ├─ publisher: Rich Harris
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/rollup
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/rollup/LICENSE.md
+├─ run-parallel@1.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/feross/run-parallel
+│  ├─ publisher: Feross Aboukhadijeh
+│  ├─ email: feross@feross.org
+│  ├─ url: https://feross.org
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/run-parallel
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/run-parallel/LICENSE
+├─ safe-array-concat@1.1.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/safe-array-concat
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/safe-array-concat
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/safe-array-concat/LICENSE
+├─ safe-buffer@5.2.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/feross/safe-buffer
+│  ├─ publisher: Feross Aboukhadijeh
+│  ├─ email: feross@feross.org
+│  ├─ url: https://feross.org
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/safe-buffer
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/safe-buffer/LICENSE
+├─ safe-push-apply@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/safe-push-apply
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/safe-push-apply
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/safe-push-apply/LICENSE
+├─ safe-regex-test@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/safe-regex-test
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/safe-regex-test
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/safe-regex-test/LICENSE
+├─ semver@6.3.1
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/npm/node-semver
+│  ├─ publisher: GitHub Inc.
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/semver
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/semver/LICENSE
+├─ serialize-javascript@6.0.2
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/yahoo/serialize-javascript
+│  ├─ publisher: Eric Ferraiuolo
+│  ├─ email: edf@ericf.me
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/serialize-javascript
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/serialize-javascript/LICENSE
+├─ set-function-length@1.2.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/set-function-length
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/set-function-length
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/set-function-length/LICENSE
+├─ set-function-name@2.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/set-function-name
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/set-function-name
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/set-function-name/LICENSE
+├─ set-proto@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/set-proto
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/set-proto
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/set-proto/LICENSE
+├─ side-channel-list@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/side-channel-list
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/side-channel-list
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/side-channel-list/LICENSE
+├─ side-channel-map@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/side-channel-map
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/side-channel-map
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/side-channel-map/LICENSE
+├─ side-channel-weakmap@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/side-channel-weakmap
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/side-channel-weakmap
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/side-channel-weakmap/LICENSE
+├─ side-channel@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/side-channel
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/side-channel
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/side-channel/LICENSE
+├─ smob@1.5.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/Tada5hi/smob
+│  ├─ publisher: Peter Placzek
+│  ├─ email: contact@tada5hi.net
+│  ├─ url: https://github.com/tada5hi
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/smob
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/smob/LICENSE
+├─ source-map-js@1.2.1
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/7rulnik/source-map-js
+│  ├─ publisher: Valentin 7rulnik Semirulnik
+│  ├─ email: v7rulnik@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/source-map-js
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/source-map-js/LICENSE
+├─ source-map-support@0.5.21
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/evanw/node-source-map-support
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/source-map-support
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/source-map-support/LICENSE.md
+├─ source-map@0.6.1
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/mozilla/source-map
+│  ├─ publisher: Nick Fitzgerald
+│  ├─ email: nfitzgerald@mozilla.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/source-map-support/node_modules/source-map
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/source-map-support/node_modules/source-map/LICENSE
+├─ source-map@0.8.0-beta.0
+│  ├─ licenses: BSD-3-Clause
+│  ├─ repository: https://github.com/mozilla/source-map
+│  ├─ publisher: Nick Fitzgerald
+│  ├─ email: nfitzgerald@mozilla.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/source-map
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/source-map/LICENSE
+├─ sourcemap-codec@1.4.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/Rich-Harris/sourcemap-codec
+│  ├─ publisher: Rich Harris
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/sourcemap-codec
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/sourcemap-codec/LICENSE
+├─ stop-iteration-iterator@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/stop-iteration-iterator
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/stop-iteration-iterator
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/stop-iteration-iterator/LICENSE
+├─ string.prototype.matchall@4.0.12
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/es-shims/String.prototype.matchAll
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/string.prototype.matchall
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/string.prototype.matchall/LICENSE
+├─ string.prototype.trim@1.2.10
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/es-shims/String.prototype.trim
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ url: http://ljharb.codes
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/string.prototype.trim
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/string.prototype.trim/LICENSE
+├─ string.prototype.trimend@1.0.9
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/es-shims/String.prototype.trimEnd
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/string.prototype.trimend
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/string.prototype.trimend/LICENSE
+├─ string.prototype.trimstart@1.0.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/es-shims/String.prototype.trimStart
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/string.prototype.trimstart
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/string.prototype.trimstart/LICENSE
+├─ stringify-object@3.3.0
+│  ├─ licenses: BSD-2-Clause
+│  ├─ repository: https://github.com/yeoman/stringify-object
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/stringify-object
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/stringify-object/LICENSE
+├─ strip-comments@2.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jonschlinkert/strip-comments
+│  ├─ publisher: Jon Schlinkert
+│  ├─ url: https://github.com/jonschlinkert
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/strip-comments
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/strip-comments/LICENSE
+├─ supports-preserve-symlinks-flag@1.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/node-supports-preserve-symlinks-flag
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/supports-preserve-symlinks-flag
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/supports-preserve-symlinks-flag/LICENSE
+├─ temp-dir@2.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/temp-dir
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/temp-dir
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/temp-dir/license
+├─ tempy@0.6.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/tempy
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: https://sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/tempy
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/tempy/license
+├─ terser@5.44.1
+│  ├─ licenses: BSD-2-Clause
+│  ├─ repository: https://github.com/terser/terser
+│  ├─ publisher: Mihai Bazon
+│  ├─ email: mihai.bazon@gmail.com
+│  ├─ url: http://lisperator.net/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/terser
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/terser/LICENSE
+├─ to-regex-range@5.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/micromatch/to-regex-range
+│  ├─ publisher: Jon Schlinkert
+│  ├─ url: https://github.com/jonschlinkert
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/to-regex-range
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/to-regex-range/LICENSE
+├─ tr46@1.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/Sebmaster/tr46.js
+│  ├─ publisher: Sebastian Mayr
+│  ├─ email: npm@smayr.name
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/tr46
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/tr46/LICENSE.md
+├─ type-fest@0.16.0
+│  ├─ licenses: (MIT OR CC0-1.0)
+│  ├─ repository: https://github.com/sindresorhus/type-fest
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: https://sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/type-fest
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/type-fest/license
+├─ typed-array-buffer@1.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/typed-array-buffer
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/typed-array-buffer
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/typed-array-buffer/LICENSE
+├─ typed-array-byte-length@1.0.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/typed-array-byte-length
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/typed-array-byte-length
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/typed-array-byte-length/LICENSE
+├─ typed-array-byte-offset@1.0.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/typed-array-byte-offset
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/typed-array-byte-offset
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/typed-array-byte-offset/LICENSE
+├─ typed-array-length@1.0.7
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/typed-array-length
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/typed-array-length
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/typed-array-length/LICENSE
+├─ typescript@5.6.3
+│  ├─ licenses: Apache-2.0
+│  ├─ repository: https://github.com/microsoft/TypeScript
+│  ├─ publisher: Microsoft Corp.
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/typescript
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/typescript/LICENSE.txt
+├─ unbox-primitive@1.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/ljharb/unbox-primitive
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unbox-primitive
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unbox-primitive/LICENSE
+├─ undici-types@7.16.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/nodejs/undici
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/undici-types
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/undici-types/LICENSE
+├─ unicode-canonical-property-names-ecmascript@2.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mathiasbynens/unicode-canonical-property-names-ecmascript
+│  ├─ publisher: Mathias Bynens
+│  ├─ url: https://mathiasbynens.be/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unicode-canonical-property-names-ecmascript
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unicode-canonical-property-names-ecmascript/LICENSE-MIT.txt
+├─ unicode-match-property-ecmascript@2.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mathiasbynens/unicode-match-property-ecmascript
+│  ├─ publisher: Mathias Bynens
+│  ├─ url: https://mathiasbynens.be/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unicode-match-property-ecmascript
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unicode-match-property-ecmascript/LICENSE-MIT.txt
+├─ unicode-match-property-value-ecmascript@2.2.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mathiasbynens/unicode-match-property-value-ecmascript
+│  ├─ publisher: Mathias Bynens
+│  ├─ url: https://mathiasbynens.be/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unicode-match-property-value-ecmascript
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unicode-match-property-value-ecmascript/LICENSE-MIT.txt
+├─ unicode-property-aliases-ecmascript@2.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/mathiasbynens/unicode-property-aliases-ecmascript
+│  ├─ publisher: Mathias Bynens
+│  ├─ url: https://mathiasbynens.be/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unicode-property-aliases-ecmascript
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unicode-property-aliases-ecmascript/LICENSE-MIT.txt
+├─ unique-string@2.0.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/sindresorhus/unique-string
+│  ├─ publisher: Sindre Sorhus
+│  ├─ email: sindresorhus@gmail.com
+│  ├─ url: sindresorhus.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unique-string
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/unique-string/license
+├─ universalify@2.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/RyanZim/universalify
+│  ├─ publisher: Ryan Zimmerman
+│  ├─ email: opensrc@ryanzim.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/universalify
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/universalify/LICENSE
+├─ upath@1.2.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/anodynos/upath
+│  ├─ publisher: Angelos Pikoulas
+│  ├─ email: agelos.pikoulas@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/upath
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/upath/LICENSE
+├─ update-browserslist-db@1.1.4
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/browserslist/update-db
+│  ├─ publisher: Andrey Sitnik
+│  ├─ email: andrey@sitnik.ru
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/update-browserslist-db
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/update-browserslist-db/LICENSE
+├─ vite-plugin-pwa@0.19.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vite-pwa/vite-plugin-pwa
+│  ├─ publisher: antfu
+│  ├─ email: anthonyfu117@hotmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vite-plugin-pwa
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vite-plugin-pwa/LICENSE
+├─ vite@5.4.21
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vitejs/vite
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vite
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vite/LICENSE.md
+├─ vscode-uri@3.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/microsoft/vscode-uri
+│  ├─ publisher: Microsoft
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vscode-uri
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vscode-uri/LICENSE.md
+├─ vue-demi@0.14.10
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/antfu/vue-demi
+│  ├─ publisher: Anthony Fu
+│  ├─ email: anthonyfu117@hotmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vue-demi
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vue-demi/LICENSE
+├─ vue-router@4.6.3
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/router
+│  ├─ publisher: Eduardo San Martin Morote
+│  ├─ email: posva13@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vue-router
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vue-router/LICENSE
+├─ vue-tsc@2.2.12
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/language-tools
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vue-tsc
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vue-tsc/LICENSE
+├─ vue@3.5.24
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/vuejs/core
+│  ├─ publisher: Evan You
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vue
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/vue/LICENSE
+├─ webidl-conversions@4.0.2
+│  ├─ licenses: BSD-2-Clause
+│  ├─ repository: https://github.com/jsdom/webidl-conversions
+│  ├─ publisher: Domenic Denicola
+│  ├─ email: d@domenic.me
+│  ├─ url: https://domenic.me/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/webidl-conversions
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/webidl-conversions/LICENSE.md
+├─ whatwg-url@7.1.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/jsdom/whatwg-url
+│  ├─ publisher: Sebastian Mayr
+│  ├─ email: github@smayr.name
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/whatwg-url
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/whatwg-url/LICENSE.txt
+├─ which-boxed-primitive@1.1.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/which-boxed-primitive
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/which-boxed-primitive
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/which-boxed-primitive/LICENSE
+├─ which-builtin-type@1.2.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/which-builtin-type
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/which-builtin-type
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/which-builtin-type/LICENSE
+├─ which-collection@1.0.2
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/which-collection
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/which-collection
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/which-collection/LICENSE
+├─ which-typed-array@1.1.19
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/inspect-js/which-typed-array
+│  ├─ publisher: Jordan Harband
+│  ├─ email: ljharb@gmail.com
+│  ├─ url: http://ljharb.codes
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/which-typed-array
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/which-typed-array/LICENSE
+├─ workbox-background-sync@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-background-sync
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-background-sync/LICENSE
+├─ workbox-broadcast-update@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-broadcast-update
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-broadcast-update/LICENSE
+├─ workbox-build@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-build/LICENSE
+├─ workbox-cacheable-response@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-cacheable-response
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-cacheable-response/LICENSE
+├─ workbox-core@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-core
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-core/LICENSE
+├─ workbox-expiration@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-expiration
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-expiration/LICENSE
+├─ workbox-google-analytics@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-google-analytics
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-google-analytics/LICENSE
+├─ workbox-navigation-preload@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-navigation-preload
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-navigation-preload/LICENSE
+├─ workbox-precaching@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-precaching
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-precaching/LICENSE
+├─ workbox-range-requests@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-range-requests
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-range-requests/LICENSE
+├─ workbox-recipes@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-recipes
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-recipes/LICENSE
+├─ workbox-routing@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-routing
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-routing/LICENSE
+├─ workbox-strategies@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-strategies
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-strategies/LICENSE
+├─ workbox-streams@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-streams
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-streams/LICENSE
+├─ workbox-sw@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-sw
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-sw/LICENSE
+├─ workbox-window@7.3.0
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/googlechrome/workbox
+│  ├─ publisher: Google's Web DevRel Team and Google's Aurora Team
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-window
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/workbox-window/LICENSE
+├─ wrappy@1.0.2
+│  ├─ licenses: ISC
+│  ├─ repository: https://github.com/npm/wrappy
+│  ├─ publisher: Isaac Z. Schlueter
+│  ├─ email: i@izs.me
+│  ├─ url: http://blog.izs.me/
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/wrappy
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/wrappy/LICENSE
+└─ yallist@3.1.1
+   ├─ licenses: ISC
+   ├─ repository: https://github.com/isaacs/yallist
+   ├─ publisher: Isaac Z. Schlueter
+   ├─ email: i@izs.me
+   ├─ url: http://blog.izs.me/
+   ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/yallist
+   └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/yallist/LICENSE
+

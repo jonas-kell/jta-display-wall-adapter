@@ -35,3 +35,8 @@ WORKDIR /app
 
 # Copy the built executable from builder stage
 COPY --from=builder /app/jta-display-wall-adapter /app/client
+COPY README.md /usr/share/licenses
+COPY LICENSE /usr/share/licenses
+COPY THIRD_PARTY_LICENSES.md /usr/share/licenses
+COPY THIRD-PARTY-LICENSES-RUST /usr/share/licenses
+COPY THIRD-PARTY-LICENSES-JS /usr/share/licenses

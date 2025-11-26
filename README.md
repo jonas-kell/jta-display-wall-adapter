@@ -1,5 +1,7 @@
 # Display Wall Module by JTA
 
+[![CC BY-NC-ND 4.0][cc-by-nc-nd-shield]][cc-by-nc-nd]
+
 Software used for running custom display walls.
 
 ## Dev
@@ -235,3 +237,40 @@ sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
 sudo reboot
 ```
+
+## Generate Third Party license texts
+
+Rust:
+
+```cmd
+cargo install cargo-license
+cargo license -a > THIRD-PARTY-LICENSES-RUST
+```
+
+JS:
+
+```cmd
+npx license-checker
+cd web_client
+npx license-checker > ./../THIRD-PARTY-LICENSES-JS
+```
+
+## License
+
+Copyright © 2025 `Just in Time Association` - [Website](https://just-in-time-association.de/)
+
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial-NoDerivs 4.0 International License][cc-by-nc-nd].
+
+[![CC BY-NC-ND 4.0][cc-by-nc-nd-image]][cc-by-nc-nd]
+
+Additional Requirement:
+Users must notify `Just in time Association` at [contact@just-in-time-association.de](mailto:contact@just-in-time-association.de) prior to any public use or distribution of this software.
+
+[cc-by-nc-nd]: http://creativecommons.org/licenses/by-nc-nd/4.0/
+[cc-by-nc-nd-image]: https://licensebuttons.net/l/by-nc-nd/4.0/88x31.png
+[cc-by-nc-nd-shield]: https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg
+
+### Third Party Licenses
+
+This project includes third-party assets licensed under separate terms. See [Third Party Licenses](./THIRD_PARTY_LICENSES.md)
