@@ -32,7 +32,7 @@ pub async fn static_handler(
 ) -> impl Responder {
     let path = path.into_inner();
     let file_map = file_map.get_ref();
-    println!("Serving statically {}", path);
+    trace!("Serving statically {}", path);
 
     // Try to resolve the requested path or default to `index.html`.
     let file_path = if path.is_empty() || path == "/" {
