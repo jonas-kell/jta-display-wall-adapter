@@ -25,7 +25,7 @@ services:
       - rust_build_cache:/usr/local/cargo/registry/
       - target_dir:/app/container_target
       - ./:/app/
-    command: cargo watch -x "run -- server --passthrough-address-display-program 192.168.8.119 -v --address-camera-program 192.168.8.119 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --passthrough-to-display-program --address-internal-communication=127.0.0.1 --internal-communication-port 5678 --dp-pos-x=1460 --dp-pos-y=1050 --dp-width=360 --dp-height=120 --internal-webcontrol-port=6789"
+    command: cargo watch -x "run -- server --listen-to-timing-program --passthrough-address-display-program 192.168.8.119 -v --address-camera-program 192.168.8.119 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --passthrough-to-display-program --address-internal-communication=127.0.0.1 --internal-communication-port 5678 --dp-pos-x=1460 --dp-pos-y=1050 --dp-width=360 --dp-height=120 --internal-webcontrol-port=6789"
 
   client:
     environment:

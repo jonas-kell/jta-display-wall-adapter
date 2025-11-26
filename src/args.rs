@@ -6,12 +6,15 @@ pub struct Args {
     /// Mode of operation: 'server' or 'client'
     #[arg(value_enum)]
     pub mode: Mode,
-    /// Port where the application should listen to the timing program
-    #[arg(long, default_value_t = String::from("18690"))]
-    pub listen_port: String,
     /// Verbosity (-v for verbose mode)
     #[arg(short, long, action = clap::ArgAction::SetTrue)]
     pub verbose: bool,
+    /// Port where the application should listen to the timing program
+    #[arg(long, default_value_t = String::from("18690"))]
+    pub listen_port: String,
+    /// Listen to the timing program on listen_port
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub listen_to_timing_program: bool,
     /// Passthrough data to an external display program
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub passthrough_to_display_program: bool,

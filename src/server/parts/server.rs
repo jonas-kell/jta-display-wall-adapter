@@ -35,10 +35,12 @@ pub async fn run_server(args: &Args) -> () {
             passthrough_address_display_program
         );
     }
-    info!(
-        "Listening self to the timing program on {}",
-        own_addr_timing
-    );
+    if args.listen_to_timing_program {
+        info!(
+            "Listening self to the timing program on {}",
+            own_addr_timing
+        );
+    }
 
     let camera_program_timing_address: SocketAddr = format!(
         "{}:{}",
@@ -86,7 +88,7 @@ pub async fn run_server(args: &Args) -> () {
     );
 
     // avoid ports doubling and inform about where to run external display program
-    if args.passthrough_to_display_program {
+    if args.passthrough_to_display_program && args.listen_to_timing_program {
         if args.passthrough_address_display_program == "127.0.0.1"
             && args.passthrough_port_display_program == args.listen_port
         {

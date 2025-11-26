@@ -32,6 +32,11 @@ pub async fn tcp_listener_timing_program(
     shutdown_marker: Arc<AtomicBool>,
     listen_addr: SocketAddr,
 ) -> io::Result<()> {
+    // never listen to the timing program -> we can just die
+    if !args.listen_to_timing_program {
+        return Ok(());
+    };
+
     let listener = TcpListener::bind(listen_addr).await?;
     debug!("TCP listener started on {}", listen_addr);
 
