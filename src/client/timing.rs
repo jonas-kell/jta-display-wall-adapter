@@ -12,6 +12,9 @@ pub struct TimingSettings {
     pub fireworks_on_finish: bool,
     pub max_decimal_places_after_comma: i8,
     pub hold_time_ms: u32,
+    pub play_sound_on_start: bool,
+    pub play_sound_on_intermediate: bool,
+    pub play_sound_on_finish: bool,
 }
 impl TimingSettings {
     pub fn new(args: &Args) -> Self {
@@ -20,6 +23,9 @@ impl TimingSettings {
             fireworks_on_finish: args.fireworks_on_finish,
             max_decimal_places_after_comma: args.max_decimal_place_after_comma,
             hold_time_ms: args.hold_time_ms,
+            play_sound_on_start: args.play_sound_on_start,
+            play_sound_on_intermediate: args.play_sound_on_intermediate,
+            play_sound_on_finish: args.play_sound_on_finish,
         }
     }
 }

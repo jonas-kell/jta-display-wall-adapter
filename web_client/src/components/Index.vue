@@ -44,10 +44,31 @@
                     step="1"
                 />
             </p>
-
             <p>
                 Hold time ms:
                 <input type="number" min="0" max="15000" v-model="mainStore.timingSettings.hold_time_ms" step="100" />
+            </p>
+            <p>
+                Start Sound: {{ mainStore.timingSettings.play_sound_on_start ? "yes" : "no" }}
+                <button @click="mainStore.timingSettings.play_sound_on_start = !mainStore.timingSettings.play_sound_on_start">
+                    Toggle
+                </button>
+            </p>
+            <p>
+                Intermediate Sound: {{ mainStore.timingSettings.play_sound_on_intermediate ? "yes" : "no" }}
+                <button
+                    @click="
+                        mainStore.timingSettings.play_sound_on_intermediate = !mainStore.timingSettings.play_sound_on_intermediate
+                    "
+                >
+                    Toggle
+                </button>
+            </p>
+            <p>
+                Finish Sound: {{ mainStore.timingSettings.play_sound_on_finish ? "yes" : "no" }}
+                <button @click="mainStore.timingSettings.play_sound_on_finish = !mainStore.timingSettings.play_sound_on_finish">
+                    Toggle
+                </button>
             </p>
         </div>
     </template>

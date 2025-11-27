@@ -93,6 +93,15 @@ pub struct Args {
     /// Timing control variable holding times (initial for client, will get sent from server to client, can be set over webcontrol)
     #[arg(long, default_value_t = 2000)]
     pub hold_time_ms: u32,
+    /// Timing control variable for sound playback (initial for client, will get sent from server to client, can be set over webcontrol)
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub play_sound_on_start: bool,
+    /// Timing control variable for sound playback (initial for client, will get sent from server to client, can be set over webcontrol)
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub play_sound_on_intermediate: bool,
+    /// Timing control variable for sound playback (initial for client, will get sent from server to client, can be set over webcontrol)
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub play_sound_on_finish: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]

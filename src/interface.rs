@@ -76,6 +76,7 @@ pub struct ServerStateMachine {
     display_connected: bool,
     database_manager: DatabaseManager,
     sound_engine: Option<AudioPlayer>,
+    timing_settings_template: TimingSettings,
 }
 impl ServerStateMachine {
     pub fn new(
@@ -98,6 +99,7 @@ impl ServerStateMachine {
             display_connected: false,
             database_manager,
             sound_engine,
+            timing_settings_template: TimingSettings::new(args),
         }
     }
 
@@ -147,7 +149,7 @@ impl ServerStateMachine {
                 ));
                 // init-impose the timing settings from the server
                 self.send_message_to_client(MessageFromServerToClient::TimingSettingsUpdate(
-                    TimingSettings::new(&self.args),
+                    self.timing_settings_template.clone(),
                 ));
 
                 // send client advertisement images
@@ -177,6 +179,7 @@ impl ServerStateMachine {
                 ));
             }
             MessageFromClientToServer::TimingSettingsState(set) => {
+                self.timing_settings_template = set.clone();
                 self.send_message_to_web_control(MessageToWebControl::TimingSettingsState(set));
             }
         }
@@ -239,7 +242,9 @@ impl ServerStateMachine {
                     store_to_database!(list, self);
                 }
                 InstructionFromCameraProgram::HeatStart(start) => {
-                    self.play_sound(Sound::Beep1);
+                    if self.timing_settings_template.play_sound_on_start {
+                        self.play_sound(Sound::Beep1);
+                    }
                     store_to_database!(start, self);
                 }
                 InstructionFromCameraProgram::HeatFalseStart(false_start) => {
@@ -254,7 +259,9 @@ impl ServerStateMachine {
                     }
                 }
                 InstructionFromCameraProgram::HeatIntermediate(intermediate) => {
-                    self.play_sound(Sound::Beep2);
+                    if self.timing_settings_template.play_sound_on_intermediate {
+                        self.play_sound(Sound::Beep2);
+                    }
                     store_to_database!(intermediate, self);
                 }
                 InstructionFromCameraProgram::HeatWind(wind) => {
@@ -264,7 +271,9 @@ impl ServerStateMachine {
                     store_to_database!(missing_wind, self);
                 }
                 InstructionFromCameraProgram::HeatFinish(finish) => {
-                    self.play_sound(Sound::Beep3);
+                    if self.timing_settings_template.play_sound_on_finish {
+                        self.play_sound(Sound::Beep3);
+                    }
                     store_to_database!(finish, self);
                 }
                 InstructionFromCameraProgram::CompetitorEvaluated(evaluated) => {
@@ -510,9 +519,6 @@ impl ClientStateMachine {
                 self.push_new_message(MessageFromClientToServer::Version(String::from(
                     crate_version!(),
                 )));
-                self.push_new_message(MessageFromClientToServer::TimingSettingsState(
-                    self.timing_settings_template.clone(),
-                ));
             }
             MessageFromServerToClient::DisplayText(text) => {
                 debug!("Server requested display mode to be switched to text");
