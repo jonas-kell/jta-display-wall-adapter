@@ -13,7 +13,30 @@ RUN apt-get update && apt-get install -y \
     libwayland-dev \
     libxkbcommon0 \
     libxkbcommon-x11-0 \
+    libasound2 \
+    libasound2-dev \
+    libpulse0 \
+    libpulse-dev \
+    libpulse-mainloop-glib0 \
+    alsa-utils \
+    libasound2-plugins \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
+
+RUN cat <<'EOF' > /etc/asound.conf
+pcm.!default {
+    type pulse
+    fallback "sysdefault"
+    hint {
+        show on
+        description "PulseAudio Sound Server"
+    }
+}
+
+ctl.!default {
+    type pulse
+}
+EOF
 
 RUN cargo install watchexec-cli
 

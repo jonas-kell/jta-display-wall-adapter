@@ -2,6 +2,7 @@ use crate::args::Args;
 use crate::instructions::InstructionCommunicationChannel;
 use crate::interface::ServerStateMachine;
 use crate::server::forwarding::PacketCommunicationChannel;
+use crate::server::parts::audio::play_audio_background;
 use crate::server::parts::client_communicator::client_communicator;
 use crate::server::parts::database::create_database_manager;
 use crate::server::parts::tcp_client_camera_program::tcp_client_camera_program;
@@ -24,6 +25,8 @@ pub async fn run_server(args: &Args) -> () {
     )
     .parse()
     .expect("Invalid display program passthrough address");
+
+    play_audio_background();
 
     let own_addr_timing: SocketAddr = format!("0.0.0.0:{}", args.listen_port)
         .parse()

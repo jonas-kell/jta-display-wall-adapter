@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
     libwayland-dev \
     libxkbcommon0 \
     libxkbcommon-x11-0 \
+    libasound2-dev \
+    libpulse-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update && apt-get install -y mingw-w64 \

@@ -22,6 +22,7 @@ docker compose -f docker-compose.diesel.yml run --rm diesel migration run && doc
 Run dev mode
 
 ```cmd
+echo -e "UID=$UID\nHOME=$HOME" > .env
 docker compose up
 ```
 

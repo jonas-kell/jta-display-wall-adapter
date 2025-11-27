@@ -1,6 +1,13 @@
 # ===== Stage 1: Build =====
 FROM rust:1.89 AS builder
 
+# Sound code from server needs sound dev libs to be installed, even if it will not work in the container anyway
+RUN apt-get update && apt-get install -y \
+    libasound2-dev \
+    libpulse-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY . .
 
@@ -16,7 +23,7 @@ RUN --mount=type=cache,target=/usr/local/cargo-${TARGETARCH} \
 # ===== Stage 2: Runtime =====
 FROM debian:trixie
 
-# Install only runtime dependencies for GUI
+# Install only runtime dependencies for GUI - display client has no sound. No sound runtime installed
 RUN apt-get update && apt-get install -y \
     libx11-6 \
     libx11-xcb1 \

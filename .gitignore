@@ -29,3 +29,5 @@ coords.txt
 /web_client/dist/**
 /web_client/node_modules
 /web_client/dev-dist
+
+.env

@@ -15,3 +15,4 @@
 /web_client/**
 !/web_client/dist/
 !/web_client/dist/**
+/.env

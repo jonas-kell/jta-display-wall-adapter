@@ -1,3 +1,4 @@
+mod audio;
 mod client_communicator;
 mod database;
 pub mod server;
