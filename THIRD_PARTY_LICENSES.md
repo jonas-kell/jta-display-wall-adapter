@@ -8,6 +8,11 @@ This [project](https://github.com/jonas-kell/jta-display-wall-adapter) includes 
     Licensed under the Lottie Simple License:
     https://lottiefiles.com/page/license
 
+-   Boop Sound (assets/Boop/boop.wav)
+    boop.wav by jeckkech -- https://freesound.org/s/391649/ -- License: Creative Commons 0
+    https://freesound.org/people/jeckkech/sounds/391649/
+    -   Other sounds in that folder are derived from that
+
 ## Packages used
 
 The built executables and docker containers (e.g. on [Docker Hub](https://hub.docker.com/repository/docker/kellehorreur/jta-display-wall-adapter/general)) bundle several external packages.

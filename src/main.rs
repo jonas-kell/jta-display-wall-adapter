@@ -26,7 +26,7 @@ fn is_port_in_use(port: &str) -> bool {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    const THIRD_PARTY_LOG_LEVELS: &str = "actix=off,reqwest=off,hyper=off,mio=off,wgpu_core=info,wgpu_hal=info,naga=info,calloop=info,neli=info,tracing=off";
+    const THIRD_PARTY_LOG_LEVELS: &str = "actix=off,reqwest=off,hyper=off,mio=off,wgpu_core=info,wgpu_hal=info,naga=info,calloop=info,neli=info,tracing=off,symphonia=off";
 
     let args = Args::parse();
     match args.verbose {

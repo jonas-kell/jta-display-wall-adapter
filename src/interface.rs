@@ -9,7 +9,7 @@ use crate::{
         IncomingInstruction, InstructionCommunicationChannel, InstructionFromCameraProgram,
         InstructionFromTimingProgram, InstructionToTimingProgram,
     },
-    server::camera_program_types::HeatStartList,
+    server::{camera_program_types::HeatStartList, AudioPlayer, Sound},
     times::DayTime,
     webserver::{DisplayClientState, MessageFromWebControl, MessageToWebControl},
 };
@@ -75,6 +75,7 @@ pub struct ServerStateMachine {
     comm_channel: InstructionCommunicationChannel,
     display_connected: bool,
     database_manager: DatabaseManager,
+    sound_engine: Option<AudioPlayer>,
 }
 impl ServerStateMachine {
     pub fn new(
@@ -82,12 +83,28 @@ impl ServerStateMachine {
         comm_channel: InstructionCommunicationChannel,
         database_manager: DatabaseManager,
     ) -> Self {
+        let sound_engine = match AudioPlayer::new() {
+            Err(e) => {
+                error!("Failed to initialize Audio Playback: {}", e);
+                None
+            }
+            Ok(e) => Some(e),
+        };
+
         Self {
             args: args.clone(),
             state: ServerState::PassthroughClient,
             comm_channel, // only used to send instructions outwards. Rest is done via incoming commands (there is a handler that continously takes them out of the channel and forwards them into us)
             display_connected: false,
             database_manager,
+            sound_engine,
+        }
+    }
+
+    fn play_sound(&self, sound: Sound) {
+        match &self.sound_engine {
+            None => error!("Can not play sounds, as sound engine not initialized"),
+            Some(se) => se.play_audio_background(sound),
         }
     }
 
@@ -222,6 +239,7 @@ impl ServerStateMachine {
                     store_to_database!(list, self);
                 }
                 InstructionFromCameraProgram::HeatStart(start) => {
+                    self.play_sound(Sound::Beep1);
                     store_to_database!(start, self);
                 }
                 InstructionFromCameraProgram::HeatFalseStart(false_start) => {
@@ -236,6 +254,7 @@ impl ServerStateMachine {
                     }
                 }
                 InstructionFromCameraProgram::HeatIntermediate(intermediate) => {
+                    self.play_sound(Sound::Beep2);
                     store_to_database!(intermediate, self);
                 }
                 InstructionFromCameraProgram::HeatWind(wind) => {
@@ -245,6 +264,7 @@ impl ServerStateMachine {
                     store_to_database!(missing_wind, self);
                 }
                 InstructionFromCameraProgram::HeatFinish(finish) => {
+                    self.play_sound(Sound::Beep3);
                     store_to_database!(finish, self);
                 }
                 InstructionFromCameraProgram::CompetitorEvaluated(evaluated) => {
