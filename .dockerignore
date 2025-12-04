@@ -16,3 +16,4 @@
 !/web_client/dist/
 !/web_client/dist/**
 /.env
+/usb_sniffer

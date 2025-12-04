@@ -1,0 +1,17 @@
+43 20 30 2c 30 0d <- zero
+43 20 31 2c 36 0d <- backwind = 20 space
+43 2d 30 2c 30 0d <- headwind = 2d -
+
+53 50 32 48 5c 72 0d -> seems to disable sensor polling
+4f -> ??? shortly after probably some kind of ack
+53 50 32 4e 5c 72 0d -> seems to enable sensor polling
+
+List of what this does:
+4e: N -> Normal polling
+57: W -> 5s Weit
+54: T -> 8s ???
+4c: L -> 10s Lauf
+5a: Z -> 12s ???
+48: H -> 13s Hürden
+
+20s (wartezeit dann 10) triggert auch 4c, aber erst nach 10s = 200m
