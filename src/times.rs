@@ -377,7 +377,7 @@ impl From<DayTime> for Duration {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RaceWind {
     /// - is gegenwind aka head wind, + is rückenwind aka back wind
     pub back_wind: bool,

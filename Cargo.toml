@@ -17,6 +17,7 @@ env_logger = "0.10"
 log = "0.4"
 image = "0.25.8"
 async-channel = "2.3.1"
+async-broadcast = "0.7.2"
 chrono = { version = "0.4.42", features = ["serde"] }
 nom = "8.0.0"
 quick-xml = { version = "0.31", features = ["serialize"] }
@@ -25,7 +26,7 @@ winit = "0.30"
 pixels = "0.15.0"
 fontdue = "0.9.3"
 tokio-util = { version = "0.7.17", features = ["codec"] }
-tokio-serde = { version = "0.9.0" , features = ["bincode"] } 
+tokio-serde = { version = "0.9.0" , features = ["bincode", "json"] } 
 futures = "0.3.31"
 actix-web = "4.9"
 actix-cors = "0.7.0"
@@ -39,6 +40,7 @@ diesel = { version = "2.2.12", features = ["sqlite", "uuid", "chrono", "r2d2"] }
 diesel_migrations = "2.3"
 r2d2 = "0.8"
 rodio = "0.21.1"
+serialport = "4.1"
 
 images_core = { path = "./images_core" }
 

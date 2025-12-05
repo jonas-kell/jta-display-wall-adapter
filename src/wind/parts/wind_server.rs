@@ -1,0 +1,49 @@
+use crate::args::Args;
+use crate::wind::format::WindMessageBroadcast;
+use crate::wind::parts::comport_adapter::run_com_port_task;
+use crate::wind::parts::tcp::run_network_task;
+use std::io::Error;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
+pub async fn run_wind_server(args: &Args) -> () {
+    // wind server does not need to store many messages. Will just trash them earlier
+    let (mut tx_out_to_tcp, rx_in_from_com_port) =
+        async_broadcast::broadcast::<WindMessageBroadcast>(3); // one data frame, one mesaurement frame and one space at least (more should not be read in one iteration and is also not interesting for us)
+    tx_out_to_tcp.set_overflow(true); // do not care, if messages get lost. They there wouuld have been no tcp client to receive them anyway, it seems
+
+    // linux: "/dev/serial/by-id/usb-Alex_Taradov_USB_Sniffer_Lite__RP2040__7A6B5C58-if00";
+    let port_path = args.wind_usb_sniffer_address.clone();
+    // TODO Windows expects strange \\\\.\\ prefix for higher number COM ports (from 10 on).
+
+    let shutdown_marker = Arc::new(AtomicBool::new(false));
+
+    let network_task = tokio::spawn(run_network_task(
+        args.clone(),
+        rx_in_from_com_port,
+        Arc::clone(&shutdown_marker),
+    ));
+    let com_port_task = tokio::spawn(run_com_port_task(
+        args.clone(),
+        tx_out_to_tcp,
+        port_path,
+        Arc::clone(&shutdown_marker),
+    ));
+    let shutdown_marker_sdt = Arc::clone(&shutdown_marker);
+    let shutdown_task = tokio::spawn(async move {
+        // listen for ctrl-c
+        tokio::signal::ctrl_c().await?;
+
+        shutdown_marker_sdt.store(true, Ordering::SeqCst);
+
+        Ok::<_, Error>(())
+    });
+
+    // async runtime stuff started, the display task doesn't like being inside tokio, so it comes after and takes shutdown orders via Arc
+    tokio::spawn(async move {
+        match tokio::try_join!(com_port_task, network_task, shutdown_task) {
+            Err(_) => error!("Error in at least one wind server task"),
+            Ok(_) => info!("All wind server tasks closed successfully"),
+        };
+    });
+}

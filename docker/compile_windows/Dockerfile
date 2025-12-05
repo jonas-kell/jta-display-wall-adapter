@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon-x11-0 \
     libasound2-dev \
     libpulse-dev \
+    libudev-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 

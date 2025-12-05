@@ -42,6 +42,15 @@ pub struct Args {
     /// Port where the internal communication between server and webclient takes place
     #[arg(long, default_value_t = String::from("6789"))]
     pub internal_webcontrol_port: String,
+    /// Port where the internal communication between wind_server and server
+    #[arg(long, default_value_t = String::from("7890"))]
+    pub wind_exchange_port: String,
+    /// Latest interval duration, the wind usb sniffer is probed
+    #[arg(long, default_value_t = 500)]
+    pub poll_wind_usb_every_nr_ms: u64,
+    /// Where to find the usb sniffer (windows COM port or linux usb serial device path)
+    #[arg(long, default_value_t = String::from("COM4"))]
+    pub wind_usb_sniffer_address: String,
     /// Address of where display client lives (for the server to talk to) (like "127.0.0.1")
     #[arg(long, default_value_t = String::from("127.0.0.1"))]
     pub address_internal_communication: String,
@@ -108,6 +117,7 @@ pub struct Args {
 pub enum Mode {
     Server,
     Client,
+    Wind,
 }
 
 pub const MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS: usize = 100;

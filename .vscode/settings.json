@@ -1,5 +1,5 @@
 {
-    "rust-analyzer.linkedProjects": ["./Cargo.toml", "./images_core/Cargo.toml", "./usb_sniffer/Cargo.toml"],
+    "rust-analyzer.linkedProjects": ["./Cargo.toml", "./images_core/Cargo.toml"],
     "rust-analyzer.cargo.extraEnv": {
         "OUT_DIR": "images_core"
     }

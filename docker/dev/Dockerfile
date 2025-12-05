@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     libpulse-mainloop-glib0 \
     alsa-utils \
     libasound2-plugins \
+    libudev-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 

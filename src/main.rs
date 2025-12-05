@@ -3,7 +3,10 @@ extern crate log;
 
 use std::net::TcpListener;
 
-use crate::args::{Args, Mode};
+use crate::{
+    args::{Args, Mode},
+    wind::run_wind_server,
+};
 use clap::Parser;
 use client::run_client;
 use server::run_server;
@@ -18,6 +21,7 @@ mod interface;
 mod server;
 mod times;
 mod webserver;
+mod wind;
 
 fn is_port_in_use(port: &str) -> bool {
     let addr = format!("0.0.0.0:{}", port);
@@ -66,9 +70,25 @@ async fn main() -> std::io::Result<()> {
         }
     }
 
+    if matches!(args.mode, Mode::Wind) {
+        if is_port_in_use(&args.wind_exchange_port) {
+            error!(
+                "The program could not be started, as the tcp port {} is already in use.",
+                args.wind_exchange_port
+            );
+            error!("Either an incompatible program is already running, or a second instance of this program is");
+
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::AddrInUse,
+                "Wind Exchange Address already used",
+            ));
+        }
+    }
+
     match args.mode {
         Mode::Server => run_server(&args).await,
         Mode::Client => run_client(&args).await,
+        Mode::Wind => run_wind_server(&args).await,
     }
 
     Ok(())

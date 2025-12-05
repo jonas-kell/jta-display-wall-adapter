@@ -5,6 +5,7 @@ FROM rust:1.89 AS builder
 RUN apt-get update && apt-get install -y \
     libasound2-dev \
     libpulse-dev \
+    libudev-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
