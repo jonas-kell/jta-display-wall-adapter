@@ -29,18 +29,20 @@ async fn main() -> std::io::Result<()> {
     const THIRD_PARTY_LOG_LEVELS: &str = "actix=off,reqwest=off,hyper=off,mio=off,wgpu_core=info,wgpu_hal=info,naga=info,calloop=info,neli=info,tracing=off,symphonia=off";
 
     let args = Args::parse();
-    match args.verbose {
-        0 => {
-            std::env::set_var("RUST_LOG", format!("info,{}", THIRD_PARTY_LOG_LEVELS));
-        }
-        1 => {
-            std::env::set_var("RUST_LOG", format!("debug,{}", THIRD_PARTY_LOG_LEVELS));
-        }
-        2 => {
-            std::env::set_var("RUST_LOG", format!("trace,{}", THIRD_PARTY_LOG_LEVELS));
-        }
-        _ => {
-            std::env::set_var("RUST_LOG", format!("trace"));
+    unsafe {
+        match args.verbose {
+            0 => {
+                std::env::set_var("RUST_LOG", format!("info,{}", THIRD_PARTY_LOG_LEVELS));
+            }
+            1 => {
+                std::env::set_var("RUST_LOG", format!("debug,{}", THIRD_PARTY_LOG_LEVELS));
+            }
+            2 => {
+                std::env::set_var("RUST_LOG", format!("trace,{}", THIRD_PARTY_LOG_LEVELS));
+            }
+            _ => {
+                std::env::set_var("RUST_LOG", format!("trace"));
+            }
         }
     }
 
