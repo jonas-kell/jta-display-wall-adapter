@@ -1,5 +1,4 @@
-use crate::hex::{get_hex_repr, parse_race_time, take_until_and_consume};
-use crate::times::RaceWind;
+use crate::hex::{parse_race_wind, take_until_and_consume};
 use crate::wind::format::{WindMeasurement, WindMeasurementType, WindMessageBroadcast};
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -7,23 +6,19 @@ use nom::character::complete::multispace0;
 use nom::{IResult, Parser};
 
 fn parse_wind_data_command(input: &[u8]) -> IResult<&[u8], WindMessageBroadcast> {
-    warn!("WE GOT HERE: {}", get_hex_repr(input));
+    // 4320302C300D
 
-    let (input, _) = tag(&b"\x20\x20\x20\x42"[..])(input)?;
+    let (input, _) = tag(&b"C"[..])(input)?;
     let (input, _) = multispace0(input)?;
-    let (input, _rt) = parse_race_time(input)?;
-    let (input, _) = take_until_and_consume(&b"\x0D"[..], input)?;
+    let (input, race_wind_slice) = take_until_and_consume(&b"\x0d"[..], input)?;
+    let (_, race_wind) = parse_race_wind(race_wind_slice)?;
 
     Ok((
         input,
         WindMessageBroadcast::Measured(WindMeasurement {
             probable_measurement_type: WindMeasurementType::Polling,
             time: None,
-            wind: RaceWind {
-                back_wind: true,
-                whole_number_part: 11,
-                fraction_part: 0,
-            },
+            wind: race_wind,
         }),
     ))
 }

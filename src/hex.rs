@@ -1,7 +1,7 @@
-use crate::times::RaceTime;
+use crate::times::{RaceTime, RaceWind};
 use nom::bytes::complete::{take_while, take_while1};
 use nom::character::complete::satisfy;
-use nom::combinator::{opt, peek};
+use nom::combinator::{eof, opt, peek};
 pub use nom::error::{Error as NomError, ErrorKind as NomErrorKind};
 use nom::sequence::preceded;
 pub use nom::Err::{Error as NomErr, Failure as NomFailure};
@@ -31,6 +31,15 @@ pub fn parse_u16(input: &[u8]) -> IResult<&[u8], u16> {
         std::str::from_utf8(bytes)
             .map_err(|_| "invalid utf8")
             .and_then(|s| s.parse::<u16>().map_err(|_| "invalid number"))
+    })
+    .parse(input)
+}
+
+pub fn parse_u8(input: &[u8]) -> IResult<&[u8], u8> {
+    map_res(take_while1(|c: u8| c.is_ascii_digit()), |bytes: &[u8]| {
+        std::str::from_utf8(bytes)
+            .map_err(|_| "invalid utf8")
+            .and_then(|s| s.parse::<u8>().map_err(|_| "invalid number"))
     })
     .parse(input)
 }
@@ -91,6 +100,25 @@ pub fn parse_race_time(input: &[u8]) -> IResult<&[u8], RaceTime> {
             hundrets,
             thousands,
             ten_thousands,
+        },
+    ))
+}
+
+pub fn parse_race_wind(input: &[u8]) -> IResult<&[u8], RaceWind> {
+    // Parse optional leading "-"
+    let (input, minus_opt) = opt(tag("-")).parse(input)?;
+    let back_wind = minus_opt.is_none();
+
+    // whole part, comma, fractional part, and ensure EOF
+    let (input, (whole_number_part, _, fraction_part, _)) =
+        (parse_u16, tag(","), parse_u8, eof).parse(input)?;
+
+    Ok((
+        input,
+        RaceWind {
+            back_wind,
+            whole_number_part,
+            fraction_part: fraction_part % 10,
         },
     ))
 }
