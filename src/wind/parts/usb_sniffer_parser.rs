@@ -21,12 +21,12 @@ pub fn decode_single_usb_dump(packet: &[u8]) -> Vec<Result<WindMessageBroadcast,
                 match opt_comm {
                     None => {
                         // Not a message to pass on
-                        continue;
                     }
                     Some(command) => {
                         res.push(Ok(command));
                     }
                 }
+                continue;
             }
         }
 
