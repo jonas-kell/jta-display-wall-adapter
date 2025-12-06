@@ -1,4 +1,4 @@
-use crate::hex::{parse_race_time, take_until_and_consume};
+use crate::hex::{get_hex_repr, parse_race_time, take_until_and_consume};
 use crate::times::RaceWind;
 use crate::wind::format::{WindMeasurement, WindMeasurementType, WindMessageBroadcast};
 use nom::branch::alt;
@@ -7,6 +7,8 @@ use nom::character::complete::multispace0;
 use nom::{IResult, Parser};
 
 fn parse_wind_data_command(input: &[u8]) -> IResult<&[u8], WindMessageBroadcast> {
+    warn!("WE GOT HERE: {}", get_hex_repr(input));
+
     let (input, _) = tag(&b"\x20\x20\x20\x42"[..])(input)?;
     let (input, _) = multispace0(input)?;
     let (input, _rt) = parse_race_time(input)?;

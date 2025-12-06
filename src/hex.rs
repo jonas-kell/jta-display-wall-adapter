@@ -1,5 +1,6 @@
 use crate::times::RaceTime;
 use nom::bytes::complete::{take_while, take_while1};
+use nom::character::complete::satisfy;
 use nom::combinator::{opt, peek};
 pub use nom::error::{Error as NomError, ErrorKind as NomErrorKind};
 use nom::sequence::preceded;
@@ -109,4 +110,20 @@ pub fn get_hex_repr(buf: &[u8]) -> String {
 
 pub fn hex_log_bytes(buf: &[u8]) {
     trace!("({} bytes) Hex: \n{}", buf.len(), get_hex_repr(buf),);
+}
+
+/// takes <space><hex1><hex2> like " a1" or " 4A"
+pub fn byte_parser<'a>() -> impl Parser<&'a [u8], Output = u8, Error = NomError<&'a [u8]>> {
+    map_res(
+        (
+            tag(" ".as_bytes()),                // literal space
+            satisfy(|c| c.is_ascii_hexdigit()), // hex1
+            satisfy(|c| c.is_ascii_hexdigit()), // hex2
+        ),
+        |(_, h1, h2)| {
+            // convert `[h1, h2]` to a real byte
+            let s: [u8; 2] = [h1 as u8, h2 as u8];
+            u8::from_str_radix(std::str::from_utf8(&s).unwrap(), 16)
+        },
+    )
 }
