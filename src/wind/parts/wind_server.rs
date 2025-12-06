@@ -34,12 +34,17 @@ pub async fn run_wind_server(args: &Args) -> () {
         rx_in_from_com_port,
         Arc::clone(&shutdown_marker),
     ));
-    let com_port_task = tokio::spawn(run_com_port_task(
-        args.clone(),
-        tx_out_to_tcp,
-        port_path,
-        Arc::clone(&shutdown_marker),
-    ));
+    let com_task_args = args.clone();
+    let com_task_shutdown_marker = shutdown_marker.clone();
+    let com_port_task = tokio::task::spawn_blocking(move || {
+        // this is not any async task, but blocking because the serialport lib is blocking
+        run_com_port_task(
+            com_task_args,
+            tx_out_to_tcp,
+            port_path,
+            com_task_shutdown_marker,
+        )
+    });
     let shutdown_marker_sdt = Arc::clone(&shutdown_marker);
     let shutdown_task = tokio::spawn(async move {
         // listen for ctrl-c

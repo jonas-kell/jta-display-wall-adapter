@@ -6,10 +6,10 @@ use serialport::SerialPort;
 use std::io::{self, Read};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::thread::sleep;
 use std::time::Duration;
-use tokio::time::sleep;
 
-pub async fn run_com_port_task(
+pub fn run_com_port_task(
     args: Args,
     tx_to_tcp: Sender<WindMessageBroadcast>,
     port_path: String,
@@ -36,7 +36,7 @@ pub async fn run_com_port_task(
         {
             Err(e) => {
                 error!("IO error when opening COM port: {}", e.to_string());
-                sleep(Duration::from_millis(1000)).await; // wait shortly before trying to reconnect
+                sleep(Duration::from_millis(1000)); // wait shortly before trying to reconnect
                 continue;
             }
             Ok(port) => {
@@ -47,7 +47,7 @@ pub async fn run_com_port_task(
 
         // probably not needed if we correctly set the things below
         // but wait small time for the COM port connection to stabilize
-        sleep(std::time::Duration::from_millis(50)).await;
+        sleep(std::time::Duration::from_millis(50));
 
         debug!("Writing terminal ready...");
         // only needed on windows
