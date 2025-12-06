@@ -42,7 +42,7 @@ The pico needs to be flashed with stock `UsbSnifferLite.uf2` from the repository
 # search for device in linux (eg ls in /dev/serial/by-id/) -> here example data from dev pico is inserted
 cat /dev/serial/by-id/usb-Alex_Taradov_USB_Sniffer_Lite__RP2040__7A6B5C58-if00
 
-# Test: connect to the virtual com port (same path as above) - 3000000 baud
+# Test: connect to the virtual COM port (same path as above) - 3000000 baud
 sudo apt install screen
 screen /dev/serial/by-id/usb-Alex_Taradov_USB_Sniffer_Lite__RP2040__7A6B5C58-if00 3000000
 

@@ -35,18 +35,18 @@ pub async fn run_com_port_task(
             .open()
         {
             Err(e) => {
-                error!("IO error when opening com port: {}", e.to_string());
+                error!("IO error when opening COM port: {}", e.to_string());
                 sleep(Duration::from_millis(1000)).await; // wait shortly before trying to reconnect
                 continue;
             }
             Ok(port) => {
-                info!("Com port opened!");
+                info!("COM port opened!");
                 port
             }
         };
 
         // probably not needed if we correctly set the things below
-        // but wait small time for the com port connection to stabilize
+        // but wait small time for the COM port connection to stabilize
         sleep(std::time::Duration::from_millis(50)).await;
 
         debug!("Writing terminal ready...");
@@ -153,15 +153,15 @@ pub async fn run_com_port_task(
 }
 
 fn send_data_to_com_port(port: &mut Box<dyn SerialPort>, data: &[u8]) -> Result<(), ()> {
-    trace!("Writing data to com port: {:?}", data);
+    trace!("Writing data to COM port: {:?}", data);
 
     match port.write_all(data) {
         Ok(()) => {
-            trace!("Successfully written data to com port");
+            trace!("Successfully written data to COM port");
             Ok(())
         }
         Err(e) => {
-            error!("Error when writing data to com port: {}", e.to_string());
+            error!("Error when writing data to COM port: {}", e.to_string());
             Err(())
         }
     }
