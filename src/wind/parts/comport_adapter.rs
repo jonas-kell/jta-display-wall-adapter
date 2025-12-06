@@ -20,7 +20,7 @@ pub fn run_com_port_task(
                                       // TODO move other buffers to heap, too (Box or Vec)
     trace!("USB reading Buffer initialized");
 
-    loop {
+    'outer: loop {
         if shutdown_marker.load(Ordering::SeqCst) {
             info!(
                 "Shutdown requested, stopping trying to connect to port {}",
@@ -86,6 +86,11 @@ pub fn run_com_port_task(
         };
 
         loop {
+            if shutdown_marker.load(Ordering::SeqCst) {
+                info!("Shutdown requested, stopping polling of serial port",);
+                break 'outer;
+            }
+
             match port.read(&mut buf) {
                 Ok(n) => {
                     // to minimize sniffer downtime, immediately instruct the device to start scanning again
@@ -123,7 +128,7 @@ pub fn run_com_port_task(
                                 trace!("Passed new wind command into internal broadcast channel");
                             }
                             Err(e) => {
-                                error!("Error when decoding a part of th eUSB sniffer communication: {}", e.to_string());
+                                error!("Error when decoding a part of the USB sniffer communication: {}", e.to_string());
                             }
                         }
                     }
