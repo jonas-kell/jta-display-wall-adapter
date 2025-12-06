@@ -24,6 +24,11 @@ pub async fn run_com_port_task(
             break;
         }
 
+        trace!("Initializing USB reading Buffer");
+        let mut buf = vec![0u8; 1 << 20]; // 1 mb buffer // !! buffer is on the heap, not wasting that much space on the stack -> it crashes windows... from one whimpy mb...
+                                          // TODO move other buffers to heap, too (Box or Vec)
+        trace!("USB reading Buffer initialized");
+
         info!("Try open port {} ...", port_path);
         let mut port = match serialport::new(&port_path, 3_000_000)
             .timeout(Duration::from_millis(args.poll_wind_usb_every_nr_ms))
@@ -39,9 +44,6 @@ pub async fn run_com_port_task(
                 port
             }
         };
-
-        let mut buf = Box::new([0u8; 2 << 20]); // 1 mb buffer // !! buffer is on the heap, not wasting that much space on the stack -> it crashes windows... from one whimpy mb...
-                                                // TODO move other buffers to heap, too
 
         // probably not needed if we correctly set the things below
         // but wait small time for the com port connection to stabilize
@@ -84,7 +86,7 @@ pub async fn run_com_port_task(
         };
 
         loop {
-            match port.read(&mut *buf) {
+            match port.read(&mut buf) {
                 Ok(n) => {
                     // to minimize sniffer downtime, immediately instruct the device to start scanning again
                     match send_data_to_com_port(&mut port, b"s") {
