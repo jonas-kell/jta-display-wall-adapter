@@ -55,11 +55,8 @@ pub async fn run_wind_server(args: &Args) -> () {
         Ok::<_, Error>(())
     });
 
-    // async runtime stuff started, the display task doesn't like being inside tokio, so it comes after and takes shutdown orders via Arc
-    tokio::spawn(async move {
-        match tokio::try_join!(com_port_task, network_task, shutdown_task) {
-            Err(_) => error!("Error in at least one wind server task"),
-            Ok(_) => info!("All wind server tasks closed successfully"),
-        };
-    });
+    match tokio::try_join!(com_port_task, network_task, shutdown_task) {
+        Err(_) => error!("Error in at least one wind server task"),
+        Ok(_) => info!("All wind server tasks closed successfully"),
+    };
 }
