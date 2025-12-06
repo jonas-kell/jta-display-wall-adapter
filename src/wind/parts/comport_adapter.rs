@@ -15,6 +15,11 @@ pub async fn run_com_port_task(
     port_path: String,
     shutdown_marker: Arc<AtomicBool>,
 ) -> std::io::Result<()> {
+    trace!("Initializing USB reading Buffer");
+    let mut buf = vec![0u8; 1 << 20]; // 1 mb buffer // !! buffer is on the heap, not wasting that much space on the stack -> it crashes windows... from one whimpy mb...
+                                      // TODO move other buffers to heap, too (Box or Vec)
+    trace!("USB reading Buffer initialized");
+
     loop {
         if shutdown_marker.load(Ordering::SeqCst) {
             info!(
@@ -23,11 +28,6 @@ pub async fn run_com_port_task(
             );
             break;
         }
-
-        trace!("Initializing USB reading Buffer");
-        let mut buf = vec![0u8; 1 << 20]; // 1 mb buffer // !! buffer is on the heap, not wasting that much space on the stack -> it crashes windows... from one whimpy mb...
-                                          // TODO move other buffers to heap, too (Box or Vec)
-        trace!("USB reading Buffer initialized");
 
         info!("Try open port {} ...", port_path);
         let mut port = match serialport::new(&port_path, 3_000_000)
