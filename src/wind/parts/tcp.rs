@@ -14,13 +14,10 @@ use tokio_util::codec::{FramedRead, FramedWrite};
 
 pub async fn run_network_task(
     args: Args,
+    listen_addr: SocketAddr,
     rx_from_com_port: Receiver<WindMessageBroadcast>,
     shutdown_marker: Arc<AtomicBool>,
 ) -> Result<(), Error> {
-    let listen_addr: SocketAddr = format!("0.0.0.0:{}", args.wind_exchange_port)
-        .parse()
-        .expect("Invalid wind exchange address");
-
     let listener = TcpListener::bind(listen_addr).await?;
     info!("TCP listener started on {}", listen_addr);
 

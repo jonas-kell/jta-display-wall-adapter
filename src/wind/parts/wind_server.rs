@@ -3,10 +3,18 @@ use crate::wind::format::WindMessageBroadcast;
 use crate::wind::parts::comport_adapter::run_com_port_task;
 use crate::wind::parts::tcp::run_network_task;
 use std::io::Error;
+use std::net::SocketAddr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 pub async fn run_wind_server(args: &Args) -> () {
+    info!("Starting wind server.");
+
+    let listen_addr: SocketAddr = format!("0.0.0.0:{}", args.wind_exchange_port)
+        .parse()
+        .expect("Invalid wind exchange address");
+    info!("TCP server will be bound to {}", listen_addr);
+
     // wind server does not need to store many messages. Will just trash them earlier
     let (mut tx_out_to_tcp, rx_in_from_com_port) =
         async_broadcast::broadcast::<WindMessageBroadcast>(3); // one data frame, one mesaurement frame and one space at least (more should not be read in one iteration and is also not interesting for us)
@@ -16,10 +24,13 @@ pub async fn run_wind_server(args: &Args) -> () {
     let port_path = args.wind_usb_sniffer_address.clone();
     // TODO Windows expects strange \\\\.\\ prefix for higher number COM ports (from 10 on).
 
+    info!("Will connect to USB sniffer at {}", port_path);
+
     let shutdown_marker = Arc::new(AtomicBool::new(false));
 
     let network_task = tokio::spawn(run_network_task(
         args.clone(),
+        listen_addr,
         rx_in_from_com_port,
         Arc::clone(&shutdown_marker),
     ));

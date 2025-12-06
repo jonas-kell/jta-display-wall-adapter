@@ -49,8 +49,9 @@ async fn main() -> std::io::Result<()> {
             }
         }
     }
-
     env_logger::init();
+
+    info!("Starting JTA Display Wall Adapter");
 
     if matches!(args.mode, Mode::Server) {
         if is_port_in_use(&args.listen_port) || is_port_in_use(&args.internal_webcontrol_port) {
