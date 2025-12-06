@@ -40,7 +40,8 @@ pub async fn run_com_port_task(
             }
         };
 
-        let mut buf = [0u8; 2 << 20]; // 1 mb buffer
+        let mut buf = Box::new([0u8; 2 << 20]); // 1 mb buffer // !! buffer is on the heap, not wasting that much space on the stack -> it crashes windows... from one whimpy mb...
+                                                // TODO move other buffers to heap, too
 
         // probably not needed if we correctly set the things below
         // but wait small time for the com port connection to stabilize
@@ -83,7 +84,7 @@ pub async fn run_com_port_task(
         };
 
         loop {
-            match port.read(&mut buf) {
+            match port.read(&mut *buf) {
                 Ok(n) => {
                     // to minimize sniffer downtime, immediately instruct the device to start scanning again
                     match send_data_to_com_port(&mut port, b"s") {
