@@ -76,7 +76,7 @@ fn parse_usb_data_line(input: &[u8]) -> IResult<&[u8], Option<WindMessageBroadca
         Ok(a) => Ok(a),
     }?;
 
-    Ok((input, Some(mes)))
+    Ok((input, mes))
 }
 
 fn throwaway_parse_line(input: &[u8]) -> IResult<&[u8], Option<WindMessageBroadcast>> {
