@@ -19,6 +19,7 @@ pub async fn run_wind_server(args: &Args) -> () {
     let (mut tx_out_to_tcp, rx_in_from_com_port) =
         async_broadcast::broadcast::<WindMessageBroadcast>(3); // one data frame, one mesaurement frame and one space at least (more should not be read in one iteration and is also not interesting for us)
     tx_out_to_tcp.set_overflow(true); // do not care, if messages get lost. They there wouuld have been no tcp client to receive them anyway, it seems
+    let rx_in_from_com_port = rx_in_from_com_port.deactivate();
 
     // linux: "/dev/serial/by-id/usb-Alex_Taradov_USB_Sniffer_Lite__RP2040__7A6B5C58-if00";
     let port_path = args.wind_usb_sniffer_address.clone();

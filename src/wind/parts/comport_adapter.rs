@@ -114,15 +114,11 @@ pub fn run_com_port_task(
                                         trace!("Thrown away old message in internal comm channel");
                                     }
                                     Err(e) => {
-                                        error!(
-                                            "Internal channel gone away somehow: {}",
+                                        warn!(
+                                            "Internal channel not open, no active receivers: {}",
                                             e.to_string()
                                         );
-
-                                        return Err(std::io::Error::new(
-                                            std::io::ErrorKind::ConnectionAborted,
-                                            "Internal comm channel no longer there",
-                                        ));
+                                        continue;
                                     }
                                 }
                                 trace!("Passed new wind command into internal broadcast channel");

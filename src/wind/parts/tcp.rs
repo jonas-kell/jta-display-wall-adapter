@@ -1,6 +1,6 @@
 use crate::args::Args;
 use crate::wind::format::{make_json_exchange_codec, MessageToWindServer, WindMessageBroadcast};
-use async_broadcast::Receiver;
+use async_broadcast::InactiveReceiver;
 use futures::prelude::*;
 use std::io::Error;
 use std::net::SocketAddr;
@@ -15,7 +15,7 @@ use tokio_util::codec::{FramedRead, FramedWrite};
 pub async fn run_network_task(
     args: Args,
     listen_addr: SocketAddr,
-    rx_from_com_port: Receiver<WindMessageBroadcast>,
+    rx_from_com_port: InactiveReceiver<WindMessageBroadcast>,
     shutdown_marker: Arc<AtomicBool>,
 ) -> Result<(), Error> {
     let listener = TcpListener::bind(listen_addr).await?;
@@ -52,7 +52,7 @@ pub async fn run_network_task(
                 // Connection is accepted. Handle all further in own task
 
                 let shutdown_marker = shutdown_marker.clone();
-                let mut rx_from_com_port = rx_from_com_port.clone();
+                let mut rx_from_com_port = rx_from_com_port.activate_cloned();
 
                 tokio::spawn(async move {
                     let shutdown_marker_read = shutdown_marker.clone();
