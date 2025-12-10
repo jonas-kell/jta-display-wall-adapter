@@ -38,6 +38,19 @@ export default defineStore("main", () => {
         }
     });
 
+    const WIND_CONNECTION_TIMEOUT = 5_000; // ms
+    const lastWindPing = ref<number>(Date.now() - 2 * WIND_CONNECTION_TIMEOUT);
+    const now = ref<number>(Date.now());
+    window.setInterval(() => {
+        now.value = Date.now();
+    }, 500);
+    function refreshWindConnectionTimer() {
+        lastWindPing.value = Date.now();
+    }
+    const windServerConnected = computed<boolean>(() => {
+        return now.value - lastWindPing.value <= WIND_CONNECTION_TIMEOUT;
+    });
+
     const logEntriesRolling = new CircularBuffer<LogEntry>(10);
 
     function handleWSMessage(ev: any) {
@@ -58,9 +71,15 @@ export default defineStore("main", () => {
             case InboundMessageType.Logs:
                 const entArr = msg.data;
                 if (entArr.length == 1) {
-                    // entry per push, not requested
-                    logEntriesRolling.unshift(entArr[0]);
-                    logEntries.value = logEntriesRolling.toArray();
+                    const new_entry = entArr[0];
+                    // constant wind spams logs
+                    if (detectWindPolling(new_entry.data)) {
+                        refreshWindConnectionTimer();
+                    } else {
+                        // entry per push, not requested
+                        logEntriesRolling.unshift(new_entry);
+                        logEntries.value = logEntriesRolling.toArray();
+                    }
                 } else {
                     logEntries.value = msg.data;
                 }
@@ -273,6 +292,18 @@ export default defineStore("main", () => {
         }
     );
 
+    function detectWindPolling(data: string): boolean {
+        const parsed = JSON.parse(data);
+
+        if (Object.keys(parsed).includes("probable_measurement_type")) {
+            if (parsed["probable_measurement_type"] == "Polling") {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     const displayCanSwitchMode = computed(() => {
         return displayCanSwitchModeInternal.value && displayConnected.value;
     });
@@ -299,5 +330,6 @@ export default defineStore("main", () => {
         displayConnected,
         displayExternalPassthrough,
         displayCanSwitchMode,
+        windServerConnected,
     };
 });

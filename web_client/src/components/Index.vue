@@ -6,6 +6,8 @@
     {{ mainStore.displayExternalPassthrough ? "External Passthrough" : "Default client" }}
     <button @click="mainStore.sendSwitchModeCommand" :disabled="!mainStore.displayCanSwitchMode">Switch Mode</button>
     <br />
+    Wind Connected: {{ mainStore.windServerConnected }}
+    <br />
     <br />
 
     <button @click="mainStore.sendAdvertisementsCommand">Advertisements</button>
