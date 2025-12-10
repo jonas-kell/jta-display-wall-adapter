@@ -12,6 +12,10 @@ use crate::{
     server::{camera_program_types::HeatStartList, AudioPlayer, Sound},
     times::DayTime,
     webserver::{DisplayClientState, MessageFromWebControl, MessageToWebControl},
+    wind::format::{
+        MessageToWindServer::SetTime,
+        WindMessageBroadcast::{Measured, Started},
+    },
 };
 use clap::crate_version;
 use images_core::images::{ImageMeta, ImagesStorage};
@@ -303,6 +307,8 @@ impl ServerStateMachine {
                     ));
                 }
                 InstructionFromCameraProgram::DayTime(dt) => {
+                    self.update_wind_server_time_reference(&dt); // TODO this should happen at more locations
+
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::Clock(dt));
                     }
@@ -404,6 +410,18 @@ impl ServerStateMachine {
                     }
                 }
             },
+            IncomingInstruction::FromWindServer(inst) => match inst {
+                Measured(wind_measurement) => {
+                    error!("TODO: wind measurement to use: {:?}", wind_measurement);
+                    // TODO
+                }
+                Started(started_wind_measurement) => {
+                    error!(
+                        "TODO: wind measurement to use: {:?}",
+                        started_wind_measurement
+                    ); // TODO
+                }
+            },
         }
     }
 
@@ -453,6 +471,19 @@ impl ServerStateMachine {
             Ok(()) => (),
             Err(e) => error!(
                 "Failed to send out instruction to web control: {}",
+                e.to_string()
+            ),
+        }
+    }
+
+    fn update_wind_server_time_reference(&mut self, dt: &DayTime) {
+        match self
+            .comm_channel
+            .send_out_command_to_wind_server(SetTime(dt.clone()))
+        {
+            Ok(()) => (),
+            Err(e) => error!(
+                "Failed to send out instruction to wind server: {}",
                 e.to_string()
             ),
         }

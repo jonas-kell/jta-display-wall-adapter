@@ -1,5 +1,6 @@
 use crate::args::Args;
 use crate::wind::format::{make_json_exchange_codec, MessageToWindServer, WindMessageBroadcast};
+use crate::wind::parts::wind_state_management::WindStateManager;
 use async_broadcast::InactiveReceiver;
 use futures::prelude::*;
 use std::io::Error;
@@ -8,6 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::net::TcpListener;
+use tokio::sync::Mutex;
 use tokio::time;
 use tokio_serde::{formats::Json, Framed};
 use tokio_util::codec::{FramedRead, FramedWrite};
@@ -54,8 +56,12 @@ pub async fn run_network_task(
                 let shutdown_marker = shutdown_marker.clone();
                 let mut rx_from_com_port = rx_from_com_port.activate_cloned();
 
+                // state manager
+                let wind_state_manager = Arc::new(Mutex::new(WindStateManager::new()));
+
                 tokio::spawn(async move {
                     let shutdown_marker_read = shutdown_marker.clone();
+                    let wind_state_manager_read = wind_state_manager.clone();
 
                     let read_handler = async move {
                         loop {
@@ -78,15 +84,19 @@ pub async fn run_network_task(
                                 }
                                 Ok(None) => return Err("TCP stream went away".into()),
                                 Ok(Some(Err(e))) => return Err(e.to_string()),
-                                Ok(Some(Ok(mes))) => {
-                                    error!("got message: TODO: {:?}", mes);
-                                }
+                                Ok(Some(Ok(mes))) => match mes {
+                                    MessageToWindServer::SetTime(dt) => {
+                                        let mut wsm = wind_state_manager_read.lock().await;
+                                        wsm.update_internal_time(dt);
+                                    }
+                                },
                             }
                         }
                         Ok::<_, String>(())
                     };
 
                     let shutdown_marker_write = shutdown_marker;
+                    let wind_state_manager_write = wind_state_manager.clone();
 
                     let write_handler = async move {
                         loop {
@@ -108,12 +118,20 @@ pub async fn run_network_task(
                                     continue;
                                 }
                                 Ok(Err(e)) => return Err(e.to_string()),
-                                Ok(Ok(mes)) => match serializer.send(mes).await {
-                                    Ok(()) => trace!(
-                                        "TCP sender forwarded message from internal comm channel"
-                                    ),
-                                    Err(e) => return Err(e.to_string()),
-                                },
+                                Ok(Ok(mes)) => {
+                                    // populate the time and type field
+                                    let mes = {
+                                        let mut wsm = wind_state_manager_write.lock().await;
+                                        wsm.populate_broadcast_message(mes)
+                                    };
+
+                                    match serializer.send(mes).await {
+                                        Ok(()) => trace!(
+                                            "TCP sender forwarded message from internal comm channel"
+                                        ),
+                                        Err(e) => return Err(e.to_string()),
+                                    };
+                                }
                             }
                         }
 

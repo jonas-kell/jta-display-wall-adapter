@@ -7,6 +7,7 @@ use crate::server::parts::database::create_database_manager;
 use crate::server::parts::tcp_client_camera_program::tcp_client_camera_program;
 use crate::server::parts::tcp_forwarder_display_program::tcp_forwarder_display_program;
 use crate::server::parts::tcp_listener_timing_program::tcp_listener_timing_program;
+use crate::server::parts::tcp_listener_wind_server::tcp_listener_wind_server;
 use crate::webserver::{get_local_ip, webserver, HttpServerStateManager, Server};
 use std::io::Error;
 use std::net::SocketAddr;
@@ -104,6 +105,18 @@ pub async fn run_server(args: &Args) -> () {
         }
     }
 
+    let wind_server_address = if let Some(wind_server_ip) = &args.address_wind_server {
+        let own_addr_wind_server: SocketAddr =
+            format!("{}:{}", wind_server_ip, args.wind_exchange_port)
+                .parse()
+                .expect("Invalid wind server address");
+
+        Some(own_addr_wind_server)
+    } else {
+        info!("Not configured to connect to a wind server");
+        None
+    };
+
     let comm_channel = InstructionCommunicationChannel::new(&args);
     let comm_channel_packets = PacketCommunicationChannel::new(&args);
     let database_manager = match create_database_manager(args.clone()) {
@@ -165,11 +178,19 @@ pub async fn run_server(args: &Args) -> () {
         }
     };
 
+    let tcp_client_wind_server_instance = tcp_listener_wind_server(
+        args.clone(),
+        comm_channel.clone(),
+        shutdown_marker.clone(),
+        wind_server_address,
+    );
+
     // spawn the async runtimes in parallel
     let client_communicator_task = tokio::spawn(client_communicator_instance);
     let tcp_listener_server_task = tokio::spawn(tcp_listener_server_instance);
     let tcp_forwarder_display_program_task = tokio::spawn(tcp_forwarder_display_program_instance);
     let tcp_client_camera_program_task = tokio::spawn(tcp_client_camera_program_instance);
+    let tcp_client_wind_server_task = tokio::spawn(tcp_client_wind_server_instance);
     let webserver_task = tokio::spawn(http_server);
     let shutdown_task = tokio::spawn(async move {
         // listen for ctrl-c
@@ -183,12 +204,13 @@ pub async fn run_server(args: &Args) -> () {
 
     // Wait for all tasks to complete
     match tokio::try_join!(
+        client_communicator_task,
         tcp_listener_server_task,
         tcp_forwarder_display_program_task,
-        shutdown_task,
-        client_communicator_task,
         tcp_client_camera_program_task,
-        webserver_task
+        tcp_client_wind_server_task,
+        webserver_task,
+        shutdown_task,
     ) {
         Err(_) => error!("Error in at least one listening task"),
         Ok(_) => info!("All listeners closed successfully"),

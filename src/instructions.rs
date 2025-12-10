@@ -7,6 +7,7 @@ use crate::{
     },
     times::{DayTime, RaceTime},
     webserver::{MessageFromWebControl, MessageToWebControl},
+    wind::format::{MessageToWindServer, WindMessageBroadcast},
 };
 use async_channel::{Receiver, RecvError, Sender, TrySendError};
 use serde::{Deserialize, Serialize};
@@ -18,6 +19,7 @@ pub enum IncomingInstruction {
     FromTimingProgram(InstructionFromTimingProgram),
     FromCameraProgram(InstructionFromCameraProgram),
     FromWebControl(MessageFromWebControl),
+    FromWindServer(WindMessageBroadcast),
 }
 impl Display for IncomingInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -30,6 +32,7 @@ impl Display for IncomingInstruction {
                 IncomingInstruction::FromCameraProgram(cpi) =>
                     format!("FromCameraProgram: {:?}", cpi),
                 IncomingInstruction::FromWebControl(wci) => format!("FromWebControl: {:?}", wci),
+                IncomingInstruction::FromWindServer(wmb) => format!("FromWindServer: {:?}", wmb),
             }
         )
     }
@@ -106,6 +109,8 @@ pub struct InstructionCommunicationChannel {
     outbound_receiver_client: Receiver<MessageFromServerToClient>,
     outbound_sender_web_control: Sender<MessageToWebControl>,
     outbound_receiver_web_control: Receiver<MessageToWebControl>,
+    outbound_sender_wind_server: Sender<MessageToWindServer>,
+    outbound_receiver_wind_server: Receiver<MessageToWindServer>,
 }
 impl InstructionCommunicationChannel {
     pub fn new(args: &Args) -> Self {
@@ -118,7 +123,10 @@ impl InstructionCommunicationChannel {
         let (sc, rc) = async_channel::bounded::<MessageFromServerToClient>(
             MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
         );
-        let (sw, rw) = async_channel::bounded::<MessageToWebControl>(
+        let (swe, rwe) = async_channel::bounded::<MessageToWebControl>(
+            MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+        );
+        let (swi, rwi) = async_channel::bounded::<MessageToWindServer>(
             MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
         );
 
@@ -130,8 +138,10 @@ impl InstructionCommunicationChannel {
             outbound_receiver_timing_program: or,
             outbound_sender_client: sc,
             outbound_receiver_client: rc,
-            outbound_sender_web_control: sw,
-            outbound_receiver_web_control: rw,
+            outbound_sender_web_control: swe,
+            outbound_receiver_web_control: rwe,
+            outbound_sender_wind_server: swi,
+            outbound_receiver_wind_server: rwi,
         }
 
         // TODO all outbound communication that could hit multiple endpoints (definitely websockets) should use a broadcast based 1 -> all communication
@@ -182,6 +192,25 @@ impl InstructionCommunicationChannel {
         match self
             .inbound_sender
             .try_send(IncomingInstruction::FromWebControl(inst))
+        {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
+    }
+
+    pub fn take_in_command_from_wind_server(
+        &self,
+        inst: WindMessageBroadcast,
+    ) -> Result<(), String> {
+        match self
+            .inbound_sender
+            .try_send(IncomingInstruction::FromWindServer(inst))
         {
             Ok(_) => Ok(()),
             Err(TrySendError::Closed(_)) => {
@@ -273,6 +302,29 @@ impl InstructionCommunicationChannel {
         time::timeout(
             Duration::from_millis(self.args.wait_ms_before_testing_for_shutdown),
             self.outbound_receiver_web_control.recv(),
+        )
+        .await
+    }
+
+    pub fn send_out_command_to_wind_server(&self, inst: MessageToWindServer) -> Result<(), String> {
+        match self.outbound_sender_wind_server.try_send(inst) {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Wind server communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Wind server communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
+    }
+
+    pub async fn wait_for_command_to_send_to_wind_server(
+        &self,
+    ) -> Result<Result<MessageToWindServer, RecvError>, Elapsed> {
+        time::timeout(
+            Duration::from_millis(self.args.wait_ms_before_testing_for_shutdown),
+            self.outbound_receiver_wind_server.recv(),
         )
         .await
     }

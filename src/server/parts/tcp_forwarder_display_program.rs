@@ -21,7 +21,7 @@ use tokio::time;
 
 pub async fn tcp_forwarder_display_program(
     args: Args,
-    state: Arc<Mutex<ServerStateMachine>>, // does not require read, but our main reference is in a mutex // TODO could use RWLock
+    state: Arc<Mutex<ServerStateMachine>>, // does not require write, but our main reference is in a mutex // TODO could use RWLock
     comm_channel: InstructionCommunicationChannel,
     comm_channel_packets: PacketCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
@@ -90,11 +90,10 @@ pub async fn tcp_forwarder_display_program(
                                                 Err((err, data_that_could_not_be_parsed)) => {
                                                     error!("Error when Decoding Outbound Communication: {}", err);
 
-                                                    let current_state: ServerState;
-                                                    {
+                                                    let current_state: ServerState = {
                                                         let guard = state.lock().await;
-                                                        current_state = guard.state.clone();
-                                                    }
+                                                        guard.state.clone()
+                                                    };
 
                                                     if current_state == ServerState::PassthroughDisplayProgram {
                                                         // proxy just like that if not successfully parsed
@@ -114,11 +113,10 @@ pub async fn tcp_forwarder_display_program(
                                                         parsed
                                                     );
 
-                                                    let current_state: ServerState;
-                                                    {
+                                                    let current_state: ServerState = {
                                                         let guard = state.lock().await;
-                                                        current_state = guard.state.clone();
-                                                    }
+                                                        guard.state.clone()
+                                                    };
 
                                                     match current_state {
                                                         ServerState::PassthroughDisplayProgram => {

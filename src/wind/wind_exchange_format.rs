@@ -1,13 +1,13 @@
 use crate::times::{DayTime, RaceWind};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum WindMessageBroadcast {
     Started(StartedWindMeasurement),
     Measured(WindMeasurement),
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum WindMeasurementType {
     Polling,
     Race10s,
@@ -17,13 +17,13 @@ pub enum WindMeasurementType {
     Other12s,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct StartedWindMeasurement {
     pub ms_type: WindMeasurementType,
     pub time: Option<DayTime>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct WindMeasurement {
     pub wind: RaceWind,
     pub probable_measurement_type: WindMeasurementType,

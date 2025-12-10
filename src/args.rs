@@ -24,7 +24,7 @@ pub struct Args {
     /// Address of where the display program lives (like "127.0.0.1")
     #[arg(long, default_value_t = String::from("127.0.0.1"))]
     pub passthrough_address_display_program: String,
-    /// Address of where camera program live (like "127.0.0.1")
+    /// Address of where camera program lives (like "127.0.0.1")
     #[arg(long, default_value_t = String::from("127.0.0.1"))]
     pub address_camera_program: String,
     /// Port where the camera program has their timing endpoint
@@ -45,6 +45,9 @@ pub struct Args {
     /// Port where the internal communication between wind_server and server
     #[arg(long, default_value_t = String::from("7890"))]
     pub wind_exchange_port: String,
+    /// Address of the wind server lives (for the server to talk to) (like "127.0.0.1") - if unset, no connection to wind server will be attempted
+    #[arg(long)]
+    pub address_wind_server: Option<String>,
     /// Latest interval duration, the wind usb sniffer is probed
     #[arg(long, default_value_t = 500)]
     pub poll_wind_usb_every_nr_ms: u64,

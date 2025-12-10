@@ -26,7 +26,7 @@ enum TimeoutOrIoError {
 
 pub async fn tcp_listener_timing_program(
     args: Args,
-    state: Arc<Mutex<ServerStateMachine>>, // does not require read, but our main reference is in a mutex // TODO could use RWLock
+    state: Arc<Mutex<ServerStateMachine>>, // does not require write, but our main reference is in a mutex // TODO could use RWLock
     comm_channel: InstructionCommunicationChannel,
     comm_channel_packets: PacketCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
@@ -153,11 +153,10 @@ pub async fn tcp_listener_timing_program(
                             let comm_channel_tcp_outbound_source = async {
                                 match comm_channel_packets_write.outbound_coming_out().await {
                                     Ok(Ok(data)) => {
-                                        let current_state: ServerState;
-                                        {
+                                        let current_state: ServerState = {
                                             let guard = state_write.lock().await;
-                                            current_state = guard.state.clone();
-                                        }
+                                            guard.state.clone()
+                                        };
 
                                         if current_state == ServerState::PassthroughDisplayProgram {
                                             trace!("Display Program sent frame");
