@@ -15,9 +15,10 @@ import {
     Timing,
     UpdateTimingSettings,
 } from "../functions/interfaceOutbound";
-import { HeatData, HeatMeta, InboundMessageType, LogEntry, parseMessage } from "../functions/interfaceInbound";
+import { DayTime, HeatData, HeatMeta, InboundMessageType, LogEntry, parseMessage } from "../functions/interfaceInbound";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { TimingSettings } from "../functions/interfaceShared";
+import { dayTimeStringRepr } from "../functions/representation";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -40,6 +41,7 @@ export default defineStore("main", () => {
 
     const WIND_CONNECTION_TIMEOUT = 5_000; // ms
     const lastWindPing = ref<number>(Date.now() - 2 * WIND_CONNECTION_TIMEOUT);
+    const windTime = ref<string>("");
     const now = ref<number>(Date.now());
     window.setInterval(() => {
         now.value = Date.now();
@@ -295,6 +297,16 @@ export default defineStore("main", () => {
     function detectWindPolling(data: string): boolean {
         const parsed = JSON.parse(data);
 
+        if (Object.keys(parsed).includes("time")) {
+            const timeElem: null | DayTime = parsed["time"];
+
+            if (timeElem == null) {
+                windTime.value = "Not-synced";
+            } else {
+                windTime.value = dayTimeStringRepr(timeElem);
+            }
+        }
+
         if (Object.keys(parsed).includes("probable_measurement_type")) {
             if (parsed["probable_measurement_type"] == "Polling") {
                 return true;
@@ -331,5 +343,6 @@ export default defineStore("main", () => {
         displayExternalPassthrough,
         displayCanSwitchMode,
         windServerConnected,
+        windTime,
     };
 });

@@ -257,6 +257,10 @@ impl ServerStateMachine {
                     if self.timing_settings_template.play_sound_on_start {
                         self.play_sound(Sound::Beep1);
                     }
+
+                    // every heat start, the wind clock gets re-synced
+                    self.update_wind_server_time_reference(&start.time);
+
                     store_to_database!(start, self);
                 }
                 InstructionFromCameraProgram::HeatFalseStart(false_start) => {
@@ -315,8 +319,6 @@ impl ServerStateMachine {
                     ));
                 }
                 InstructionFromCameraProgram::DayTime(dt) => {
-                    self.update_wind_server_time_reference(&dt); // TODO this should happen at more locations
-
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::Clock(dt));
                     }
