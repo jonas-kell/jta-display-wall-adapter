@@ -73,6 +73,14 @@ docker buildx build \
 -   Edit the shortcut and prepend/edit the location with `C:\Windows\System32\cmd.exe /c "<...this is the content that was previously in the field...>"`
     -   Now this is seen as an executable and you can pin it to the taskbar by dragging
     -   Now for this shortcut you can set the icon
+-   For running the Wind server automatically
+    -   Do everything in [this readme](./usb_sniffer/Readme.md)
+    -   Get the correct Com-Port from the device manager
+    -   Modify the `start-jta-display-wall-adapter.bat` for use with wind-server mode (set Com-port and usb-iteration delay if you want) by setting mode to `wind`
+    -   Place a windows compiled version alongsite the .bat in a folder
+    -   Create a link to the .bat, by right-clicking -> Desktop-shortcut
+    -   Open the startup-folder by `Win+R`: `shell:startup`
+    -   Place the link inside it
 
 ## Install display client on a Raspberry Pi
 
