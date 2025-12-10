@@ -53,3 +53,13 @@ export type UpdateTimingSettings = {
 export type RequestTimingSettings = {
     type: "RequestTimingSettings";
 };
+
+export type WindValueRequestDateContainer = {
+    from: string;
+    to: string;
+};
+
+export type RequestWindValues = {
+    type: "RequestWindValues";
+    data: WindValueRequestDateContainer;
+};

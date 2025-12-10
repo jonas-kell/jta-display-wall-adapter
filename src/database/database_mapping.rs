@@ -457,3 +457,23 @@ pub fn purge_heat_data(id: Uuid, manager: &DatabaseManager) -> Result<(), Databa
 
     Ok(())
 }
+
+pub fn get_wind_readings(
+    from: NaiveDateTime,
+    to: NaiveDateTime,
+    manager: &DatabaseManager,
+) -> Result<Vec<WindMeasurement>, DatabaseError> {
+    let mut conn = manager.get_connection()?;
+
+    let data_wind = internal_wind_readings::table::table()
+        .filter(internal_wind_readings::wind_meas_time.is_not_null())
+        .filter(internal_wind_readings::wind_meas_time.ge(Some(from)))
+        .filter(internal_wind_readings::wind_meas_time.le(Some(to)))
+        .order(internal_wind_readings::wind_meas_time.asc())
+        .load::<InternalWindReadingsDatabase>(&mut conn)?
+        .into_iter()
+        .filter_map(|iwr| WindMeasurement::try_from(iwr).ok())
+        .collect();
+
+    return Ok(data_wind);
+}

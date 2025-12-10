@@ -10,12 +10,22 @@ import {
     Idle,
     RequestDisplayClientState,
     RequestTimingSettings,
+    RequestWindValues,
     SelectHeat,
     SwitchMode,
     Timing,
     UpdateTimingSettings,
+    WindValueRequestDateContainer,
 } from "../functions/interfaceOutbound";
-import { DayTime, HeatData, HeatMeta, InboundMessageType, LogEntry, parseMessage } from "../functions/interfaceInbound";
+import {
+    DayTime,
+    HeatData,
+    HeatMeta,
+    InboundMessageType,
+    LogEntry,
+    parseMessage,
+    WindMeasurement,
+} from "../functions/interfaceInbound";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { TimingSettings } from "../functions/interfaceShared";
 import { dayTimeStringRepr } from "../functions/representation";
@@ -54,6 +64,7 @@ export default defineStore("main", () => {
     });
 
     const logEntriesRolling = new CircularBuffer<LogEntry>(10);
+    const requestedWindMeasurements = ref([] as WindMeasurement[]);
 
     function handleWSMessage(ev: any) {
         let msg = parseMessage(JSON.parse(ev.data));
@@ -99,6 +110,9 @@ export default defineStore("main", () => {
                         timingSettingsBeingChanged.value = false;
                     });
                 });
+                return;
+            case InboundMessageType.WindMeasurements:
+                requestedWindMeasurements.value = msg.data;
                 return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);
@@ -209,6 +223,14 @@ export default defineStore("main", () => {
         displayCanSwitchModeInternal.value = false; // will be reset on updating message
         const packet: SwitchMode = {
             type: "SwitchMode",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+
+    function sendGetWindValuesCommand(data: WindValueRequestDateContainer) {
+        const packet: RequestWindValues = {
+            type: "RequestWindValues",
+            data,
         };
         sendWSCommand(JSON.stringify(packet));
     }
@@ -334,6 +356,7 @@ export default defineStore("main", () => {
         sendSelectHeatCommand,
         sendTimingCommand,
         sendClockCommand,
+        sendGetWindValuesCommand,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,
@@ -344,5 +367,6 @@ export default defineStore("main", () => {
         displayCanSwitchMode,
         windServerConnected,
         windTime,
+        requestedWindMeasurements,
     };
 });

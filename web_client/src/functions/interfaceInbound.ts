@@ -142,6 +142,22 @@ export type HeatData = {
     result: HeatResult | null;
 };
 
+export enum WindMeasurementType {
+    Polling = "Polling",
+    UnidentifiedMeasurement = "UnidentifiedMeasurement",
+    Race10s = "Race10s",
+    Race13s = "Race13s",
+    Jump5s = "Jump5s",
+    Other8s = "Other8s",
+    Other12s = "Other12s",
+}
+
+export type WindMeasurement = {
+    wind: RaceWind;
+    probable_measurement_type: WindMeasurementType;
+    time: DayTime | null;
+};
+
 // message formats
 
 export type DisplayClientStateState = {
@@ -181,6 +197,11 @@ export type TimingSettingsState = {
     data: TimingSettings;
 };
 
+export type WindMeasurements = {
+    type: "WindMeasurements";
+    data: WindMeasurement[];
+};
+
 export type Unknown = {
     type: "Unknown";
     data: unknown;
@@ -193,9 +214,17 @@ export enum InboundMessageType {
     Logs = "Logs",
     HeatDataMessage = "HeatDataMessage",
     TimingSettingsState = "TimingSettingsState",
+    WindMeasurements = "WindMeasurements",
 }
 
-export type InboundMessage = DisplayClientState | HeatsMeta | Logs | HeatDataMessage | TimingSettingsState | Unknown;
+export type InboundMessage =
+    | DisplayClientState
+    | HeatsMeta
+    | Logs
+    | HeatDataMessage
+    | TimingSettingsState
+    | WindMeasurements
+    | Unknown;
 
 export function parseMessage(json: unknown): InboundMessage {
     if (typeof json !== "object" || json === null) {
@@ -215,6 +244,8 @@ export function parseMessage(json: unknown): InboundMessage {
             return { type: "HeatDataMessage", data: obj.data } as HeatDataMessage;
         case InboundMessageType.TimingSettingsState:
             return { type: "TimingSettingsState", data: obj.data } as TimingSettingsState;
+        case InboundMessageType.WindMeasurements:
+            return { type: "WindMeasurements", data: obj.data } as WindMeasurements;
 
         default:
             return { type: "Unknown", data: json } as Unknown;

@@ -3,7 +3,9 @@ use crate::{
     database::PermanentlyStoredDataset,
     server::camera_program_types::{HeatData, HeatMeta},
     times::DayTime,
+    wind::format::WindMeasurement,
 };
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -21,6 +23,13 @@ pub enum MessageFromWebControl {
     UpdateTimingSettings(TimingSettings),
     RequestTimingSettings,
     Clock(DayTime),
+    RequestWindValues(WindValueRequestDateContainer),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WindValueRequestDateContainer {
+    pub from: NaiveDateTime,
+    pub to: NaiveDateTime,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -38,4 +47,5 @@ pub enum MessageToWebControl {
     Logs(Vec<PermanentlyStoredDataset>),
     HeatDataMessage(HeatData),
     TimingSettingsState(TimingSettings),
+    WindMeasurements(Vec<WindMeasurement>),
 }

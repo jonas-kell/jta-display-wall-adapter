@@ -2,7 +2,8 @@ use crate::{
     args::Args,
     client::{ClockState, TimingSettings, TimingStateMachine, TimingUpdate},
     database::{
-        get_heat_data, get_log_limited, purge_heat_data, DatabaseManager, DatabaseSerializable,
+        get_heat_data, get_log_limited, get_wind_readings, purge_heat_data, DatabaseManager,
+        DatabaseSerializable,
     },
     file::read_image_files,
     instructions::{
@@ -417,6 +418,17 @@ impl ServerStateMachine {
                 MessageFromWebControl::Clock(dt) => {
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::Clock(dt));
+                    }
+                }
+                MessageFromWebControl::RequestWindValues(wvdc) => {
+                    match get_wind_readings(wvdc.from, wvdc.to, &self.database_manager) {
+                        Err(e) => error!(
+                            "Error while querying wind values from databae: {}",
+                            e.to_string()
+                        ),
+                        Ok(vals) => self.send_message_to_web_control(
+                            MessageToWebControl::WindMeasurements(vals),
+                        ),
                     }
                 }
             },
