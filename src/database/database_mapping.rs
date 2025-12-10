@@ -4,15 +4,18 @@
 use crate::database::db::DatabaseError;
 use crate::database::schema::{
     heat_evaluations, heat_false_starts, heat_finishes, heat_intermediates, heat_results,
-    heat_start_lists, heat_starts, heat_wind_missings, heat_winds, permanent_storage,
+    heat_start_lists, heat_starts, heat_wind_missings, heat_winds, internal_wind_measurements,
+    internal_wind_readings, permanent_storage,
 };
 use crate::database::DatabaseManager;
 use crate::server::camera_program_types::{
     CompetitorEvaluated, HeatData, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult,
     HeatStart, HeatStartList, HeatWind, HeatWindMissing,
 };
-use chrono::NaiveDateTime;
+use crate::times::DayTime;
+use crate::wind::format::{StartedWindMeasurement, WindMeasurement};
 use chrono::Utc;
+use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 use diesel::associations::HasTable;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -268,6 +271,80 @@ impl_database_serializable!(
         data: serde_json::to_string(self_obj)?,
     })
 );
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = internal_wind_readings)]
+pub struct InternalWindReadingsDatabase {
+    id: String,
+    data: String,
+    wind_meas_time: Option<NaiveDateTime>,
+    stored_at_local: NaiveDateTime,
+}
+impl_database_serializable!(
+    WindMeasurement,
+    InternalWindReadingsDatabase,
+    internal_wind_readings::table,
+    internal_wind_readings::id,
+    |self_obj: &WindMeasurement| Ok(InternalWindReadingsDatabase {
+        id: Uuid::new_v4().to_string(),
+        data: serde_json::to_string(self_obj)?,
+        wind_meas_time: transform_time(&self_obj.time),
+        stored_at_local: Local::now().naive_local(),
+    })
+);
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = internal_wind_measurements)]
+pub struct InternalWindMeasurementsDatabase {
+    id: String,
+    data: String,
+    wind_meas_time: Option<NaiveDateTime>,
+    stored_at_local: NaiveDateTime,
+}
+impl_database_serializable!(
+    StartedWindMeasurement,
+    InternalWindMeasurementsDatabase,
+    internal_wind_measurements::table,
+    internal_wind_measurements::id,
+    |self_obj: &StartedWindMeasurement| Ok(InternalWindMeasurementsDatabase {
+        id: Uuid::new_v4().to_string(),
+        data: serde_json::to_string(self_obj)?,
+        wind_meas_time: transform_time(&self_obj.time),
+        stored_at_local: Local::now().naive_local(),
+    })
+);
+
+fn transform_time(time: &Option<DayTime>) -> Option<NaiveDateTime> {
+    match time {
+        Some(time) => {
+            let hours: u16 = time.hours;
+            let minutes: u16 = time.minutes;
+            let seconds: u16 = time.seconds;
+            let fractional_part_in_ten_thousands: Option<u32> =
+                time.fractional_part_in_ten_thousands;
+
+            let nanos = fractional_part_in_ten_thousands
+                .map(|f| (f as u64) * 100_000) // 1/10_000 second = 100,000 nanoseconds
+                .unwrap_or(0) as u32;
+
+            // Build NaiveTime
+            let naive_time = match NaiveTime::from_hms_nano_opt(
+                hours as u32,
+                minutes as u32,
+                seconds as u32,
+                nanos,
+            ) {
+                Some(a) => a,
+                None => return None,
+            };
+
+            let today: NaiveDate = Local::now().date_naive();
+
+            return Some(NaiveDateTime::new(today, naive_time));
+        }
+        None => None,
+    }
+}
 
 #[derive(Insertable, Queryable, Identifiable)]
 #[diesel(table_name = permanent_storage)]

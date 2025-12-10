@@ -66,6 +66,24 @@ diesel::table! {
 }
 
 diesel::table! {
+    internal_wind_measurements (id) {
+        id -> Text,
+        data -> Text,
+        wind_meas_time -> Nullable<Timestamp>,
+        stored_at_local -> Timestamp,
+    }
+}
+
+diesel::table! {
+    internal_wind_readings (id) {
+        id -> Text,
+        data -> Text,
+        wind_meas_time -> Nullable<Timestamp>,
+        stored_at_local -> Timestamp,
+    }
+}
+
+diesel::table! {
     permanent_storage (id) {
         id -> Text,
         name_key -> Text,
@@ -75,4 +93,4 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    heat_evaluations,heat_false_starts,heat_finishes,heat_intermediates,heat_results,heat_start_lists,heat_starts,heat_wind_missings,heat_winds,permanent_storage,);
+    heat_evaluations,heat_false_starts,heat_finishes,heat_intermediates,heat_results,heat_start_lists,heat_starts,heat_wind_missings,heat_winds,internal_wind_measurements,internal_wind_readings,permanent_storage,);

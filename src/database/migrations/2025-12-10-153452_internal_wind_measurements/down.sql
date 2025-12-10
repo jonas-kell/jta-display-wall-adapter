@@ -1,0 +1,1 @@
+DROP TABLE internal_wind_measurements;

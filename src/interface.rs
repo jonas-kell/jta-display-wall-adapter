@@ -59,8 +59,8 @@ pub enum ServerState {
     PassthroughDisplayProgram,
 }
 
-macro_rules! store_to_database {
-    ($value:expr, $self_val:expr) => {
+macro_rules! store_to_database_log_conditionally {
+    ($value:expr, $self_val:expr, $log:expr) => {
         match $value.store_to_database(&$self_val.database_manager) {
             Ok(()) => {
                 trace!("Success, we stored an instruction into the database");
@@ -69,7 +69,15 @@ macro_rules! store_to_database {
                 error!("Database storage error: {}", e);
             }
         }
-        $self_val.send_out_latest_n_logs_to_webclient(1);
+        if $log {
+            $self_val.send_out_latest_n_logs_to_webclient(1);
+        }
+    };
+}
+
+macro_rules! store_to_database {
+    ($value:expr, $self_val:expr) => {
+        store_to_database_log_conditionally!($value, $self_val, true);
     };
 }
 
@@ -412,14 +420,10 @@ impl ServerStateMachine {
             },
             IncomingInstruction::FromWindServer(inst) => match inst {
                 Measured(wind_measurement) => {
-                    error!("TODO: wind measurement to use: {:?}", wind_measurement);
-                    // TODO
+                    store_to_database!(wind_measurement, self);
                 }
                 Started(started_wind_measurement) => {
-                    error!(
-                        "TODO: wind measurement to use: {:?}",
-                        started_wind_measurement
-                    ); // TODO
+                    store_to_database!(started_wind_measurement, self);
                 }
             },
         }

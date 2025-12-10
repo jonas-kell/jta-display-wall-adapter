@@ -49,7 +49,7 @@ pub struct Args {
     #[arg(long)]
     pub address_wind_server: Option<String>,
     /// Latest interval duration, the wind usb sniffer is probed
-    #[arg(long, default_value_t = 500)]
+    #[arg(long, default_value_t = 117)] // TODO what is the best interval for this
     pub poll_wind_usb_every_nr_ms: u64,
     /// Where to find the usb sniffer (windows COM port or linux usb serial device path)
     #[arg(long, default_value_t = String::from("COM4"))]
