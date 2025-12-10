@@ -1,9 +1,9 @@
-use crate::hex::{parse_race_wind, take_until_and_consume};
+use crate::hex::{parse_race_wind, take_until_and_consume, NomErr, NomError, NomErrorKind};
 use crate::wind::format::{
     StartedWindMeasurement, WindMeasurement, WindMeasurementType, WindMessageBroadcast,
 };
 use nom::branch::alt;
-use nom::bytes::complete::tag;
+use nom::bytes::complete::{tag, take};
 use nom::character::complete::multispace0;
 use nom::combinator::map_opt;
 use nom::{IResult, Parser};
@@ -12,16 +12,23 @@ fn parse_wind_data_command(input: &[u8]) -> IResult<&[u8], Option<WindMessageBro
     // 43 20 30 2c 30 0d <- zero
     // 43 20 31 2c 36 0d <- backwind = 20 space
     // 43 2d 30 2c 30 0d <- headwind = 2d -
+    // !! the first byte is 52, if it is a measurement result
 
-    let (input, _) = tag(&b"C"[..])(input)?;
+    let (input, type_byte) = take(1usize)(input)?;
     let (input, _) = multispace0(input)?;
     let (input, race_wind_slice) = take_until_and_consume(&b"\x0d"[..], input)?;
     let (_, race_wind) = parse_race_wind(race_wind_slice)?;
 
+    let measurement_type = match type_byte[0] {
+        0x43 => WindMeasurementType::Polling,
+        0x52 => WindMeasurementType::UnidentifiedMeasurement,
+        _ => return Err(NomErr(NomError::new(input, NomErrorKind::Tag))),
+    };
+
     Ok((
         input,
         Some(WindMessageBroadcast::Measured(WindMeasurement {
-            probable_measurement_type: WindMeasurementType::Polling,
+            probable_measurement_type: measurement_type,
             time: None,
             wind: race_wind,
         })),

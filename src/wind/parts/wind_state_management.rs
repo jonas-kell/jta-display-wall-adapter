@@ -55,8 +55,11 @@ impl WindStateManager {
                     // longest measurement should take 13 seconds plus a bit leeway
                     if Instant::now().saturating_duration_since(inst.clone())
                         < Duration::from_secs(16)
+                        && meas.probable_measurement_type
+                            == WindMeasurementType::UnidentifiedMeasurement
+                        && meas_type != &WindMeasurementType::Polling
                     {
-                        meas.probable_measurement_type = meas_type.clone(); // polling is default. this might overwrite polling with polling, but that is not a problem
+                        meas.probable_measurement_type = meas_type.clone();
                     }
 
                     self.internal_action_tracker = None; // the type reference is consumed in any case, as soon as a measurement is received

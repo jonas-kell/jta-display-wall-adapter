@@ -7,9 +7,10 @@ pub enum WindMessageBroadcast {
     Measured(WindMeasurement),
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub enum WindMeasurementType {
     Polling,
+    UnidentifiedMeasurement,
     Race10s,
     Race13s,
     Jump5s,
