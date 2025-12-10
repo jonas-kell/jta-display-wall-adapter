@@ -23,6 +23,9 @@ pub async fn run_network_task(
     let listener = TcpListener::bind(listen_addr).await?;
     info!("TCP listener started on {}", listen_addr);
 
+    // state manager
+    let wind_state_manager = Arc::new(Mutex::new(WindStateManager::new()));
+
     loop {
         if shutdown_marker.load(Ordering::SeqCst) {
             info!("Shutdown requested, stopping listener on {}", listen_addr);
@@ -55,9 +58,7 @@ pub async fn run_network_task(
 
                 let shutdown_marker = shutdown_marker.clone();
                 let mut rx_from_com_port = rx_from_com_port.activate_cloned();
-
-                // state manager
-                let wind_state_manager = Arc::new(Mutex::new(WindStateManager::new()));
+                let wind_state_manager = wind_state_manager.clone();
 
                 tokio::spawn(async move {
                     let shutdown_marker_read = shutdown_marker.clone();
@@ -96,7 +97,7 @@ pub async fn run_network_task(
                     };
 
                     let shutdown_marker_write = shutdown_marker;
-                    let wind_state_manager_write = wind_state_manager.clone();
+                    let wind_state_manager_write = wind_state_manager;
 
                     let write_handler = async move {
                         loop {
