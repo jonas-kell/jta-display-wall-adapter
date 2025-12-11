@@ -1,6 +1,6 @@
 use crate::args::Args;
-use crate::instructions::InstructionCommunicationChannel;
 use crate::interface::ServerStateMachine;
+use crate::server::comm_channel::InstructionCommunicationChannel;
 use std::io::{self, Error, ErrorKind};
 use std::sync::{
     atomic::{AtomicBool, Ordering},

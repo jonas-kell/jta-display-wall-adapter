@@ -1,5 +1,5 @@
 use crate::args::Args;
-use crate::instructions::InstructionCommunicationChannel;
+use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::server::xml_serial::{BufferedParserSerial, BufferedParserXML};
 use std::io::{self, Error, ErrorKind};
 use std::net::SocketAddr;

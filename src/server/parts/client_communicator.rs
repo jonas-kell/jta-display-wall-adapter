@@ -1,6 +1,6 @@
 use crate::args::Args;
-use crate::instructions::InstructionCommunicationChannel;
 use crate::interface::{MessageFromClientToServer, MessageFromServerToClient, ServerStateMachine};
+use crate::server::comm_channel::InstructionCommunicationChannel;
 use futures::prelude::*;
 use std::io;
 use std::net::SocketAddr;

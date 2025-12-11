@@ -1,3 +1,4 @@
+use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::{
     args::Args,
     client::{ClockState, TimingSettings, TimingStateMachine, TimingUpdate},
@@ -7,8 +8,8 @@ use crate::{
     },
     file::read_image_files,
     instructions::{
-        IncomingInstruction, InstructionCommunicationChannel, InstructionFromCameraProgram,
-        InstructionFromTimingProgram, InstructionToTimingProgram,
+        IncomingInstruction, InstructionFromCameraProgram, InstructionFromTimingProgram,
+        InstructionToTimingProgram,
     },
     server::{camera_program_types::HeatStartList, AudioPlayer, Sound},
     times::DayTime,

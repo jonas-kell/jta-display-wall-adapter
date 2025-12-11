@@ -1,9 +1,8 @@
 use crate::args::Args;
 use crate::hex::hex_log_bytes;
-use crate::instructions::{
-    InstructionCommunicationChannel, InstructionFromTimingProgram, InstructionToTimingProgram,
-};
+use crate::instructions::{InstructionFromTimingProgram, InstructionToTimingProgram};
 use crate::interface::{ServerState, ServerStateMachineServerStateReader};
+use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::server::forwarding::PacketCommunicationChannel;
 use crate::server::nrbf::BufferedParser;
 use std::io;

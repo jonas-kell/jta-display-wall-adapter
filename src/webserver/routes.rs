@@ -1,6 +1,5 @@
-use crate::{
-    instructions::InstructionCommunicationChannel, webserver::interface::MessageFromWebControl,
-};
+use crate::server::comm_channel::InstructionCommunicationChannel;
+use crate::webserver::interface::MessageFromWebControl;
 use actix_web::{web, HttpRequest, Responder};
 use actix_ws::Message;
 use futures::StreamExt;

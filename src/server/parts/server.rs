@@ -1,6 +1,6 @@
 use crate::args::Args;
-use crate::instructions::InstructionCommunicationChannel;
 use crate::interface::{ServerStateMachine, ServerStateMachineServerStateReader};
+use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::server::forwarding::PacketCommunicationChannel;
 use crate::server::parts::client_communicator::client_communicator;
 use crate::server::parts::database::create_database_manager;

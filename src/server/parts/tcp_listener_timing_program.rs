@@ -1,7 +1,8 @@
 use crate::args::Args;
 use crate::hex::hex_log_bytes;
-use crate::instructions::{InstructionCommunicationChannel, InstructionToTimingProgram};
+use crate::instructions::InstructionToTimingProgram;
 use crate::interface::{ServerState, ServerStateMachineServerStateReader};
+use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::server::forwarding::{PacketCommunicationChannel, PacketData};
 use crate::server::nrbf::{generate_response_bytes, BufferedParser};
 use async_channel::RecvError;

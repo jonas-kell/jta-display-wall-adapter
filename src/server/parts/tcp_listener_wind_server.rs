@@ -1,5 +1,5 @@
 use crate::args::Args;
-use crate::instructions::InstructionCommunicationChannel;
+use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::wind::format::{make_json_exchange_codec, MessageToWindServer, WindMessageBroadcast};
 use futures::{SinkExt, StreamExt};
 use std::io::{self, Error, ErrorKind};

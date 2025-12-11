@@ -1,4 +1,4 @@
-use crate::instructions::InstructionCommunicationChannel;
+use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::webserver::routes::ws_route;
 use crate::webserver::static_files;
 use actix_cors::Cors;
