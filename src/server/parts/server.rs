@@ -4,6 +4,7 @@ use crate::interface::ServerStateMachine;
 use crate::server::forwarding::PacketCommunicationChannel;
 use crate::server::parts::client_communicator::client_communicator;
 use crate::server::parts::database::create_database_manager;
+use crate::server::parts::intake_commands::intake_commands;
 use crate::server::parts::tcp_client_camera_program::tcp_client_camera_program;
 use crate::server::parts::tcp_forwarder_display_program::tcp_forwarder_display_program;
 use crate::server::parts::tcp_listener_timing_program::tcp_listener_timing_program;
@@ -153,10 +154,17 @@ pub async fn run_server(args: &Args) -> () {
 
     let client_communicator_instance = client_communicator(
         args.clone(),
-        server_state,
+        server_state.clone(),
         comm_channel.clone(),
         Arc::clone(&shutdown_marker),
         internal_communication_address,
+    );
+
+    let intake_commands_instance = intake_commands(
+        args.clone(),
+        server_state,
+        comm_channel.clone(),
+        Arc::clone(&shutdown_marker),
     );
 
     let tcp_client_camera_program_instance = tcp_client_camera_program(
@@ -187,6 +195,7 @@ pub async fn run_server(args: &Args) -> () {
 
     // spawn the async runtimes in parallel
     let client_communicator_task = tokio::spawn(client_communicator_instance);
+    let intake_commands_task = tokio::spawn(intake_commands_instance);
     let tcp_listener_server_task = tokio::spawn(tcp_listener_server_instance);
     let tcp_forwarder_display_program_task = tokio::spawn(tcp_forwarder_display_program_instance);
     let tcp_client_camera_program_task = tokio::spawn(tcp_client_camera_program_instance);
@@ -205,6 +214,7 @@ pub async fn run_server(args: &Args) -> () {
     // Wait for all tasks to complete
     match tokio::try_join!(
         client_communicator_task,
+        intake_commands_task,
         tcp_listener_server_task,
         tcp_forwarder_display_program_task,
         tcp_client_camera_program_task,
