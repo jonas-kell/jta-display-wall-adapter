@@ -5,7 +5,8 @@ use crate::client::rendering::render_client_frame;
 use crate::client::{FRAME_TIME_NS, REPORT_FRAME_LOGS_EVERY_SECONDS, TARGET_FPS};
 use crate::file::{create_file_if_not_there_and_write, make_sure_folder_exists};
 use crate::interface::{ClientStateMachine, MessageFromClientToServer, MessageFromServerToClient};
-use async_channel::{Receiver, Sender, TryRecvError, TrySendError};
+use async_broadcast::Sender;
+use async_channel::{Receiver, TryRecvError};
 use fontdue::layout::{CoordinateSystem, Layout};
 use fontdue::{Font, FontSettings};
 use pixels::{Pixels, SurfaceTexture};
@@ -328,15 +329,15 @@ impl App {
         // send away outgoing messages (we do not need to loop, as this is running at 60 fps anyway)
         match self.state_machine.get_one_message_to_send() {
             Some(msg) => {
-                match self.outgoing.try_send(msg) {
-                    Ok(()) => (),
-                    Err(TrySendError::Closed(_)) => {
-                        error!("Internal communication channel closed...");
-                        event_loop.exit();
+                match self.outgoing.try_broadcast(msg) {
+                    Ok(Some(_)) => {
+                        trace!("Thrown away old message in outgoing internal communication")
                     }
-                    Err(TrySendError::Full(_)) => {
-                        trace!(
-                            "Outbound client internal communication full. Seems like there is nobody to consume",
+                    Ok(None) => (),
+                    Err(e) => {
+                        warn!(
+                            "Outbound internal channel not open, no active receivers: {}",
+                            e.to_string()
                         );
                     }
                 };

@@ -1,6 +1,7 @@
 use crate::args::Args;
 use crate::interface::{MessageFromClientToServer, MessageFromServerToClient};
-use async_channel::{Receiver, Sender, TrySendError};
+use async_broadcast::InactiveReceiver;
+use async_channel::{Sender, TrySendError};
 use futures::prelude::*;
 use std::io::Error;
 use std::net::SocketAddr;
@@ -16,7 +17,7 @@ use tokio_util::codec::{FramedRead, FramedWrite, LengthDelimitedCodec};
 pub async fn run_network_task(
     args: Args,
     tx_to_ui: Sender<MessageFromServerToClient>,
-    rx_from_ui: Receiver<MessageFromClientToServer>,
+    rx_from_ui: InactiveReceiver<MessageFromClientToServer>,
     shutdown_marker: Arc<AtomicBool>,
 ) -> Result<(), Error> {
     let listen_addr: SocketAddr = format!("0.0.0.0:{}", args.internal_communication_port)
@@ -66,7 +67,7 @@ pub async fn run_network_task(
 
                 let shutdown_marker = shutdown_marker.clone();
                 let tx_to_ui = tx_to_ui.clone();
-                let rx_from_ui = rx_from_ui.clone();
+                let mut rx_from_ui = rx_from_ui.activate_cloned();
 
                 tokio::spawn(async move {
                     let shutdown_marker_read = shutdown_marker.clone();

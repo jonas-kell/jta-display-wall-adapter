@@ -10,9 +10,11 @@ pub async fn run_client(args: &Args) -> () {
     let (tx_to_ui, rx_to_ui) = async_channel::bounded::<MessageFromServerToClient>(
         MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
     );
-    let (tx_from_ui, rx_from_ui) = async_channel::bounded::<MessageFromClientToServer>(
+    let (mut tx_from_ui, rx_from_ui) = async_broadcast::broadcast::<MessageFromClientToServer>(
         MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
     );
+    tx_from_ui.set_overflow(true); // do not care, if messages get lost. They there wouuld have been no tcp client to receive them anyway, it seems
+    let rx_from_ui = rx_from_ui.deactivate();
 
     let shutdown_marker = Arc::new(AtomicBool::new(false));
 

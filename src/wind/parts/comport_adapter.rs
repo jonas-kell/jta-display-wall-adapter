@@ -110,9 +110,10 @@ pub fn run_com_port_task(
                             Ok(msg) => {
                                 // not blocking, as we have set overflow_mode. if old message is returned from this, we just throw it away
                                 match tx_to_tcp.try_broadcast(msg) {
-                                    Ok(_) => {
+                                    Ok(Some(_)) => {
                                         trace!("Thrown away old message in internal comm channel");
                                     }
+                                    Ok(None) => (),
                                     Err(e) => {
                                         warn!(
                                             "Internal channel not open, no active receivers: {}",

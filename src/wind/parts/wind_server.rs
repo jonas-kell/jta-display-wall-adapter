@@ -1,4 +1,4 @@
-use crate::args::Args;
+use crate::args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS};
 use crate::wind::format::WindMessageBroadcast;
 use crate::wind::parts::comport_adapter::run_com_port_task;
 use crate::wind::parts::tcp::run_network_task;
@@ -15,9 +15,9 @@ pub async fn run_wind_server(args: &Args) -> () {
         .expect("Invalid wind exchange address");
     info!("TCP server will be bound to {}", listen_addr);
 
-    // wind server does not need to store many messages. Will just trash them earlier
-    let (mut tx_out_to_tcp, rx_in_from_com_port) =
-        async_broadcast::broadcast::<WindMessageBroadcast>(3); // one data frame, one mesaurement frame and one space at least (more should not be read in one iteration and is also not interesting for us)
+    let (mut tx_out_to_tcp, rx_in_from_com_port) = async_broadcast::broadcast::<WindMessageBroadcast>(
+        MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+    );
     tx_out_to_tcp.set_overflow(true); // do not care, if messages get lost. They there wouuld have been no tcp client to receive them anyway, it seems
     let rx_in_from_com_port = rx_in_from_com_port.deactivate();
 
