@@ -59,9 +59,8 @@ pub async fn tcp_listener_timing_program(
 
                 let (mut ri, mut wi) = inbound.into_split();
 
-                // Connection is accepted. Handle all further in own task
-                // TODO -> technically if multiple connect, we would need to send out the messages to ALL connections!!
-
+                // Connection is accepted. Handle all further in own task - We could only accept one connection here. But it does not hurt to do it like this
+                // E.g. wind server only accepts one connection (but for that we know it is reliably using one connection)
                 let comm_channel = comm_channel.clone();
                 let comm_channel_packets = comm_channel_packets.clone();
                 let shutdown_marker = shutdown_marker.clone();
