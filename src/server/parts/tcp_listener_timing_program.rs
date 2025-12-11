@@ -1,7 +1,7 @@
 use crate::args::Args;
 use crate::hex::hex_log_bytes;
 use crate::instructions::{InstructionCommunicationChannel, InstructionToTimingProgram};
-use crate::interface::{ServerState, ServerStateMachine};
+use crate::interface::{ServerState, ServerStateMachineServerStateReader};
 use crate::server::forwarding::{PacketCommunicationChannel, PacketData};
 use crate::server::nrbf::{generate_response_bytes, BufferedParser};
 use async_channel::RecvError;
@@ -15,7 +15,6 @@ use std::time::Duration;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
-use tokio::sync::Mutex;
 use tokio::time;
 
 enum TimeoutOrIoError {
@@ -26,7 +25,7 @@ enum TimeoutOrIoError {
 
 pub async fn tcp_listener_timing_program(
     args: Args,
-    state: Arc<Mutex<ServerStateMachine>>, // does not require write, but our main reference is in a mutex // TODO could use RWLock
+    state_reader: ServerStateMachineServerStateReader,
     comm_channel: InstructionCommunicationChannel,
     comm_channel_packets: PacketCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
@@ -65,7 +64,7 @@ pub async fn tcp_listener_timing_program(
                 let comm_channel_packets = comm_channel_packets.clone();
                 let shutdown_marker = shutdown_marker.clone();
                 let args = args.clone();
-                let state = state.clone();
+                let state_reader = state_reader.clone();
 
                 tokio::spawn(async move {
                     let comm_channel_read = comm_channel.clone();
@@ -76,7 +75,7 @@ pub async fn tcp_listener_timing_program(
                     let shutdown_marker_write = shutdown_marker;
                     let args_read = args.clone();
                     let args_write = args;
-                    let state_write = state;
+                    let state_reader_write = state_reader;
 
                     let read_handler = async move {
                         let mut parser = BufferedParser::new(args_read.clone());
@@ -153,10 +152,8 @@ pub async fn tcp_listener_timing_program(
                             let comm_channel_tcp_outbound_source = async {
                                 match comm_channel_packets_write.outbound_coming_out().await {
                                     Ok(Ok(data)) => {
-                                        let current_state: ServerState = {
-                                            let guard = state_write.lock().await;
-                                            guard.state.clone()
-                                        };
+                                        let current_state: ServerState =
+                                            state_reader_write.get_server_state().await;
 
                                         if current_state == ServerState::PassthroughDisplayProgram {
                                             trace!("Display Program sent frame");

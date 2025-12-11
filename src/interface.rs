@@ -21,7 +21,8 @@ use crate::{
 use clap::crate_version;
 use images_core::images::{ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::{path::Path, sync::Arc};
+use tokio::sync::Mutex;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -80,6 +81,22 @@ macro_rules! store_to_database {
     ($value:expr, $self_val:expr) => {
         store_to_database_log_conditionally!($value, $self_val, true);
     };
+}
+
+#[derive(Clone)]
+pub struct ServerStateMachineServerStateReader {
+    reference: Arc<Mutex<ServerStateMachine>>,
+}
+impl ServerStateMachineServerStateReader {
+    pub fn build(ssm: ServerStateMachine) -> (Arc<Mutex<ServerStateMachine>>, Self) {
+        let arc = Arc::new(Mutex::new(ssm));
+        (arc.clone(), Self { reference: arc })
+    }
+
+    pub async fn get_server_state(&self) -> ServerState {
+        let guard = self.reference.lock().await;
+        guard.state.clone()
+    }
 }
 
 pub struct ServerStateMachine {

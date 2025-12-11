@@ -1,6 +1,6 @@
 use crate::args::Args;
 use crate::instructions::InstructionCommunicationChannel;
-use crate::interface::ServerStateMachine;
+use crate::interface::{ServerStateMachine, ServerStateMachineServerStateReader};
 use crate::server::forwarding::PacketCommunicationChannel;
 use crate::server::parts::client_communicator::client_communicator;
 use crate::server::parts::database::create_database_manager;
@@ -16,7 +16,6 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     Arc,
 };
-use tokio::sync::Mutex;
 
 /// Start server
 pub async fn run_server(args: &Args) -> () {
@@ -127,16 +126,14 @@ pub async fn run_server(args: &Args) -> () {
         }
         Ok(man) => man,
     };
-    let server_state = Arc::new(Mutex::new(ServerStateMachine::new(
-        &args,
-        comm_channel.clone(),
-        database_manager,
-    )));
+    let (server_state, server_state_reader) = ServerStateMachineServerStateReader::build(
+        ServerStateMachine::new(&args, comm_channel.clone(), database_manager),
+    );
     let shutdown_marker = Arc::new(AtomicBool::new(false));
 
     let tcp_listener_server_instance = tcp_listener_timing_program(
         args.clone(),
-        server_state.clone(),
+        server_state_reader.clone(),
         comm_channel.clone(),
         comm_channel_packets.clone(),
         Arc::clone(&shutdown_marker),
@@ -145,7 +142,7 @@ pub async fn run_server(args: &Args) -> () {
 
     let tcp_forwarder_display_program_instance = tcp_forwarder_display_program(
         args.clone(),
-        server_state.clone(),
+        server_state_reader,
         comm_channel.clone(),
         comm_channel_packets.clone(),
         Arc::clone(&shutdown_marker),

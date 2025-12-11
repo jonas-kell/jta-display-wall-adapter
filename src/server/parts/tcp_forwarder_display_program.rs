@@ -3,7 +3,7 @@ use crate::hex::hex_log_bytes;
 use crate::instructions::{
     InstructionCommunicationChannel, InstructionFromTimingProgram, InstructionToTimingProgram,
 };
-use crate::interface::{ServerState, ServerStateMachine};
+use crate::interface::{ServerState, ServerStateMachineServerStateReader};
 use crate::server::forwarding::PacketCommunicationChannel;
 use crate::server::nrbf::BufferedParser;
 use std::io;
@@ -16,12 +16,11 @@ use std::time::Duration;
 use tokio::io::AsyncReadExt;
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
-use tokio::sync::Mutex;
 use tokio::time;
 
 pub async fn tcp_forwarder_display_program(
     args: Args,
-    state: Arc<Mutex<ServerStateMachine>>, // does not require write, but our main reference is in a mutex // TODO could use RWLock
+    state_reader: ServerStateMachineServerStateReader,
     comm_channel: InstructionCommunicationChannel,
     comm_channel_packets: PacketCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
@@ -62,7 +61,7 @@ pub async fn tcp_forwarder_display_program(
                 let shutdown_marker_write = shutdown_marker.clone();
                 let args_read = args.clone();
                 let args_write = args.clone();
-                let state = state.clone();
+                let state_reader = state_reader.clone();
 
                 let read_handler = async move {
                     let mut buf = [0u8; 65536];
@@ -90,10 +89,7 @@ pub async fn tcp_forwarder_display_program(
                                                 Err((err, data_that_could_not_be_parsed)) => {
                                                     error!("Error when Decoding Outbound Communication: {}", err);
 
-                                                    let current_state: ServerState = {
-                                                        let guard = state.lock().await;
-                                                        guard.state.clone()
-                                                    };
+                                                    let current_state: ServerState = state_reader.get_server_state().await;
 
                                                     if current_state == ServerState::PassthroughDisplayProgram {
                                                         // proxy just like that if not successfully parsed
@@ -113,10 +109,7 @@ pub async fn tcp_forwarder_display_program(
                                                         parsed
                                                     );
 
-                                                    let current_state: ServerState = {
-                                                        let guard = state.lock().await;
-                                                        guard.state.clone()
-                                                    };
+                                                    let current_state: ServerState = state_reader.get_server_state().await;
 
                                                     match current_state {
                                                         ServerState::PassthroughDisplayProgram => {
