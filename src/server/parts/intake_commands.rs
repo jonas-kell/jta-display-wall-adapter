@@ -7,6 +7,7 @@ use std::sync::{
     Arc,
 };
 use tokio::sync::Mutex;
+// TODO could refactor ServerState to use Arc<RWLock<...>>. With that, the ServerStateMachine would no longer need to live in an Arc<Mutex<...>> and the main server could avoid that alltogether and properly move to solely message based communication
 
 pub async fn intake_commands(
     args: Args,
