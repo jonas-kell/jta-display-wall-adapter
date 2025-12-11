@@ -1,4 +1,5 @@
 use crate::{
+    interface::MessageFromClientToServer,
     server::camera_program_types::{
         CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
         HeatStartList, HeatWind, HeatWindMissing,
@@ -11,6 +12,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
 pub enum IncomingInstruction {
+    FromClient(MessageFromClientToServer),
     FromTimingProgram(InstructionFromTimingProgram),
     FromCameraProgram(InstructionFromCameraProgram),
     FromWebControl(MessageFromWebControl),
@@ -22,6 +24,7 @@ impl Display for IncomingInstruction {
             f,
             "{}",
             match self {
+                IncomingInstruction::FromClient(mfcts) => format!("FromClient: {:?}", mfcts),
                 IncomingInstruction::FromTimingProgram(tci) =>
                     format!("FromTimingProgram: {}", tci),
                 IncomingInstruction::FromCameraProgram(cpi) =>

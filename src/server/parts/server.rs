@@ -151,7 +151,6 @@ pub async fn run_server(args: &Args) -> () {
 
     let client_communicator_instance = client_communicator(
         args.clone(),
-        server_state.clone(),
         comm_channel.clone(),
         Arc::clone(&shutdown_marker),
         internal_communication_address,

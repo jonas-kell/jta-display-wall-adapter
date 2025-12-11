@@ -4,7 +4,7 @@ use crate::{
         IncomingInstruction, InstructionFromCameraProgram, InstructionFromTimingProgram,
         InstructionToTimingProgram,
     },
-    interface::MessageFromServerToClient,
+    interface::{MessageFromClientToServer, MessageFromServerToClient},
     webserver::{MessageFromWebControl, MessageToWebControl},
     wind::format::{MessageToWindServer, WindMessageBroadcast},
 };
@@ -118,6 +118,24 @@ impl InstructionCommunicationChannel {
         }
     }
 
+    pub fn take_in_command_from_client(
+        &self,
+        inst: MessageFromClientToServer,
+    ) -> Result<(), String> {
+        match self
+            .inbound_sender
+            .try_send(IncomingInstruction::FromClient(inst))
+        {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
+    }
     pub fn take_in_command_from_wind_server(
         &self,
         inst: WindMessageBroadcast,

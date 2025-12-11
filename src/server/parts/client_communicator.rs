@@ -1,5 +1,8 @@
 use crate::args::Args;
-use crate::interface::{MessageFromClientToServer, MessageFromServerToClient, ServerStateMachine};
+use crate::interface::ServerInternalMessageFromClientToServer::{
+    MakeVersionRequestToAllClients, SetMainDisplayState,
+};
+use crate::interface::{MessageFromClientToServer, MessageFromServerToClient};
 use crate::server::comm_channel::InstructionCommunicationChannel;
 use futures::prelude::*;
 use std::io;
@@ -10,7 +13,6 @@ use std::sync::{
 };
 use std::time::Duration;
 use tokio::net::TcpStream;
-use tokio::sync::Mutex;
 use tokio::time::{self, sleep};
 use tokio_serde::formats::Bincode;
 use tokio_serde::Framed;
@@ -18,7 +20,6 @@ use tokio_util::codec::{FramedRead, FramedWrite, LengthDelimitedCodec};
 
 pub async fn client_communicator(
     args: Args,
-    server_state: Arc<Mutex<ServerStateMachine>>,
     comm_channel: InstructionCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
     client_addr: SocketAddr,
@@ -28,10 +29,17 @@ pub async fn client_communicator(
             info!("Shutdown requested, stopping listener on {}", client_addr);
             break;
         }
-        {
-            let mut guard = server_state.lock().await;
-            guard.set_main_display_state(false);
-        }
+        match comm_channel.take_in_command_from_client(MessageFromClientToServer::ServerInternal(
+            SetMainDisplayState(false),
+        )) {
+            Ok(()) => (),
+            Err(e) => {
+                error!(
+                    "Could not pass server-internal message into internal communication channel."
+                );
+                return Err(io::Error::new(io::ErrorKind::Other, e.to_string()));
+            }
+        };
 
         // Wait for new connection with timeout so we can check shutdown flag periodically
         match time::timeout(
@@ -44,12 +52,29 @@ pub async fn client_communicator(
                 info!("Connected to client at {}", client_addr);
 
                 // on connection first request version to initiate communication
-                {
-                    let mut guard = server_state.lock().await;
-                    guard.set_main_display_state(true);
-                    guard.make_server_request_client_version().await;
-                    debug!("Requested server version from client {}", client_addr);
-                }
+                match comm_channel.take_in_command_from_client(
+                    MessageFromClientToServer::ServerInternal(SetMainDisplayState(true)),
+                ) {
+                    Ok(()) => (),
+                    Err(e) => {
+                        error!("Could not pass server-internal message into internal communication channel.");
+                        return Err(io::Error::new(io::ErrorKind::Other, e.to_string()));
+                    }
+                };
+                match comm_channel.take_in_command_from_client(
+                    MessageFromClientToServer::ServerInternal(MakeVersionRequestToAllClients),
+                ) {
+                    Ok(()) => {
+                        debug!(
+                            "Scheduled server to request version from client(s) {}",
+                            client_addr
+                        );
+                    }
+                    Err(e) => {
+                        error!("Could not pass server-internal message into internal communication channel.");
+                        return Err(io::Error::new(io::ErrorKind::Other, e.to_string()));
+                    }
+                };
 
                 // handle messaging
                 let (read_half, write_half) = client_stream.into_split();
@@ -73,7 +98,7 @@ pub async fn client_communicator(
                 );
 
                 let shutdown_marker_read = shutdown_marker.clone();
-                let server_state_read = server_state.clone();
+                let comm_channel_client_inbound_read = comm_channel.clone();
 
                 let read_handler = async move {
                     loop {
@@ -96,8 +121,15 @@ pub async fn client_communicator(
                             Ok(Some(Err(e))) => return Err(e.to_string()),
                             Ok(Some(Ok(mes))) => {
                                 // message from server
-                                let mut guard = server_state_read.lock().await;
-                                guard.parse_client_command(mes).await;
+                                match comm_channel_client_inbound_read
+                                    .take_in_command_from_client(mes)
+                                {
+                                    Ok(()) => (),
+                                    Err(e) => {
+                                        error!("Could not pass message into internal communication channel.");
+                                        return Err(e);
+                                    }
+                                };
                             }
                         }
                     }
@@ -140,29 +172,48 @@ pub async fn client_communicator(
                     Ok(_) => (),
                     Err(e) => {
                         error!("Client connection gone away: {}", e);
-                        {
-                            let mut guard = server_state.lock().await;
-                            guard.set_main_display_state(false);
-                        }
+                        match comm_channel.take_in_command_from_client(
+                            MessageFromClientToServer::ServerInternal(SetMainDisplayState(false)),
+                        ) {
+                            Ok(()) => (),
+                            Err(e) => {
+                                error!("Could not pass server-internal message into internal communication channel.");
+                                return Err(io::Error::new(io::ErrorKind::Other, e.to_string()));
+                            }
+                        };
                         sleep(Duration::from_millis(1000)).await; // on dev the communication goes into docker, so it connects, then fails. But this spams logs. Slow down retry a bit
                     }
                 }
             }
             Ok(Err(e)) => {
                 error!("Client exchange error: {}", e);
-                {
-                    let mut guard = server_state.lock().await;
-                    guard.set_main_display_state(false);
-                }
+                match comm_channel.take_in_command_from_client(
+                    MessageFromClientToServer::ServerInternal(SetMainDisplayState(false)),
+                ) {
+                    Ok(()) => (),
+                    Err(e) => {
+                        error!(
+                    "Could not pass server-internal message into internal communication channel."
+                );
+                        return Err(io::Error::new(io::ErrorKind::Other, e.to_string()));
+                    }
+                };
                 sleep(Duration::from_millis(1000)).await; // on missing target the communication sometimes connects with "Error - connection refused" -> immediately fails. But this spams logs. Slow down retry a bit
             }
             Err(_) => {
                 // expected on timeout, just loop
                 trace!("No TCP connection to client could be established within timeout interval");
-                {
-                    let mut guard = server_state.lock().await;
-                    guard.set_main_display_state(false);
-                }
+                match comm_channel.take_in_command_from_client(
+                    MessageFromClientToServer::ServerInternal(SetMainDisplayState(false)),
+                ) {
+                    Ok(()) => (),
+                    Err(e) => {
+                        error!(
+                    "Could not pass server-internal message into internal communication channel."
+                );
+                        return Err(io::Error::new(io::ErrorKind::Other, e.to_string()));
+                    }
+                };
             }
         }
     }

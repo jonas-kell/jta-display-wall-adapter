@@ -50,7 +50,14 @@ pub enum MessageFromServerToClient {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum ServerInternalMessageFromClientToServer {
+    SetMainDisplayState(bool),
+    MakeVersionRequestToAllClients,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum MessageFromClientToServer {
+    ServerInternal(ServerInternalMessageFromClientToServer),
     Version(String),
     CurrentWindow(Vec<u8>),
     TimingSettingsState(TimingSettings),
@@ -141,84 +148,94 @@ impl ServerStateMachine {
         }
     }
 
-    pub async fn parse_client_command(&mut self, msg: MessageFromClientToServer) {
-        // handle all messages
-        match msg {
-            MessageFromClientToServer::Version(version) => {
-                info!("Client reported to have version: '{}'", version);
-                let our_version = String::from(crate_version!());
-                if version == our_version {
-                    info!("That is a version match. Communication established!");
-                } else {
-                    error!("CAUTION: the client version is NOT the same version as we expected. This might cause the program to misbehave or outright not work!");
-                    error!("Client: {}; Server: {}", version, our_version);
-                }
-
-                if self.args.listen_to_timing_program {
-                    // report the timing program our fake version
-                    self.send_message_to_timing_program(InstructionToTimingProgram::SendServerInfo);
-                }
-
-                // get client to respect window position and size
-                debug!(
-                    "Requesting window change on client: {} {} {} {}",
-                    self.args.dp_pos_x, self.args.dp_pos_y, self.args.dp_width, self.args.dp_height,
-                );
-                self.send_message_to_client(MessageFromServerToClient::ServerImposedSettings(
-                    ServerImposedSettings {
-                        position: (
-                            self.args.dp_pos_x,
-                            self.args.dp_pos_y,
-                            self.args.dp_width,
-                            self.args.dp_height,
-                        ),
-                        slideshow_duration_in_ms: self.args.slideshow_duration_nr_ms,
-                        slideshow_transition_duration_nr_ms: self
-                            .args
-                            .slideshow_transition_duration_nr_ms,
-                    },
-                ));
-                // init-impose the timing settings from the server
-                self.send_message_to_client(MessageFromServerToClient::TimingSettingsUpdate(
-                    self.timing_settings_template.clone(),
-                ));
-
-                // send client advertisement images
-                let folder_path = Path::new("advertisement_container");
-                let images_data = match read_image_files(folder_path) {
-                    Err(e) => {
-                        error!("Could not read advertisement files: {}", e);
-                        Vec::new()
-                    }
-                    Ok(data) => data,
-                };
-                self.send_message_to_client(MessageFromServerToClient::AdvertisementImages(
-                    images_data,
-                ));
-            }
-            MessageFromClientToServer::CurrentWindow(data) => {
-                if self.state == ServerState::PassthroughClient
-                    && self.args.listen_to_timing_program
-                {
-                    self.send_message_to_timing_program(InstructionToTimingProgram::SendFrame(
-                        data,
-                    ));
-                }
-                // ping the state to the web control
-                self.send_message_to_web_control(MessageToWebControl::DisplayClientState(
-                    self.get_display_client_state(),
-                ));
-            }
-            MessageFromClientToServer::TimingSettingsState(set) => {
-                self.timing_settings_template = set.clone();
-                self.send_message_to_web_control(MessageToWebControl::TimingSettingsState(set));
-            }
-        }
-    }
-
     pub async fn parse_incoming_command(&mut self, msg: IncomingInstruction) {
         // handle all messages
         match msg {
+            IncomingInstruction::FromClient(inst) => match inst {
+                MessageFromClientToServer::ServerInternal(internal) => match internal {
+                    ServerInternalMessageFromClientToServer::MakeVersionRequestToAllClients => {
+                        // this possibly must be changed for multiple clients (possible TODO )
+                        self.send_message_to_client(MessageFromServerToClient::RequestVersion);
+                    }
+                    ServerInternalMessageFromClientToServer::SetMainDisplayState(new_val) => {
+                        self.set_main_display_state(new_val);
+                    }
+                },
+                MessageFromClientToServer::Version(version) => {
+                    info!("Client reported to have version: '{}'", version);
+                    let our_version = String::from(crate_version!());
+                    if version == our_version {
+                        info!("That is a version match. Communication established!");
+                    } else {
+                        error!("CAUTION: the client version is NOT the same version as we expected. This might cause the program to misbehave or outright not work!");
+                        error!("Client: {}; Server: {}", version, our_version);
+                    }
+
+                    if self.args.listen_to_timing_program {
+                        // report the timing program our fake version
+                        self.send_message_to_timing_program(
+                            InstructionToTimingProgram::SendServerInfo,
+                        );
+                    }
+
+                    // get client to respect window position and size
+                    debug!(
+                        "Requesting window change on client: {} {} {} {}",
+                        self.args.dp_pos_x,
+                        self.args.dp_pos_y,
+                        self.args.dp_width,
+                        self.args.dp_height,
+                    );
+                    self.send_message_to_client(MessageFromServerToClient::ServerImposedSettings(
+                        ServerImposedSettings {
+                            position: (
+                                self.args.dp_pos_x,
+                                self.args.dp_pos_y,
+                                self.args.dp_width,
+                                self.args.dp_height,
+                            ),
+                            slideshow_duration_in_ms: self.args.slideshow_duration_nr_ms,
+                            slideshow_transition_duration_nr_ms: self
+                                .args
+                                .slideshow_transition_duration_nr_ms,
+                        },
+                    ));
+                    // init-impose the timing settings from the server
+                    self.send_message_to_client(MessageFromServerToClient::TimingSettingsUpdate(
+                        self.timing_settings_template.clone(),
+                    ));
+
+                    // send client advertisement images
+                    let folder_path = Path::new("advertisement_container");
+                    let images_data = match read_image_files(folder_path) {
+                        Err(e) => {
+                            error!("Could not read advertisement files: {}", e);
+                            Vec::new()
+                        }
+                        Ok(data) => data,
+                    };
+                    self.send_message_to_client(MessageFromServerToClient::AdvertisementImages(
+                        images_data,
+                    ));
+                }
+                MessageFromClientToServer::CurrentWindow(data) => {
+                    if self.state == ServerState::PassthroughClient
+                        && self.args.listen_to_timing_program
+                    {
+                        self.send_message_to_timing_program(InstructionToTimingProgram::SendFrame(
+                            data,
+                        ));
+                    }
+                    // ping the state to the web control
+                    self.send_message_to_web_control(MessageToWebControl::DisplayClientState(
+                        self.get_display_client_state(),
+                    ));
+                }
+                MessageFromClientToServer::TimingSettingsState(set) => {
+                    self.timing_settings_template = set.clone();
+                    self.send_message_to_web_control(MessageToWebControl::TimingSettingsState(set));
+                }
+            },
             IncomingInstruction::FromTimingProgram(inst) => match inst {
                 InstructionFromTimingProgram::ClientInfo => (),
                 InstructionFromTimingProgram::ServerInfo => (),
@@ -488,10 +505,6 @@ impl ServerStateMachine {
         }
     }
 
-    pub async fn make_server_request_client_version(&mut self) {
-        self.send_message_to_client(MessageFromServerToClient::RequestVersion)
-    }
-
     fn send_message_to_client(&mut self, inst: MessageFromServerToClient) {
         match self.comm_channel.send_out_command_to_client(inst) {
             Ok(()) => (),
@@ -525,7 +538,7 @@ impl ServerStateMachine {
         }
     }
 
-    pub fn set_main_display_state(&mut self, state: bool) {
+    fn set_main_display_state(&mut self, state: bool) {
         self.display_connected = state;
     }
 }
