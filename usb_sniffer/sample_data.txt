@@ -14,4 +14,20 @@ List of what this does:
 5a: Z -> 12s ???
 48: H -> 13s Hürden
 
-20s (wartezeit dann 10) triggert auch 4c, aber erst nach 10s = 200m
+20s (waiting time, then 10) also triggers 4c => 200m
+
+
+// random garbage, that gets exchanged on program start
+ 619 : DATA0 (8): 00 09 00 00 00 00 00 00
+ 486 : DATA0 (8): 80 06 00 01 00 00 12 00
+ 180 : DATA0 (2): 00 01
+ 213 : DATA0 (8): 80 06 00 02 00 00 09 00
+ 679 : DATA1 (9): 09 02 2e 00 01 01 00 60 01
+ 821 : DATA0 (8): 80 06 00 02 00 00 2e 00
+ 348 : DATA1 (16): 09 02 2e 00 01 01 00 60 01 09 04 00 00 04 dc a0
+ 653 : DATA0 (16): b0 00 07 05 81 03 10 00 01 07 05 01 03 10 00 0a
+ 689 : DATA1 (14): 07 05 82 02 40 00 0a 07 05 02 02 40 00 0a
+ 852 : DATA0 (8): 00 09 01 00 00 00 00 00
+
+// somewhat interesting, but not really
+  14 : DATA0 (7): 45 4d 55 30 5c 72 0d
