@@ -5,7 +5,7 @@ use crate::client::rendering::render_client_frame;
 use crate::client::{FRAME_TIME_NS, REPORT_FRAME_LOGS_EVERY_SECONDS, TARGET_FPS};
 use crate::file::{create_file_if_not_there_and_write, make_sure_folder_exists};
 use crate::interface::{ClientStateMachine, MessageFromClientToServer, MessageFromServerToClient};
-use async_broadcast::Sender;
+use async_broadcast::{Sender, TrySendError};
 use async_channel::{Receiver, TryRecvError};
 use fontdue::layout::{CoordinateSystem, Layout};
 use fontdue::{Font, FontSettings};
@@ -334,11 +334,15 @@ impl App {
                         trace!("Thrown away old message in outgoing internal communication")
                     }
                     Ok(None) => (),
-                    Err(e) => {
-                        warn!(
-                            "Outbound internal channel not open, no active receivers: {}",
-                            e.to_string()
-                        );
+                    Err(TrySendError::Inactive(_)) => {
+                        warn!("Outbound internal channel not open, no active receivers",);
+                    }
+                    Err(TrySendError::Full(_)) => {
+                        error!("Receivers are there, but outbound internal channel full. This should not happen!");
+                    }
+                    Err(TrySendError::Closed(_)) => {
+                        error!("Outbound internal channel went away unexpectedly");
+                        event_loop.exit();
                     }
                 };
             }

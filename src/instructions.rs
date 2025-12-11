@@ -90,7 +90,7 @@ impl Display for InstructionFromTimingProgram {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum InstructionToTimingProgram {
     SendServerInfo,
     SendFrame(Vec<u8>), // stores the frame data

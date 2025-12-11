@@ -31,7 +31,7 @@ pub struct WindMeasurement {
     pub time: Option<DayTime>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum MessageToWindServer {
     SetTime(DayTime),
 }

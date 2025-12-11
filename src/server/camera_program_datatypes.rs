@@ -12,7 +12,7 @@ pub enum DisqualificationReason {
     Other(String),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatStart {
     pub application: String,
     pub version: String,
@@ -21,7 +21,7 @@ pub struct HeatStart {
     pub time: DayTime,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatFinish {
     pub application: String,
     pub version: String,
@@ -31,7 +31,7 @@ pub struct HeatFinish {
     pub race_time: RaceTime,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatIntermediate {
     pub application: String,
     pub version: String,
@@ -74,7 +74,7 @@ pub struct HeatCompetitor {
     pub disqualified: Option<DisqualificationReason>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatWind {
     pub application: String,
     pub version: String,
@@ -91,7 +91,7 @@ pub struct HeatWindMissing {
     pub id: Uuid,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CompetitorEvaluated {
     pub application: String,
     pub version: String,
@@ -100,13 +100,13 @@ pub struct CompetitorEvaluated {
     pub competitor_result: HeatCompetitorResult,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum DifferenceToCandidate {
     Winner,
     Difference(RaceTime),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatCompetitorResult {
     pub competitor: HeatCompetitor,
     pub distance: u32,
@@ -118,7 +118,7 @@ pub struct HeatCompetitorResult {
     pub finish_time: DayTime,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatResult {
     pub id: Uuid,
     // usefull props
@@ -131,7 +131,7 @@ pub struct HeatResult {
     pub competitors_left_to_evaluate: Vec<HeatCompetitor>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatMeta {
     pub id: Uuid,
     pub name: String,
@@ -149,7 +149,7 @@ impl From<HeatStartList> for HeatMeta {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatData {
     pub meta: HeatMeta,
     pub start_list: HeatStartList,

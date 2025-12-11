@@ -1,6 +1,5 @@
 mod camera_program_datatypes;
 pub mod comm_channel;
-mod forwarding;
 mod nrbf;
 mod parts;
 mod xml_serial;

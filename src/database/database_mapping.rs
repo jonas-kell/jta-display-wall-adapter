@@ -355,7 +355,7 @@ struct PermanentStorageDatabase {
     data: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PermanentlyStoredDataset {
     name_key: String,
     stored_at: NaiveDateTime,

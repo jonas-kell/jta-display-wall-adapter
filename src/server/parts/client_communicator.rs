@@ -137,7 +137,7 @@ pub async fn client_communicator(
                 };
 
                 let shutdown_marker_write = shutdown_marker.clone();
-                let comm_channel_client_outbound_write = comm_channel.clone();
+                let mut comm_channel_client_outbound_write = comm_channel.client_receiver();
 
                 let write_handler = async move {
                     loop {
@@ -147,7 +147,7 @@ pub async fn client_communicator(
                         }
 
                         match comm_channel_client_outbound_write
-                            .wait_for_command_to_send_to_client()
+                            .wait_for_some_data()
                             .await
                         {
                             Err(_) => {

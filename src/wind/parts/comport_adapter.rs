@@ -1,7 +1,7 @@
 use crate::args::Args;
 use crate::wind::format::WindMessageBroadcast;
 use crate::wind::parts::usb_sniffer_parser::decode_single_usb_dump;
-use async_broadcast::Sender;
+use async_broadcast::{Sender, TrySendError};
 use serialport::SerialPort;
 use std::io::{self, Read};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -114,12 +114,19 @@ pub fn run_com_port_task(
                                         trace!("Thrown away old message in internal comm channel");
                                     }
                                     Ok(None) => (),
-                                    Err(e) => {
-                                        warn!(
-                                            "Internal channel not open, no active receivers: {}",
-                                            e.to_string()
-                                        );
+                                    Err(TrySendError::Inactive(_)) => {
+                                        warn!("Internal channel not open, no active receivers");
                                         continue;
+                                    }
+                                    Err(TrySendError::Full(_)) => {
+                                        error!("Receivers are there, but internal channel full. This should not happen!");
+                                        continue;
+                                    }
+                                    Err(TrySendError::Closed(_)) => {
+                                        return Err(std::io::Error::new(
+                                            std::io::ErrorKind::AddrInUse,
+                                            "Internal comm channel went away unexpectedly",
+                                        ));
                                     }
                                 }
                                 trace!("Passed new wind command into internal broadcast channel");

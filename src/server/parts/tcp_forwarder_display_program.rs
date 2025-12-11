@@ -2,8 +2,7 @@ use crate::args::Args;
 use crate::hex::hex_log_bytes;
 use crate::instructions::{InstructionFromTimingProgram, InstructionToTimingProgram};
 use crate::interface::{ServerState, ServerStateMachineServerStateReader};
-use crate::server::comm_channel::InstructionCommunicationChannel;
-use crate::server::forwarding::PacketCommunicationChannel;
+use crate::server::comm_channel::{InstructionCommunicationChannel, PacketCommunicationChannel};
 use crate::server::nrbf::BufferedParser;
 use std::io;
 use std::net::SocketAddr;
@@ -55,7 +54,7 @@ pub async fn tcp_forwarder_display_program(
 
                 let comm_channel = comm_channel.clone();
                 let comm_channel_packets_read = comm_channel_packets.clone();
-                let comm_channel_packets_write = comm_channel_packets.clone();
+                let mut inbound_packet_receiver = comm_channel_packets.inbound_receiver();
                 let shutdown_marker_read = shutdown_marker.clone();
                 let shutdown_marker_write = shutdown_marker.clone();
                 let args_read = args.clone();
@@ -163,7 +162,7 @@ pub async fn tcp_forwarder_display_program(
                             break;
                         }
 
-                        match comm_channel_packets_write.inbound_coming_in().await {
+                        match inbound_packet_receiver.wait_for_some_data().await {
                             Ok(Ok(data)) => {
                                 trace!("Proxying through packet from timing program to display program unaltered");
                                 if args_write.hexdump_passthrough_communication {

@@ -107,7 +107,7 @@ pub async fn tcp_listener_wind_server(
                 };
 
                 let shutdown_marker_write = shutdown_marker.clone();
-                let comm_channel_write = comm_channel.clone();
+                let mut wind_server_receiver = comm_channel.wind_server_receiver();
 
                 let wind_server_write = async move {
                     loop {
@@ -116,10 +116,7 @@ pub async fn tcp_listener_wind_server(
                             break;
                         }
 
-                        match comm_channel_write
-                            .wait_for_command_to_send_to_wind_server()
-                            .await
-                        {
+                        match wind_server_receiver.wait_for_some_data().await {
                             Ok(Ok(mes)) => match serializer.send(mes).await {
                                 Ok(()) => trace!("Message to wind server was emitted"),
                                 Err(e) => {

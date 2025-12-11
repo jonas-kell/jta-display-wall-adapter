@@ -2,10 +2,11 @@ use crate::args::Args;
 use crate::hex::hex_log_bytes;
 use crate::instructions::InstructionToTimingProgram;
 use crate::interface::{ServerState, ServerStateMachineServerStateReader};
-use crate::server::comm_channel::InstructionCommunicationChannel;
-use crate::server::forwarding::{PacketCommunicationChannel, PacketData};
+use crate::server::comm_channel::{
+    InstructionCommunicationChannel, PacketCommunicationChannel, PacketData,
+};
 use crate::server::nrbf::{generate_response_bytes, BufferedParser};
-use async_channel::RecvError;
+use async_broadcast::RecvError;
 use std::io;
 use std::net::SocketAddr;
 use std::sync::{
@@ -69,9 +70,9 @@ pub async fn tcp_listener_timing_program(
 
                 tokio::spawn(async move {
                     let comm_channel_read = comm_channel.clone();
-                    let comm_channel_write = comm_channel;
+                    let mut timing_program_receiver = comm_channel.timing_program_receiver();
                     let comm_channel_packets_read = comm_channel_packets.clone();
-                    let comm_channel_packets_write = comm_channel_packets;
+                    let mut outbound_packet_receiver = comm_channel_packets.outbound_receiver();
                     let shutdown_marker_read = shutdown_marker.clone();
                     let shutdown_marker_write = shutdown_marker;
                     let args_read = args.clone();
@@ -151,7 +152,7 @@ pub async fn tcp_listener_timing_program(
 
                             // wait on the tcp stream from passthrough
                             let comm_channel_tcp_outbound_source = async {
-                                match comm_channel_packets_write.outbound_coming_out().await {
+                                match outbound_packet_receiver.wait_for_some_data().await {
                                     Ok(Ok(data)) => {
                                         let current_state: ServerState =
                                             state_reader_write.get_server_state().await;
@@ -173,10 +174,7 @@ pub async fn tcp_listener_timing_program(
                             };
                             // wait on the back-send-command scheduler
                             let comm_channel_command_outbound_source = async {
-                                match comm_channel_write
-                                    .wait_for_command_to_send_to_timing_program()
-                                    .await
-                                {
+                                match timing_program_receiver.wait_for_some_data().await {
                                     Ok(Ok(inst)) => return Ok(inst),
                                     Ok(Err(e)) => return Err(TimeoutOrIoError::ReceiveError(e)),
                                     Err(_) => {

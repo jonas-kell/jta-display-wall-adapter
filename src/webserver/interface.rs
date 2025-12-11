@@ -32,14 +32,14 @@ pub struct WindValueRequestDateContainer {
     pub to: NaiveDateTime,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DisplayClientState {
     pub alive: bool,
     pub external_passthrough_mode: bool,
     pub can_switch_mode: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", content = "data")]
 pub enum MessageToWebControl {
     DisplayClientState(DisplayClientState),

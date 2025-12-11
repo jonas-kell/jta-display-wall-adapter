@@ -27,13 +27,10 @@ pub async fn ws_route(
 
     // Sender task
     let mut sender_session = session.clone();
-    let comm_channel_data_read = comm_channel_data.clone();
+    let mut web_control_receiver = comm_channel_data.web_control_receiver();
     actix_web::rt::spawn(async move {
         loop {
-            match comm_channel_data_read
-                .wait_for_command_to_send_to_web_control()
-                .await
-            {
+            match web_control_receiver.wait_for_some_data().await {
                 Err(_) => {
                     trace!("No new command to send to web control within timeout interval");
                     continue;
