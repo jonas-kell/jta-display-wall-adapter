@@ -200,6 +200,10 @@ impl InstructionCommunicationChannel {
         }
     }
 
+    pub fn timing_program_there_to_receive(&self) -> bool {
+        self.outbound_sender_timing_program.receiver_count() > 0
+    }
+
     pub fn timing_program_receiver(&self) -> BroadcastReceiver<InstructionToTimingProgram> {
         self.outbound_receiver_timing_program.get_active_receiver()
     }
@@ -251,6 +255,10 @@ impl InstructionCommunicationChannel {
                 "Web control communication channel went away unexpectedly"
             )),
         }
+    }
+
+    pub fn web_control_there_to_receive(&self) -> bool {
+        self.outbound_sender_web_control.receiver_count() > 0
     }
 
     pub fn web_control_receiver(&self) -> BroadcastReceiver<MessageToWebControl> {

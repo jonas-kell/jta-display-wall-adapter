@@ -222,14 +222,19 @@ impl ServerStateMachine {
                     if self.state == ServerState::PassthroughClient
                         && self.args.listen_to_timing_program
                     {
-                        self.send_message_to_timing_program(InstructionToTimingProgram::SendFrame(
-                            data,
-                        ));
+                        // force our frame onto the timing program
+                        if self.comm_channel.timing_program_there_to_receive() {
+                            self.send_message_to_timing_program(
+                                InstructionToTimingProgram::SendFrame(data),
+                            );
+                        }
                     }
                     // ping the state to the web control
-                    self.send_message_to_web_control(MessageToWebControl::DisplayClientState(
-                        self.get_display_client_state(),
-                    ));
+                    if self.comm_channel.web_control_there_to_receive() {
+                        self.send_message_to_web_control(MessageToWebControl::DisplayClientState(
+                            self.get_display_client_state(),
+                        ));
+                    }
                 }
                 MessageFromClientToServer::TimingSettingsState(set) => {
                     self.timing_settings_template = set.clone();
