@@ -37,6 +37,7 @@ RUN apt-get update && apt-get install -y \
     libxkbcommon0 \
     libxkbcommon-x11-0 \
     libxcb1 \
+    libasound2 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
