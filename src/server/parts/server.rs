@@ -42,40 +42,56 @@ pub async fn run_server(args: &Args) -> () {
         );
     }
 
-    let camera_program_timing_address: SocketAddr = format!(
-        "{}:{}",
-        args.address_camera_program, args.camera_exchange_timing_port
-    )
-    .parse()
-    .expect("Invalid camera program address for timing");
-    let camera_program_data_address: SocketAddr = format!(
-        "{}:{}",
-        args.address_camera_program, args.camera_exchange_data_port
-    )
-    .parse()
-    .expect("Invalid camera program address for data");
-    let camera_program_xml_address: SocketAddr = format!(
-        "{}:{}",
-        args.address_camera_program, args.camera_exchange_xml_port
-    )
-    .parse()
-    .expect("Invalid camera program address for xml");
-    info!(
-        "Talking to the camera program on {}, {} and {}",
-        camera_program_timing_address, camera_program_data_address, camera_program_xml_address
-    );
+    let (camera_program_timing_address, camera_program_data_address, camera_program_xml_address) =
+        if let Some(camera_program_ip) = &args.address_camera_program {
+            let camera_program_timing_address: SocketAddr =
+                format!("{}:{}", camera_program_ip, args.camera_exchange_timing_port)
+                    .parse()
+                    .expect("Invalid camera program address for timing");
+            let camera_program_data_address: SocketAddr =
+                format!("{}:{}", camera_program_ip, args.camera_exchange_data_port)
+                    .parse()
+                    .expect("Invalid camera program address for data");
+            let camera_program_xml_address: SocketAddr =
+                format!("{}:{}", camera_program_ip, args.camera_exchange_xml_port)
+                    .parse()
+                    .expect("Invalid camera program address for xml");
+            info!(
+                "Talking to the camera program on {}, {} and {}",
+                camera_program_timing_address,
+                camera_program_data_address,
+                camera_program_xml_address
+            );
 
-    let internal_communication_address: SocketAddr = format!(
-        "{}:{}",
-        args.address_internal_communication, args.internal_communication_port
-    )
-    .parse()
-    .expect("Invalid internal address");
+            (
+                Some(camera_program_timing_address),
+                Some(camera_program_data_address),
+                Some(camera_program_xml_address),
+            )
+        } else {
+            info!("Not configured to connect to a camera program");
+            (None, None, None)
+        };
 
-    info!(
-        "Talking to {} for internal communication to display client",
-        internal_communication_address
-    );
+    let internal_communication_address =
+        if let Some(display_client_ip) = &args.address_display_client {
+            let internal_communication_address: SocketAddr = format!(
+                "{}:{}",
+                display_client_ip, args.display_client_communication_port
+            )
+            .parse()
+            .expect("Invalid internal address");
+
+            info!(
+                "Talking to {} for internal communication to display client",
+                internal_communication_address
+            );
+
+            Some(internal_communication_address)
+        } else {
+            info!("Not configured to connect to a display client");
+            None
+        };
 
     let own_addr_webcontrol: SocketAddr = format!("0.0.0.0:{}", args.internal_webcontrol_port)
         .parse()

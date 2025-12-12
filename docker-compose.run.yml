@@ -11,5 +11,5 @@ services:
       - /dev/dri:/dev/dri
     ports:
       - "5678:5678"
-    command: /app/client client -vv --internal-communication-port 5678 --wait-ms-before-testing-for-shutdown=5000 --emit-file-on-location-update
+    command: /app/client client -vv --display-client-communication-port 5678 --wait-ms-before-testing-for-shutdown=5000 --emit-file-on-location-update
     restart: on-failure

@@ -22,8 +22,15 @@ pub async fn client_communicator(
     args: Args,
     comm_channel: InstructionCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
-    client_addr: SocketAddr,
+    client_addr: Option<SocketAddr>,
 ) -> io::Result<()> {
+    let client_addr = if let Some(client_addr) = client_addr {
+        client_addr
+    } else {
+        // never listen to the display client -> we can just die
+        return Ok(());
+    };
+
     loop {
         if shutdown_marker.load(Ordering::SeqCst) {
             info!("Shutdown requested, stopping listener on {}", client_addr);

@@ -28,4 +28,4 @@ services:
       - /dev/dri:/dev/dri
     ports:
       - "5678:5678"
-    command: /app/client client --internal-communication-port 5678
+    command: /app/client client --display-client-communication-port 5678

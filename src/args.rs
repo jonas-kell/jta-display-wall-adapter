@@ -24,9 +24,9 @@ pub struct Args {
     /// Address of where the display program lives (like "127.0.0.1")
     #[arg(long, default_value_t = String::from("127.0.0.1"))]
     pub passthrough_address_display_program: String,
-    /// Address of where camera program lives (like "127.0.0.1")
-    #[arg(long, default_value_t = String::from("127.0.0.1"))]
-    pub address_camera_program: String,
+    /// Address of where camera program lives (like "127.0.0.1") - if unset, no connection to camera program will be attempted
+    #[arg(long)]
+    pub address_camera_program: Option<String>,
     /// Port where the camera program has their timing endpoint
     #[arg(long, default_value_t = String::from("4445"))]
     pub camera_exchange_timing_port: String,
@@ -38,11 +38,11 @@ pub struct Args {
     pub camera_exchange_xml_port: String,
     /// Port where the internal communication between server and client takes place
     #[arg(long, default_value_t = String::from("5678"))]
-    pub internal_communication_port: String,
+    pub display_client_communication_port: String,
     /// Port where the internal communication between server and webclient takes place
     #[arg(long, default_value_t = String::from("6789"))]
     pub internal_webcontrol_port: String,
-    /// Port where the internal communication between wind_server and server
+    /// Port where the internal communication between wind server and server takes place
     #[arg(long, default_value_t = String::from("7890"))]
     pub wind_exchange_port: String,
     /// Address of the wind server lives (for the server to talk to) (like "127.0.0.1") - if unset, no connection to wind server will be attempted
@@ -54,9 +54,9 @@ pub struct Args {
     /// Where to find the usb sniffer (windows COM port or linux usb serial device path)
     #[arg(long, default_value_t = String::from("COM4"))]
     pub wind_usb_sniffer_address: String,
-    /// Address of where display client lives (for the server to talk to) (like "127.0.0.1")
-    #[arg(long, default_value_t = String::from("127.0.0.1"))]
-    pub address_internal_communication: String,
+    /// Address of where display client lives (for the server to talk to) (like "127.0.0.1") - if unset, no connection to display client will be attempted
+    #[arg(long)]
+    pub address_display_client: Option<String>,
     /// If the data that is incoming through should get hexdump-displayed
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub hexdump_incoming_communication: bool,

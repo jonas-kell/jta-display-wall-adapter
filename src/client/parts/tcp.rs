@@ -20,7 +20,7 @@ pub async fn run_network_task(
     rx_from_ui: InactiveReceiver<MessageFromClientToServer>,
     shutdown_marker: Arc<AtomicBool>,
 ) -> Result<(), Error> {
-    let listen_addr: SocketAddr = format!("0.0.0.0:{}", args.internal_communication_port)
+    let listen_addr: SocketAddr = format!("0.0.0.0:{}", args.display_client_communication_port)
         .parse()
         .expect("Invalid internal communication address");
 

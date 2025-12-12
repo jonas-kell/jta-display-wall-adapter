@@ -16,14 +16,21 @@ pub async fn tcp_client_camera_program(
     args: Args,
     comm_channel: InstructionCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
-    timing_addr: SocketAddr,
-    data_addr: SocketAddr,
-    xml_addr: SocketAddr,
+    timing_addr: Option<SocketAddr>,
+    data_addr: Option<SocketAddr>,
+    xml_addr: Option<SocketAddr>,
 ) -> io::Result<()> {
     let args_timing = args.clone();
     let shutdown_marker_timing = shutdown_marker.clone();
     let comm_channel_timing = comm_channel.clone();
     let timing_task = async move {
+        let timing_addr = if let Some(timing_addr) = timing_addr {
+            timing_addr
+        } else {
+            // never listen to the timing endpoint -> we can just die
+            return Ok(());
+        };
+
         let mut buf = [0u8; 65536];
 
         loop {
@@ -119,6 +126,13 @@ pub async fn tcp_client_camera_program(
     let shutdown_marker_xml = shutdown_marker.clone();
     let comm_channel_xml = comm_channel.clone();
     let xml_task = async move {
+        let xml_addr = if let Some(xml_addr) = xml_addr {
+            xml_addr
+        } else {
+            // never listen to the xml endpoint -> we can just die
+            return Ok(());
+        };
+
         let mut buf = [0u8; 65536];
 
         loop {
@@ -211,6 +225,13 @@ pub async fn tcp_client_camera_program(
     let shutdown_marker_data = shutdown_marker;
     let comm_channel_data = comm_channel;
     let data_task = async move {
+        let data_addr = if let Some(data_addr) = data_addr {
+            data_addr
+        } else {
+            // never listen to the data endpoint -> we can just die
+            return Ok(());
+        };
+
         let mut buf = [0u8; 65536];
 
         loop {
