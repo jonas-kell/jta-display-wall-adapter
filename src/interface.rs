@@ -576,6 +576,7 @@ pub struct ClientStateMachine {
     pub slideshow_transition_duration_nr_ms: u32,
     timing_state_machine_storage: Option<TimingStateMachine>,
     timing_settings_template: TimingSettings,
+    outbound_connection_open: bool,
 }
 impl ClientStateMachine {
     pub fn new(args: &Args) -> Self {
@@ -594,6 +595,7 @@ impl ClientStateMachine {
             slideshow_transition_duration_nr_ms: args.slideshow_transition_duration_nr_ms,
             timing_state_machine_storage: None,
             timing_settings_template: TimingSettings::new(args),
+            outbound_connection_open: false,
         }
     }
 
@@ -779,7 +781,12 @@ impl ClientStateMachine {
     }
 
     pub fn push_new_message(&mut self, msg: MessageFromClientToServer) {
-        self.messages_to_send_out_to_server.push(msg);
+        if self.outbound_connection_open
+            || !matches!(msg, MessageFromClientToServer::CurrentWindow(_))
+        {
+            // avoid spamming warnings by emitting frames while nothing is connected
+            self.messages_to_send_out_to_server.push(msg);
+        }
     }
 
     pub fn advance_counters(&mut self) {
@@ -788,5 +795,9 @@ impl ClientStateMachine {
 
     pub fn get_one_message_to_send(&mut self) -> Option<MessageFromClientToServer> {
         self.messages_to_send_out_to_server.pop()
+    }
+
+    pub fn set_outbound_connection_open(&mut self, conn_open: bool) {
+        self.outbound_connection_open = conn_open;
     }
 }

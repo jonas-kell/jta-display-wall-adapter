@@ -310,6 +310,10 @@ impl App {
             }
         }
 
+        // update connection status (avoid pushing out messages if we know they will be trashed)
+        self.state_machine
+            .set_outbound_connection_open(self.outgoing.receiver_count() > 0);
+
         // read incoming messages (we do not need to loop, as this is running at 60 fps anyway)
         match self.incoming.try_recv() {
             Ok(msg) => {
@@ -335,7 +339,8 @@ impl App {
                     }
                     Ok(None) => (),
                     Err(TrySendError::Inactive(_)) => {
-                        warn!("Outbound internal channel not open, no active receivers",);
+                        // to never spam log, none of these should be sent while no listeners there if possible (at least no polling)
+                        warn!("Outbound internal channel not open, no active receivers");
                     }
                     Err(TrySendError::Full(_)) => {
                         error!("Receivers are there, but outbound internal channel full. This should not happen!");
