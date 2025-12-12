@@ -28,9 +28,22 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ServerImposedSettings {
-    position: (u32, u32, u32, u32),
-    slideshow_duration_in_ms: u32,
-    slideshow_transition_duration_nr_ms: u32,
+    pub position: (u32, u32, u32, u32),
+    pub slideshow_duration_nr_ms: u32,
+    pub slideshow_transition_duration_nr_ms: u32,
+    pub scroll_text_speed: u32,
+    pub scroll_text_deadzones_nr_ms: u32,
+}
+impl ServerImposedSettings {
+    fn new(args: &Args) -> Self {
+        Self {
+            position: (args.dp_pos_x, args.dp_pos_y, args.dp_width, args.dp_height),
+            slideshow_duration_nr_ms: args.slideshow_duration_nr_ms,
+            slideshow_transition_duration_nr_ms: args.slideshow_transition_duration_nr_ms,
+            scroll_text_speed: args.scroll_text_speed,
+            scroll_text_deadzones_nr_ms: args.scroll_text_deadzones_nr_ms,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -178,27 +191,17 @@ impl ServerStateMachine {
                         );
                     }
 
-                    // get client to respect window position and size
+                    // init-impose the server settings from the server
+                    let server_imposed_settings = ServerImposedSettings::new(&self.args);
                     debug!(
                         "Requesting window change on client: {} {} {} {}",
-                        self.args.dp_pos_x,
-                        self.args.dp_pos_y,
-                        self.args.dp_width,
-                        self.args.dp_height,
+                        server_imposed_settings.position.0,
+                        server_imposed_settings.position.1,
+                        server_imposed_settings.position.2,
+                        server_imposed_settings.position.3,
                     );
                     self.send_message_to_client(MessageFromServerToClient::ServerImposedSettings(
-                        ServerImposedSettings {
-                            position: (
-                                self.args.dp_pos_x,
-                                self.args.dp_pos_y,
-                                self.args.dp_width,
-                                self.args.dp_height,
-                            ),
-                            slideshow_duration_in_ms: self.args.slideshow_duration_nr_ms,
-                            slideshow_transition_duration_nr_ms: self
-                                .args
-                                .slideshow_transition_duration_nr_ms,
-                        },
+                        server_imposed_settings,
                     ));
                     // init-impose the timing settings from the server
                     self.send_message_to_client(MessageFromServerToClient::TimingSettingsUpdate(
@@ -572,8 +575,7 @@ pub struct ClientStateMachine {
     pub window_state_needs_update: Option<(u32, u32, u32, u32)>,
     pub permanent_images_storage: ImagesStorage,
     pub current_frame_dimensions: Option<(u32, u32)>,
-    pub slideshow_duration_nr_ms: u32,
-    pub slideshow_transition_duration_nr_ms: u32,
+    pub server_imposed_settings: ServerImposedSettings,
     timing_state_machine_storage: Option<TimingStateMachine>,
     timing_settings_template: TimingSettings,
     outbound_connection_open: bool,
@@ -591,8 +593,7 @@ impl ClientStateMachine {
             window_state_needs_update: None,
             permanent_images_storage: images_storage,
             current_frame_dimensions: None,
-            slideshow_duration_nr_ms: args.slideshow_duration_nr_ms,
-            slideshow_transition_duration_nr_ms: args.slideshow_transition_duration_nr_ms,
+            server_imposed_settings: ServerImposedSettings::new(args),
             timing_state_machine_storage: None,
             timing_settings_template: TimingSettings::new(args),
             outbound_connection_open: false,
@@ -616,17 +617,15 @@ impl ClientStateMachine {
                 self.switch_mode_with_stashing_timing_state(ClientState::DisplayText(text));
             }
             MessageFromServerToClient::ServerImposedSettings(settings) => {
+                // size/position properties of the window are not reflected in internal state but by the real window -> needs instructions to change
                 let (x, y, w, h) = settings.position;
                 debug!("Server requested an update of the window position/size");
                 self.window_state_needs_update = Some((x, y, w, h));
 
-                debug!(
-                    "Server set the slideshow duration to {} ms",
-                    settings.slideshow_duration_in_ms
-                );
-                self.slideshow_duration_nr_ms = settings.slideshow_duration_in_ms;
+                // store other (mainly rendering) settings
+                self.server_imposed_settings = settings;
 
-                // do not forget to do this on size changes -> TODO maybe extract somewhere or do in true window resize handler
+                // do not forget to do this on canvase size changes !! -> TODO maybe extract somewhere or do in true window resize handler
                 debug!("Cache rescaling Animations");
                 self.permanent_images_storage
                     .fireworks_animation

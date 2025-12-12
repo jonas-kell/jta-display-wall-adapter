@@ -174,6 +174,10 @@ impl ApplicationHandler for App {
                             frame: pixels.frame_mut(),
                             texture_width: texture_size.width as usize,
                             texture_height: texture_size.height as usize,
+                            server_imposed_settings: self
+                                .state_machine
+                                .server_imposed_settings
+                                .clone(),
                         };
 
                         render_client_frame(&mut meta, &mut self.state_machine);

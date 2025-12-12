@@ -90,6 +90,12 @@ pub struct Args {
     /// Duration of one advertisement slideshow slide transition (initial for client, will get sent from server to client)
     #[arg(long, default_value_t = 200)]
     pub slideshow_transition_duration_nr_ms: u32,
+    /// Speed for scrolling text (in percent relative to default) (initial for client, will get sent from server to client)
+    #[arg(long, default_value_t = 100)]
+    pub scroll_text_speed: u32,
+    /// Duration, that scrolling text waits at the start and end stationarily (initial for client, will get sent from server to client)
+    #[arg(long, default_value_t = 400)]
+    pub scroll_text_deadzones_nr_ms: u32,
     /// Name of the database file (do not include /s that probably breaks shit)
     #[arg(long, default_value_t = String::from("db.db"))]
     pub database_file_name: String,

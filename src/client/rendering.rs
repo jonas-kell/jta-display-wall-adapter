@@ -1,8 +1,8 @@
 use crate::{
     client::{
         rasterizing::{
-            clear, draw_image, draw_image_at_opacity, draw_text, fill_with_color, RasterizerMeta,
-            JTA_COLOR,
+            clear, draw_image, draw_image_at_opacity, draw_text, draw_text_scrolling_with_width,
+            fill_with_color, RasterizerMeta, JTA_COLOR,
         },
         FRAME_TIME_NS,
     },
@@ -57,8 +57,10 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
         ClientState::Advertisements => {
             let nr_images = state.permanent_images_storage.advertisement_images.len();
             if nr_images > 0 {
-                let frames_per_image =
-                    ((state.slideshow_duration_nr_ms * 1000000) / (FRAME_TIME_NS as u32)) + 1; // +1 to avoid dividing by 0
+                let frames_per_image = ((state.server_imposed_settings.slideshow_duration_nr_ms
+                    * 1000000)
+                    / (FRAME_TIME_NS as u32))
+                    + 1; // +1 to avoid dividing by 0
                 let current_frame = state.frame_counter;
                 let frame_index = (current_frame / frames_per_image as u64) % (nr_images as u64);
 
@@ -80,10 +82,11 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
 
                         // blend to the next frame if desired
                         let frames_per_transition = ((std::cmp::min(
-                            state.slideshow_transition_duration_nr_ms,
-                            state.slideshow_duration_nr_ms - 1, // transition may not be longer than the slideshow itself.
-                        ) * 1000000) // ms to ns
-                            / (FRAME_TIME_NS as u32))
+                            state.server_imposed_settings.slideshow_transition_duration_nr_ms,
+                            state.server_imposed_settings.slideshow_duration_nr_ms - 1, // transition may not be longer than the slideshow itself.
+                        ) as u64 * 1000000) // ms to ns
+                            / (FRAME_TIME_NS))
+                            as u32
                             + 1; // +1 to avoid dividing by 0
                         let frame_of_image = (current_frame % frames_per_image as u64) as u32;
                         let frames_of_image_without_transition =
@@ -128,7 +131,15 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
 
             // Title
             if let Some(tsm) = &timing_state_machine.meta {
-                draw_text(&tsm.title, 10.0, 10.0, 20.0, meta);
+                draw_text_scrolling_with_width(
+                    &tsm.title,
+                    10.0,
+                    10.0,
+                    20.0,
+                    (meta.texture_width - 30) as f32,
+                    state.frame_counter,
+                    meta,
+                );
             }
             // line 1
             draw_text(
