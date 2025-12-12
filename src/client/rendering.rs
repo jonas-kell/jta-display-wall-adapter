@@ -126,13 +126,11 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
         ClientState::Timing(timing_state_machine) => {
             fill_with_color(JTA_COLOR, meta);
 
-            if let Some(title) = &timing_state_machine.title {
-                draw_text(title, 10.0, 10.0, 20.0, meta);
+            // Title
+            if let Some(tsm) = &timing_state_machine.meta {
+                draw_text(&tsm.title, 10.0, 10.0, 20.0, meta);
             }
-
-            if timing_state_machine.race_finished() {
-                draw_text("Finished", 10.0, 10.0, 20.0, meta);
-            }
+            // line 1
             draw_text(
                 &timing_state_machine
                     .get_main_display_race_time()
@@ -145,6 +143,10 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
                 20.0,
                 meta,
             );
+            if timing_state_machine.race_finished() {
+                draw_text("Finished", 150.0, 30.0, 20.0, meta);
+            }
+            // line 2
             if let Some(hts) = timing_state_machine.get_held_display_race_time() {
                 draw_text(
                     &hts.held_at_time
@@ -157,8 +159,12 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
                     20.0,
                     meta,
                 );
+                if let Some(held_distance) = hts.held_at_m {
+                    draw_text(&format!("{}m", held_distance), 150.0, 50.0, 20.0, meta);
+                }
             }
 
+            // animations
             if let Some(over_top_player) = &mut timing_state_machine.over_top_animation {
                 match over_top_player.get_current_frame(
                     meta.texture_width as u32,

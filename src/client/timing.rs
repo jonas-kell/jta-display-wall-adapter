@@ -1,5 +1,6 @@
 use crate::{
     args::Args,
+    server::camera_program_types::HeatStartList,
     times::{DayTime, RaceTime},
 };
 use images_core::images::{Animation, AnimationPlayer, ImagesStorage};
@@ -15,6 +16,7 @@ pub struct TimingSettings {
     pub play_sound_on_start: bool,
     pub play_sound_on_intermediate: bool,
     pub play_sound_on_finish: bool,
+    pub can_currently_update_meta: bool,
 }
 impl TimingSettings {
     pub fn new(args: &Args) -> Self {
@@ -26,6 +28,7 @@ impl TimingSettings {
             play_sound_on_start: args.play_sound_on_start,
             play_sound_on_intermediate: args.play_sound_on_intermediate,
             play_sound_on_finish: args.play_sound_on_finish,
+            can_currently_update_meta: true,
         }
     }
 }
@@ -36,7 +39,6 @@ pub struct HeldTimeState {
     holding_start_time: Instant,
     pub held_at_m: Option<u32>,
     pub held_at_time: RaceTime,
-    pub race_was_finished: bool,
 }
 impl HeldTimeState {
     fn holding_has_elapsed(&self) -> bool {
@@ -60,17 +62,166 @@ pub enum TimingState {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum TimingUpdate {
+    Meta(HeatStartList),
     Reset,
     Running(RaceTime),
-    Intermediate(RaceTime),
-    End(RaceTime),
+    Intermediate(RaceTime), // only ever produced by the camera program when sending manual intermediate signal (could never get the light barrier to emit it)
+    End(RaceTime),          // always emmitted by the light barrier if active
+}
+
+// TODO could implement some mechanism to differentiate between relays and normal races over 1000m. This is also kind of unnecessary and probably would only ever matter for 3000m
+pub enum RaceDistance {
+    Sprint15Meters,
+    Sprint20Meters,
+    Sprint25Meters,
+    Sprint30Meters,
+    Sprint50Meters,
+    Sprint60Meters,
+    Sprint75Meters,
+    Sprint80Meters,
+    Sprint100Meters,
+    Sprint110Meters,
+    Sprint120Meters,
+    Sprint150Meters,
+    Sprint200Meters, // this is not really differentiable from 4x50m as the timing program exports distance and distanceType, but the camera program only re-exports distance
+    Sprint300Meters, // this is not really differentiable from 4x75m as the timing program exports distance and distanceType, but the camera program only re-exports distance
+    Sprint400Meters, // this is not really differentiable from 4x100m as the timing program exports distance and distanceType, but the camera program only re-exports distance
+    Distance800Meters,
+    Distance1000Meters,
+    Distance1500Meters,
+    Relay4x400Meters,
+    Distance2000Meters,
+    Relay3x800Meters,
+    Distance3000Meters, // this is not really differentiable from 3x1000m as the timing program exports distance and distanceType, but the camera program only re-exports distance
+    Distance5000Meters,
+    Distance10000Meters,
+    Custom(u32),
+}
+impl RaceDistance {
+    pub fn new(distance: u32) -> Self {
+        match distance {
+            15 => Self::Sprint15Meters,
+            20 => Self::Sprint20Meters,
+            25 => Self::Sprint25Meters,
+            30 => Self::Sprint30Meters,
+            50 => Self::Sprint50Meters,
+            60 => Self::Sprint60Meters,
+            75 => Self::Sprint75Meters,
+            80 => Self::Sprint80Meters,
+            100 => Self::Sprint100Meters,
+            110 => Self::Sprint110Meters,
+            120 => Self::Sprint120Meters,
+            150 => Self::Sprint150Meters,
+            200 => Self::Sprint200Meters,
+            300 => Self::Sprint300Meters,
+            400 => Self::Sprint400Meters,
+            800 => Self::Distance800Meters,
+            1000 => Self::Distance1000Meters,
+            1500 => Self::Distance1500Meters,
+            1600 => Self::Relay4x400Meters,
+            2000 => Self::Distance2000Meters,
+            2400 => Self::Relay3x800Meters,
+            3000 => Self::Distance3000Meters,
+            5000 => Self::Distance5000Meters,
+            10000 => Self::Distance10000Meters,
+            other => Self::Custom(other),
+        }
+    }
+
+    pub fn get_distance_as_number(&self) -> u32 {
+        match self {
+            Self::Sprint15Meters => 15,
+            Self::Sprint20Meters => 20,
+            Self::Sprint25Meters => 25,
+            Self::Sprint30Meters => 30,
+            Self::Sprint50Meters => 50,
+            Self::Sprint60Meters => 60,
+            Self::Sprint75Meters => 75,
+            Self::Sprint80Meters => 80,
+            Self::Sprint100Meters => 100,
+            Self::Sprint110Meters => 110,
+            Self::Sprint120Meters => 120,
+            Self::Sprint150Meters => 150,
+            Self::Sprint200Meters => 200,
+            Self::Sprint300Meters => 300,
+            Self::Sprint400Meters => 400,
+            Self::Distance800Meters => 800,
+            Self::Distance1000Meters => 1000,
+            Self::Distance1500Meters => 1500,
+            Self::Relay4x400Meters => 1600,
+            Self::Distance2000Meters => 2000,
+            Self::Relay3x800Meters => 2400,
+            Self::Distance3000Meters => 3000,
+            Self::Distance5000Meters => 5000,
+            Self::Distance10000Meters => 10000,
+            Self::Custom(other) => *other,
+        }
+    }
+
+    // IWR 19.3
+    // Die Zeiten aller im Ziel ankommenden Läufer sind zu erfassen. Zusätzlich müssen nach Möglichkeit auch die Rundenzeiten (des jeweils Führenden) bei Läufen von 800m und länger und die 1000m-Zeiten bei Läufen von 3000m und länger protokolliert werden.
+    // Nationale Bestimmung DLV: Die Runden- bzw. Zwischenzeiten sind nur für den jeweils Führenden festzustellen und durch Hinzufügen seiner Startnummer in das Wettkampfprotokoll einzutragen. Dies gilt auch bei vollautomatischer Zeitnahme.
+
+    pub fn get_split_distances(&self) -> Option<Vec<u32>> {
+        match self {
+            Self::Sprint15Meters => None,
+            Self::Sprint20Meters => None,
+            Self::Sprint25Meters => None,
+            Self::Sprint30Meters => None,
+            Self::Sprint50Meters => None,
+            Self::Sprint60Meters => None,
+            Self::Sprint75Meters => None,
+            Self::Sprint80Meters => None,
+            Self::Sprint100Meters => None,
+            Self::Sprint110Meters => None,
+            Self::Sprint120Meters => None,
+            Self::Sprint150Meters => None,
+            Self::Sprint200Meters => None,
+            Self::Sprint300Meters => None,
+            Self::Sprint400Meters => None,
+            Self::Distance800Meters => Some([400].into()),
+            Self::Distance1000Meters => Some([400, 800].into()),
+            Self::Distance1500Meters => Some([400, 800, 1200].into()),
+            Self::Relay4x400Meters => Some([400, 800, 1200].into()), // no idea, why this relay HAS intermediate times now.
+            Self::Distance2000Meters => Some([400, 800, 1200, 1600].into()),
+            Self::Relay3x800Meters => None, // seems to be exception in timing program -> 3x1000 also has None
+            Self::Distance3000Meters => Some([1000, 2000].into()),
+            Self::Distance5000Meters => Some([1000, 2000, 3000, 4000].into()),
+            Self::Distance10000Meters => {
+                Some([1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000].into())
+            }
+            Self::Custom(other) => {
+                let mut res = Vec::new();
+
+                if *other < 800 {
+                    return None;
+                }
+
+                let round = if *other < 3000 { 400u32 } else { 1000u32 };
+
+                let mut running: u32 = round;
+                while running < *other {
+                    res.push(running);
+                    running += round;
+                }
+
+                Some(res)
+            }
+        }
+    }
+}
+
+pub struct TimingStateMeta {
+    pub title: String,
+    pub distance: RaceDistance,
 }
 
 pub struct TimingStateMachine {
     fireworks_animation: Animation,
     pub over_top_animation: Option<AnimationPlayer>,
-    pub title: Option<String>,
+    pub meta: Option<TimingStateMeta>,
     pub settings: TimingSettings,
+    time_held_counter: u16,
     timing_state: TimingState,
     held_time_state: Option<HeldTimeState>,
     reference_computation_time: Instant,
@@ -79,7 +230,8 @@ impl TimingStateMachine {
     pub fn new(images_storage: &ImagesStorage, settings: &TimingSettings) -> TimingStateMachine {
         TimingStateMachine {
             over_top_animation: None,
-            title: None,
+            meta: None,
+            time_held_counter: 0,
             fireworks_animation: images_storage.fireworks_animation.clone(), // animations can be lightweightly cloned
             settings: settings.clone(),
             timing_state: TimingState::Stopped,
@@ -90,9 +242,20 @@ impl TimingStateMachine {
 
     pub fn update_race_time(&mut self, rtu: TimingUpdate) {
         match rtu {
+            TimingUpdate::Meta(hsl) => {
+                if self.settings.can_currently_update_meta {
+                    self.meta = Some(TimingStateMeta {
+                        title: hsl.name,
+                        distance: RaceDistance::new(hsl.distance_meters),
+                    })
+                } else {
+                    warn!("Race Meta update was trashed, because uptade is blocked by settings");
+                }
+            }
             TimingUpdate::Reset => {
                 self.timing_state = TimingState::Stopped;
                 self.held_time_state = None; // make sure, to clear this
+                self.time_held_counter = 0;
             }
             TimingUpdate::Running(rt) => {
                 self.update_reference_computation_time(&rt);
@@ -120,12 +283,28 @@ impl TimingStateMachine {
                         self.timing_state = TimingState::Held;
 
                         self.timing_state = TimingState::Held;
+                        self.time_held_counter += 1;
+
+                        let mut held_at_m = None;
+                        if let Some(meta) = &self.meta {
+                            if let Some(split_distances) = meta.distance.get_split_distances() {
+                                if self.time_held_counter as usize >= split_distances.len() {
+                                    held_at_m = Some(meta.distance.get_distance_as_number())
+                                } else {
+                                    if let Some(split_distance) =
+                                        split_distances.get(self.time_held_counter as usize - 1)
+                                    {
+                                        held_at_m = Some(*split_distance);
+                                    }
+                                }
+                            }
+                        }
+
                         self.held_time_state = Some(HeldTimeState {
                             settings: self.settings.clone(),
                             holding_start_time: Instant::now(),
-                            held_at_m: None, // TODO add logic
+                            held_at_m,
                             held_at_time: rt,
-                            race_was_finished: false, // TODO add logic
                         });
 
                         if self.settings.fireworks_on_intermediate {

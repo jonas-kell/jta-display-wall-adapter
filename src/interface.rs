@@ -292,7 +292,11 @@ impl ServerStateMachine {
             },
             IncomingInstruction::FromCameraProgram(inst) => match inst {
                 InstructionFromCameraProgram::HeatStartList(list) => {
-                    store_to_database!(list, self);
+                    store_to_database!(list.clone(), self);
+
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::Meta(list),
+                    ));
                 }
                 InstructionFromCameraProgram::HeatStart(start) => {
                     if self.timing_settings_template.play_sound_on_start {

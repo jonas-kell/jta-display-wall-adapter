@@ -72,6 +72,16 @@
                     Toggle
                 </button>
             </p>
+            <p>
+                Meta can change: {{ mainStore.timingSettings.can_currently_update_meta ? "yes" : "no" }}
+                <button
+                    @click="
+                        mainStore.timingSettings.can_currently_update_meta = !mainStore.timingSettings.can_currently_update_meta
+                    "
+                >
+                    Toggle
+                </button>
+            </p>
         </div>
     </template>
     <p v-else>Not loaded</p>
