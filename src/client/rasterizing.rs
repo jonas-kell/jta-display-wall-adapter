@@ -51,6 +51,28 @@ pub fn draw_text_scrolling_with_width(
     global_frame: u64,
     meta: &mut RasterizerMeta,
 ) {
+    draw_text_scrolling_with_width_internal(
+        text,
+        x,
+        y,
+        script_size,
+        box_w,
+        global_frame,
+        meta,
+        true,
+    );
+}
+
+fn draw_text_scrolling_with_width_internal(
+    text: &str,
+    x: f32,
+    y: f32,
+    script_size: f32,
+    box_w: f32,
+    global_frame: u64,
+    meta: &mut RasterizerMeta,
+    left_align: bool, // this must be set to true for scrolling (alignment does not make sense anyway with scrolling)
+) {
     // filter for renderable glyphs
     let filtered: String = text.replace('\n', "\r").replace("\r\r", "\r");
 
@@ -66,42 +88,55 @@ pub fn draw_text_scrolling_with_width(
     let glyphs: &Vec<GlyphPosition> = meta.font_layout.glyphs();
 
     // calculate bounding box for moving text
-    let left_bound_box = 0isize.max(x.floor() as isize);
-    let right_bound_box = meta.texture_width.min((x.floor() + box_w) as usize);
+    let mut left_bound_box = 0isize.max(x.floor() as isize);
+    let mut right_bound_box = meta.texture_width.min((x.floor() + box_w) as usize);
+    if !left_align {
+        left_bound_box = 0isize.max((x.floor() - box_w) as isize);
+        right_bound_box = meta.texture_width.min(x.floor() as usize);
+    }
     let text_width = 0f32.max(rightmost_x(glyphs) - x);
-    let amount_to_scroll = 0i64.max((text_width.ceil() as i64) - box_w.ceil() as i64) as u64;
-    let offset: isize = if amount_to_scroll == 0 {
-        0
-    } else {
-        // dynamically calculate the scroll amount
-        let nr_frames_deadzones = (meta.server_imposed_settings.scroll_text_deadzones_nr_ms as u64
-            * 1000000)
-            / FRAME_TIME_NS;
-        const PIXEL_PER_SEC_DEFAULT: u64 = 60;
-        let nr_frames_scrolling =
-            (amount_to_scroll * meta.server_imposed_settings.scroll_text_speed as u64 * 1000000000)
+
+    let offset: isize = if left_align {
+        // only on left aligned text, we possibly can have scrolling text (there is a box, technically nothing is aligned here)
+        let amount_to_scroll = 0i64.max((text_width.ceil() as i64) - box_w.ceil() as i64) as u64;
+
+        if amount_to_scroll == 0 {
+            0
+        } else {
+            // dynamically calculate the scroll amount
+            let nr_frames_deadzones =
+                (meta.server_imposed_settings.scroll_text_deadzones_nr_ms as u64 * 1000000)
+                    / FRAME_TIME_NS;
+            const PIXEL_PER_SEC_DEFAULT: u64 = 60;
+            let nr_frames_scrolling = (amount_to_scroll
+                * meta.server_imposed_settings.scroll_text_speed as u64
+                * 1000000000)
                 / FRAME_TIME_NS
                 / 100
                 / PIXEL_PER_SEC_DEFAULT;
 
-        let progress = global_frame % (nr_frames_deadzones * 2 + nr_frames_scrolling);
-        if progress < nr_frames_deadzones {
-            0
-        } else {
-            // between 0 and nr_frames_scrolling, depending on scrolling progress
-            let scroll_anim_progress_frame =
-                0i64.max(progress as i64 - nr_frames_deadzones as i64)
-                    .min(nr_frames_scrolling as i64) as u64;
-
-            if scroll_anim_progress_frame == nr_frames_scrolling {
-                amount_to_scroll as isize
+            let progress = global_frame % (nr_frames_deadzones * 2 + nr_frames_scrolling);
+            if progress < nr_frames_deadzones {
+                0
             } else {
-                // interpolate
-                (scroll_anim_progress_frame as f32 * amount_to_scroll as f32
-                    / nr_frames_scrolling as f32)
-                    .round() as isize
+                // between 0 and nr_frames_scrolling, depending on scrolling progress
+                let scroll_anim_progress_frame =
+                    0i64.max(progress as i64 - nr_frames_deadzones as i64)
+                        .min(nr_frames_scrolling as i64) as u64;
+
+                if scroll_anim_progress_frame == nr_frames_scrolling {
+                    amount_to_scroll as isize
+                } else {
+                    // interpolate
+                    (scroll_anim_progress_frame as f32 * amount_to_scroll as f32
+                        / nr_frames_scrolling as f32)
+                        .round() as isize
+                }
             }
         }
+    } else {
+        // right align, no scrolling for right align (does not make sense together)
+        text_width.ceil() as isize
     };
 
     // iterate over glyphs to draw them
@@ -145,6 +180,18 @@ pub fn draw_text(text: &str, x: f32, y: f32, script_size: f32, meta: &mut Raster
     // if the box is as wide as possible, there will be no scrolling
     // no animation necessary for static text, therefore frame = 0
     draw_text_scrolling_with_width(text, x, y, script_size, f32::MAX, 0, meta);
+}
+
+pub fn draw_text_right_aligned(
+    text: &str,
+    x: f32,
+    y: f32,
+    script_size: f32,
+    meta: &mut RasterizerMeta,
+) {
+    // if the box is as wide as possible, there will be no scrolling
+    // no animation necessary for static text, therefore frame = 0
+    draw_text_scrolling_with_width_internal(text, x, y, script_size, f32::MAX, 0, meta, false);
 }
 
 fn blend_pixel(dst: &mut [u8], src: [u8; 4]) {

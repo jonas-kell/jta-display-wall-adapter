@@ -1,8 +1,8 @@
 use crate::{
     client::{
         rasterizing::{
-            clear, draw_image, draw_image_at_opacity, draw_text, draw_text_scrolling_with_width,
-            fill_with_color, RasterizerMeta, JTA_COLOR,
+            clear, draw_image, draw_image_at_opacity, draw_text, draw_text_right_aligned,
+            draw_text_scrolling_with_width, fill_with_color, RasterizerMeta, JTA_COLOR,
         },
         FRAME_TIME_NS,
     },
@@ -142,14 +142,14 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
                 );
             }
             // line 1
-            draw_text(
+            draw_text_right_aligned(
                 &timing_state_machine
                     .get_main_display_race_time()
                     .optimize_representation_for_display(Some(
                         timing_state_machine.settings.max_decimal_places_after_comma,
                     ))
                     .to_string(),
-                10.0,
+                130.0,
                 30.0,
                 20.0,
                 meta,
