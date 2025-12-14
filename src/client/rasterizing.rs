@@ -7,6 +7,7 @@ use fontdue::{
 use image::Rgba;
 use image::{DynamicImage, ImageBuffer};
 use images_core::images::ImageMeta;
+use std::collections::VecDeque;
 
 pub struct RasterizerMeta<'a> {
     pub font: &'a Font,
@@ -58,8 +59,9 @@ pub fn draw_text_scrolling_with_width(
         script_size,
         box_w,
         global_frame,
-        meta,
         true,
+        None,
+        meta,
     );
 }
 
@@ -70,8 +72,9 @@ fn draw_text_scrolling_with_width_internal(
     script_size: f32,
     box_w: f32,
     global_frame: u64,
-    meta: &mut RasterizerMeta,
     left_align: bool, // this must be set to true for scrolling (alignment does not make sense anyway with scrolling)
+    debouncer: Option<&mut FontPositionDebouncer>,
+    meta: &mut RasterizerMeta,
 ) {
     // filter for renderable glyphs
     let filtered: String = text.replace('\n', "\r").replace("\r\r", "\r");
@@ -94,11 +97,11 @@ fn draw_text_scrolling_with_width_internal(
         left_bound_box = 0isize.max((x.floor() - box_w) as isize);
         right_bound_box = meta.texture_width.min(x.floor() as usize);
     }
-    let text_width = 0f32.max(rightmost_x(glyphs) - x);
+    let text_width = (0f32.max(rightmost_x(glyphs) - x)).ceil() as usize;
 
     let offset: isize = if left_align {
         // only on left aligned text, we possibly can have scrolling text (there is a box, technically nothing is aligned here)
-        let amount_to_scroll = 0i64.max((text_width.ceil() as i64) - box_w.ceil() as i64) as u64;
+        let amount_to_scroll = 0i64.max((text_width as i64) - box_w.ceil() as i64) as u64;
 
         if amount_to_scroll == 0 {
             0
@@ -136,7 +139,25 @@ fn draw_text_scrolling_with_width_internal(
         }
     } else {
         // right align, no scrolling for right align (does not make sense together)
-        text_width.ceil() as isize
+        let glyh_width = widest_glyph(glyphs);
+
+        match debouncer {
+            Some(debouncer) => {
+                let compare_from_debouncer = debouncer.add_width_and_process(text_width, text);
+
+                if compare_from_debouncer >= text_width
+                    && text_width + glyh_width / 2 > compare_from_debouncer
+                {
+                    // in range, take value from debouncer
+                    compare_from_debouncer as isize
+                } else {
+                    // reset debouncer, as the value just jumped bigtime
+                    debouncer.reset();
+                    text_width as isize
+                }
+            }
+            None => text_width as isize,
+        }
     };
 
     // iterate over glyphs to draw them
@@ -176,6 +197,10 @@ fn rightmost_x(glyphs: &Vec<GlyphPosition>) -> f32 {
         .fold(0.0, f32::max)
 }
 
+fn widest_glyph(glyphs: &Vec<GlyphPosition>) -> usize {
+    glyphs.iter().map(|g| g.width).fold(0, usize::max)
+}
+
 pub fn draw_text(text: &str, x: f32, y: f32, script_size: f32, meta: &mut RasterizerMeta) {
     // if the box is as wide as possible, there will be no scrolling
     // no animation necessary for static text, therefore frame = 0
@@ -187,11 +212,88 @@ pub fn draw_text_right_aligned(
     x: f32,
     y: f32,
     script_size: f32,
+    debouncer: Option<&mut FontPositionDebouncer>,
     meta: &mut RasterizerMeta,
 ) {
     // if the box is as wide as possible, there will be no scrolling
     // no animation necessary for static text, therefore frame = 0
-    draw_text_scrolling_with_width_internal(text, x, y, script_size, f32::MAX, 0, meta, false);
+    draw_text_scrolling_with_width_internal(
+        text,
+        x,
+        y,
+        script_size,
+        f32::MAX,
+        0,
+        false,
+        debouncer,
+        meta,
+    );
+}
+
+pub struct FontPositionDebouncer {
+    data: Ringbuffer<usize>,
+    last_added_text: Option<String>,
+}
+impl FontPositionDebouncer {
+    pub fn new_for_number_debouncing() -> Self {
+        Self {
+            data: Ringbuffer::new_with_capacity(10),
+            last_added_text: None,
+        }
+    }
+
+    fn add_width_and_process(&mut self, width: usize, text: &str) -> usize {
+        if let Some(last_added_text) = &self.last_added_text {
+            if last_added_text != text {
+                self.data.push(width);
+                self.last_added_text = Some(String::from(text));
+            }
+        } else {
+            self.data.push(width);
+            self.last_added_text = Some(String::from(text));
+        }
+
+        match self.data.get_max() {
+            Some(a) => a,
+            None => width,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.last_added_text = None;
+        self.data.empty();
+    }
+}
+
+struct Ringbuffer<T> {
+    data: VecDeque<T>,
+    capacity: usize,
+}
+impl<T> Ringbuffer<T>
+where
+    T: Clone + Ord,
+{
+    pub fn new_with_capacity(cap: usize) -> Self {
+        Self {
+            capacity: cap,
+            data: VecDeque::with_capacity(cap),
+        }
+    }
+
+    pub fn push(&mut self, elem: T) {
+        self.data.push_front(elem);
+        if self.data.len() > self.capacity {
+            self.data.pop_back();
+        }
+    }
+
+    pub fn get_max(&self) -> Option<T> {
+        self.data.iter().max().cloned()
+    }
+
+    pub fn empty(&mut self) {
+        self.data.clear();
+    }
 }
 
 fn blend_pixel(dst: &mut [u8], src: [u8; 4]) {

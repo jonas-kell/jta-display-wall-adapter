@@ -152,6 +152,7 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
                 130.0,
                 30.0,
                 20.0,
+                Some(&mut timing_state_machine.main_number_display_debouncer),
                 meta,
             );
             if timing_state_machine.race_finished() {

@@ -1,5 +1,6 @@
 use crate::{
     args::Args,
+    client::rasterizing::FontPositionDebouncer,
     interface::{
         ClientInternalMessageFromServerToClient::EmitTimingSettingsUpdate,
         MessageFromServerToClient,
@@ -270,6 +271,7 @@ pub struct TimingStateMachine {
     reference_computation_time: Instant,
     client_state_machine_sender: Sender<MessageFromServerToClient>,
     race_finished: bool,
+    pub main_number_display_debouncer: FontPositionDebouncer,
 }
 impl TimingStateMachine {
     pub fn new(
@@ -288,6 +290,7 @@ impl TimingStateMachine {
             reference_computation_time: Instant::now(),
             client_state_machine_sender,
             race_finished: false,
+            main_number_display_debouncer: FontPositionDebouncer::new_for_number_debouncing(),
         }
     }
 
