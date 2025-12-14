@@ -1,8 +1,13 @@
 use crate::{
     args::Args,
+    interface::{
+        ClientInternalMessageFromServerToClient::EmitTimingSettingsUpdate,
+        MessageFromServerToClient,
+    },
     server::camera_program_types::HeatStartList,
     times::{DayTime, RaceTime},
 };
+use async_channel::{Sender, TrySendError};
 use images_core::images::{Animation, AnimationPlayer, ImagesStorage};
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
@@ -17,6 +22,7 @@ pub struct TimingSettings {
     pub play_sound_on_intermediate: bool,
     pub play_sound_on_finish: bool,
     pub can_currently_update_meta: bool,
+    pub time_continues_running: bool,
 }
 impl TimingSettings {
     pub fn new(args: &Args) -> Self {
@@ -29,6 +35,7 @@ impl TimingSettings {
             play_sound_on_intermediate: args.play_sound_on_intermediate,
             play_sound_on_finish: args.play_sound_on_finish,
             can_currently_update_meta: true,
+            time_continues_running: false,
         }
     }
 }
@@ -209,6 +216,42 @@ impl RaceDistance {
             }
         }
     }
+
+    fn get_time_continues_running(&self) -> bool {
+        match self {
+            Self::Sprint15Meters
+            | Self::Sprint20Meters
+            | Self::Sprint25Meters
+            | Self::Sprint30Meters
+            | Self::Sprint50Meters
+            | Self::Sprint60Meters
+            | Self::Sprint75Meters
+            | Self::Sprint80Meters
+            | Self::Sprint100Meters
+            | Self::Sprint110Meters
+            | Self::Sprint120Meters
+            | Self::Sprint150Meters
+            | Self::Sprint200Meters
+            | Self::Sprint300Meters
+            | Self::Sprint400Meters => false,
+            Self::Distance800Meters
+            | Self::Distance1000Meters
+            | Self::Distance1500Meters
+            | Self::Relay4x400Meters
+            | Self::Distance2000Meters
+            | Self::Relay3x800Meters
+            | Self::Distance3000Meters
+            | Self::Distance5000Meters
+            | Self::Distance10000Meters => true,
+            Self::Custom(other) => {
+                if *other < 800 {
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+        }
+    }
 }
 
 pub struct TimingStateMeta {
@@ -225,9 +268,15 @@ pub struct TimingStateMachine {
     timing_state: TimingState,
     held_time_state: Option<HeldTimeState>,
     reference_computation_time: Instant,
+    client_state_machine_sender: Sender<MessageFromServerToClient>,
+    race_finished: bool,
 }
 impl TimingStateMachine {
-    pub fn new(images_storage: &ImagesStorage, settings: &TimingSettings) -> TimingStateMachine {
+    pub fn new(
+        images_storage: &ImagesStorage,
+        settings: &TimingSettings,
+        client_state_machine_sender: Sender<MessageFromServerToClient>,
+    ) -> TimingStateMachine {
         TimingStateMachine {
             over_top_animation: None,
             meta: None,
@@ -237,6 +286,8 @@ impl TimingStateMachine {
             timing_state: TimingState::Stopped,
             held_time_state: None,
             reference_computation_time: Instant::now(),
+            client_state_machine_sender,
+            race_finished: false,
         }
     }
 
@@ -244,17 +295,40 @@ impl TimingStateMachine {
         match rtu {
             TimingUpdate::Meta(hsl) => {
                 if self.settings.can_currently_update_meta {
+                    let rd = RaceDistance::new(hsl.distance_meters);
+                    let time_continues_running = rd.get_time_continues_running();
                     self.meta = Some(TimingStateMeta {
                         title: hsl.name,
-                        distance: RaceDistance::new(hsl.distance_meters),
-                    })
+                        distance: rd,
+                    });
+
+                    // update settings
+                    self.settings.time_continues_running = time_continues_running;
+
+                    // update time_continues_running
+                    match self.client_state_machine_sender.try_send(
+                        MessageFromServerToClient::ClientInternal(EmitTimingSettingsUpdate(
+                            self.settings.clone(),
+                        )),
+                    ) {
+                        Ok(()) => {}
+                        Err(e) => match e {
+                            TrySendError::Full(_) => {
+                                error!("Receivers are there, but inbound internal channel is full. This should not happen!");
+                            }
+                            TrySendError::Closed(_) => {
+                                error!("Could not post message, internal channel closed unexpectedly. This is fatal, but we can not return from here. Expect program to shut down now");
+                            }
+                        },
+                    }
                 } else {
-                    warn!("Race Meta update was trashed, because uptade is blocked by settings");
+                    warn!("Race Meta update was trashed, because update is blocked by settings");
                 }
             }
             TimingUpdate::Reset => {
                 self.timing_state = TimingState::Stopped;
                 self.held_time_state = None; // make sure, to clear this
+                self.race_finished = false;
                 self.time_held_counter = 0;
             }
             TimingUpdate::Running(rt) => {
@@ -272,54 +346,46 @@ impl TimingStateMachine {
                             }
                         }
                     }
-                    TimingState::Finished(_) => {} // we can not come back from finished. // TODO maybe add option for this. At least think about it.
+                    TimingState::Finished(_) => {
+                        // this should not happen naturally. This can only happen, if you have selected time_continues_running=false
+                        // then the race ends
+                        // then you decide that the time should continue and you select time_continues_running=true
+                        // this than would trigger the time to continue in this case
+                        if self.settings.time_continues_running {
+                            self.timing_state = TimingState::Running;
+                        }
+                    }
                 };
             }
             TimingUpdate::Intermediate(rt) => {
                 self.update_reference_computation_time(&rt);
 
-                match &self.timing_state {
-                    TimingState::Stopped | TimingState::Running | TimingState::Held => {
-                        self.timing_state = TimingState::Held;
-
-                        self.timing_state = TimingState::Held;
-                        self.time_held_counter += 1;
-
-                        let mut held_at_m = None;
-                        if let Some(meta) = &self.meta {
-                            if let Some(split_distances) = meta.distance.get_split_distances() {
-                                if self.time_held_counter as usize >= split_distances.len() {
-                                    held_at_m = Some(meta.distance.get_distance_as_number())
-                                } else {
-                                    if let Some(split_distance) =
-                                        split_distances.get(self.time_held_counter as usize - 1)
-                                    {
-                                        held_at_m = Some(*split_distance);
-                                    }
-                                }
-                            }
-                        }
-
-                        self.held_time_state = Some(HeldTimeState {
-                            settings: self.settings.clone(),
-                            holding_start_time: Instant::now(),
-                            held_at_m,
-                            held_at_time: rt,
-                        });
-
-                        if self.settings.fireworks_on_intermediate {
-                            self.play_animation_over_top(AnimationPlayer::new(
-                                &self.fireworks_animation,
-                                false,
-                            ));
-                        }
+                if matches!(self.timing_state, TimingState::Finished(_)) {
+                    if !self.settings.time_continues_running {
+                        // if finished and time must stop, do not trigger intermediate holding
+                        return;
                     }
-                    TimingState::Finished(_) => {} // we can not come back from finished. // TODO maybe add option for this. At least think about it.
-                };
+                }
+
+                // if we reach this location, hold time
+                self.hold_time(rt);
+
+                if self.settings.fireworks_on_intermediate {
+                    self.play_animation_over_top(AnimationPlayer::new(
+                        &self.fireworks_animation,
+                        false,
+                    ));
+                }
             }
             TimingUpdate::End(rt) => {
                 self.update_reference_computation_time(&rt);
-                self.timing_state = TimingState::Finished(rt);
+                self.race_finished = true;
+
+                if self.settings.time_continues_running {
+                    self.hold_time(rt);
+                } else {
+                    self.timing_state = TimingState::Finished(rt);
+                }
 
                 if self.settings.fireworks_on_finish {
                     self.play_animation_over_top(AnimationPlayer::new(
@@ -329,6 +395,33 @@ impl TimingStateMachine {
                 }
             }
         }
+    }
+
+    fn hold_time(&mut self, race_time: RaceTime) {
+        self.timing_state = TimingState::Held;
+        self.time_held_counter += 1;
+
+        let mut held_at_m = None;
+        if let Some(meta) = &self.meta {
+            if let Some(split_distances) = meta.distance.get_split_distances() {
+                if self.time_held_counter as usize >= split_distances.len() {
+                    held_at_m = Some(meta.distance.get_distance_as_number())
+                } else {
+                    if let Some(split_distance) =
+                        split_distances.get(self.time_held_counter as usize - 1)
+                    {
+                        held_at_m = Some(*split_distance);
+                    }
+                }
+            }
+        }
+
+        self.held_time_state = Some(HeldTimeState {
+            settings: self.settings.clone(),
+            holding_start_time: Instant::now(),
+            held_at_m,
+            held_at_time: race_time,
+        });
     }
 
     /// also pushes the hold time state out, if necessary
@@ -364,16 +457,7 @@ impl TimingStateMachine {
     }
 
     pub fn race_finished(&self) -> bool {
-        match &self.timing_state {
-            TimingState::Finished(_) => {
-                return true;
-            }
-            _ => {}
-        };
-
-        // TODO add case, that finished but still intermediates there
-
-        return false;
+        return self.race_finished;
     }
 
     fn update_reference_computation_time(&mut self, race_time: &RaceTime) {

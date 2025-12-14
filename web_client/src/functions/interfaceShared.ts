@@ -7,4 +7,5 @@ export type TimingSettings = {
     play_sound_on_intermediate: boolean;
     play_sound_on_finish: boolean;
     can_currently_update_meta: boolean;
+    time_continues_running: boolean;
 };

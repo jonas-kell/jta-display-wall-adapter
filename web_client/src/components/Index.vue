@@ -18,6 +18,13 @@
     <br />
     Timing Settings:
     <br />
+    <b style="color: crimson">Caution!! For full functionality, Camera Program Display Wall Mode MUST be on: AUTO</b>
+    <br />
+    Otherwise only the first light barrier signal is forwarded as a HeatFinish
+    <br />
+    If the button <b>Anzeigetafel</b> is red and mode is fixed and can not be changed, you can click the title (red) to enable
+    editing the wall state again
+    <br />
     <template v-if="mainStore.timingSettings">
         <div style="margin-left: 1cm">
             <p>
@@ -78,6 +85,14 @@
                     @click="
                         mainStore.timingSettings.can_currently_update_meta = !mainStore.timingSettings.can_currently_update_meta
                     "
+                >
+                    Toggle
+                </button>
+            </p>
+            <p>
+                Time continues running: {{ mainStore.timingSettings.time_continues_running ? "yes" : "no" }}
+                <button
+                    @click="mainStore.timingSettings.time_continues_running = !mainStore.timingSettings.time_continues_running"
                 >
                     Toggle
                 </button>

@@ -20,7 +20,7 @@ pub async fn run_client(args: &Args) -> () {
 
     let network_task = tokio::spawn(run_network_task(
         args.clone(),
-        tx_to_ui,
+        tx_to_ui.clone(),
         rx_from_ui,
         Arc::clone(&shutdown_marker),
     ));
@@ -46,6 +46,7 @@ pub async fn run_client(args: &Args) -> () {
         args.clone(),
         rx_to_ui,
         tx_from_ui,
+        tx_to_ui,
         Arc::clone(&shutdown_marker),
     );
 }

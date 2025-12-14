@@ -5,8 +5,8 @@ use crate::client::rendering::render_client_frame;
 use crate::client::{FRAME_TIME_NS, REPORT_FRAME_LOGS_EVERY_SECONDS, TARGET_FPS};
 use crate::file::{create_file_if_not_there_and_write, make_sure_folder_exists};
 use crate::interface::{ClientStateMachine, MessageFromClientToServer, MessageFromServerToClient};
-use async_broadcast::{Sender, TrySendError};
-use async_channel::{Receiver, TryRecvError};
+use async_broadcast::{Sender as BroadcastSender, TrySendError};
+use async_channel::{Receiver, Sender, TryRecvError};
 use fontdue::layout::{CoordinateSystem, Layout};
 use fontdue::{Font, FontSettings};
 use pixels::{Pixels, SurfaceTexture};
@@ -26,7 +26,8 @@ use winit::window::{Window, WindowId};
 pub fn run_display_task(
     args: Args,
     rx_to_ui: Receiver<MessageFromServerToClient>,
-    tx_from_ui: Sender<MessageFromClientToServer>,
+    tx_from_ui: BroadcastSender<MessageFromClientToServer>,
+    tx_to_ui: Sender<MessageFromServerToClient>,
     shutdown_marker: Arc<AtomicBool>,
 ) -> () {
     // setup event loop
@@ -48,7 +49,7 @@ pub fn run_display_task(
         incoming: rx_to_ui,
         outgoing: tx_from_ui,
         shutdown_marker: shutdown_marker,
-        state_machine: ClientStateMachine::new(&args),
+        state_machine: ClientStateMachine::new(&args, tx_to_ui),
         last_draw_call: Instant::now(),
     };
     let _ = event_loop.run_app(&mut app);
@@ -61,7 +62,7 @@ pub struct App {
     font_layout: Layout,
     args: Args,
     incoming: Receiver<MessageFromServerToClient>,
-    outgoing: Sender<MessageFromClientToServer>,
+    outgoing: BroadcastSender<MessageFromClientToServer>,
     shutdown_marker: Arc<AtomicBool>,
     state_machine: ClientStateMachine,
     last_draw_call: Instant,

@@ -19,6 +19,7 @@ use crate::{
         WindMessageBroadcast::{Measured, Started},
     },
 };
+use async_channel::Sender;
 use clap::crate_version;
 use images_core::images::{ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
@@ -47,6 +48,11 @@ impl ServerImposedSettings {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum ClientInternalMessageFromServerToClient {
+    EmitTimingSettingsUpdate(TimingSettings),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum MessageFromServerToClient {
     DisplayText(String),
     RequestVersion,
@@ -60,6 +66,7 @@ pub enum MessageFromServerToClient {
     TimingSettingsUpdate(TimingSettings),
     RequestTimingSettings,
     Clock(DayTime),
+    ClientInternal(ClientInternalMessageFromServerToClient),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -579,9 +586,10 @@ pub struct ClientStateMachine {
     timing_state_machine_storage: Option<TimingStateMachine>,
     timing_settings_template: TimingSettings,
     outbound_connection_open: bool,
+    self_sender: Sender<MessageFromServerToClient>,
 }
 impl ClientStateMachine {
-    pub fn new(args: &Args) -> Self {
+    pub fn new(args: &Args, sender: Sender<MessageFromServerToClient>) -> Self {
         debug!("Start loading Images storage");
         let images_storage = ImagesStorage::from_bytes(STORAGE_BYTES);
         debug!("DONE loading Images storage");
@@ -597,6 +605,7 @@ impl ClientStateMachine {
             timing_state_machine_storage: None,
             timing_settings_template: TimingSettings::new(args),
             outbound_connection_open: false,
+            self_sender: sender,
         }
     }
 
@@ -702,6 +711,7 @@ impl ClientStateMachine {
                             let mut new_timing_state_machine = TimingStateMachine::new(
                                 &self.permanent_images_storage,
                                 &self.timing_settings_template,
+                                self.self_sender.clone(),
                             );
                             new_timing_state_machine.update_race_time(update);
 
@@ -723,13 +733,7 @@ impl ClientStateMachine {
                     _ => {}
                 };
 
-                // update template so is timing mode gets re-initialized, the settings are applied
-                self.timing_settings_template = set;
-
-                // notify of the successful update
-                self.push_new_message(MessageFromClientToServer::TimingSettingsState(
-                    self.timing_settings_template.clone(),
-                ));
+                self.update_internal_knowledge_of_timing_settings(set);
             }
             MessageFromServerToClient::RequestTimingSettings => {
                 self.push_new_message(MessageFromClientToServer::TimingSettingsState(
@@ -740,7 +744,24 @@ impl ClientStateMachine {
                 trace!("Switch to clock mode"); // this is called often if the camera program is in clock mode, so only trace
                 self.state = ClientState::Clock(ClockState::new(&dt));
             }
+            MessageFromServerToClient::ClientInternal(client_internal_message) => {
+                match client_internal_message {
+                    ClientInternalMessageFromServerToClient::EmitTimingSettingsUpdate(set) => {
+                        self.update_internal_knowledge_of_timing_settings(set);
+                    }
+                }
+            }
         }
+    }
+
+    fn update_internal_knowledge_of_timing_settings(&mut self, set: TimingSettings) {
+        // update template so is timing mode gets re-initialized, the settings are applied
+        self.timing_settings_template = set;
+
+        // notify of the successful update
+        self.push_new_message(MessageFromClientToServer::TimingSettingsState(
+            self.timing_settings_template.clone(),
+        ));
     }
 
     fn switch_mode_with_stashing_timing_state(&mut self, new_state: ClientState) {
@@ -769,6 +790,7 @@ impl ClientStateMachine {
                         self.state = ClientState::Timing(TimingStateMachine::new(
                             &self.permanent_images_storage,
                             &self.timing_settings_template,
+                            self.self_sender.clone(),
                         ));
                     }
                 }
