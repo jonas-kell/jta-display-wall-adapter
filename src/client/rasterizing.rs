@@ -49,38 +49,47 @@ pub fn draw_text_as_big_as_possible(
     pos_y: f32,
     max_width: usize,
     max_height: usize,
+    font_size_cache: &mut FontSizeChooserCache,
     meta: &mut RasterizerMeta,
 ) {
-    const TEXT_SIZE_FINDING_STEP: f32 = 2.0;
-    const MAX_STEPS: usize = 400;
-
-    let mut current_text_size = 0f32;
-    let mut step = 0;
-    let mut result_width = 0;
-    let mut result_height = 0;
-    loop {
-        layout_text(
-            text,
-            Some(0f32),
-            None,
-            current_text_size + TEXT_SIZE_FINDING_STEP,
-            meta,
-        );
-        let (_, text_width, text_height) = text_meta_data(0f32, &meta.font_layout);
-
-        if text_width > max_width || text_height > max_height {
-            break;
+    // relatively expensive process -> cache
+    let (result_text_size, result_width, result_height) =
+        if let Some(font_size_cached) = font_size_cache.check_cache(text, max_width, max_height) {
+            font_size_cached
         } else {
-            result_width = text_width;
-            result_height = text_height;
-            current_text_size += TEXT_SIZE_FINDING_STEP; // now it is set, to what it was tested on before.
-        }
+            const TEXT_SIZE_FINDING_STEP: f32 = 2.0;
+            const MAX_STEPS: usize = 400;
 
-        step += 1;
-        if step > MAX_STEPS {
-            break;
-        }
-    }
+            let mut current_text_size = 0f32;
+            let mut step = 0;
+            let mut result_width = 0;
+            let mut result_height = 0;
+            loop {
+                layout_text(
+                    text,
+                    Some(0f32),
+                    None,
+                    current_text_size + TEXT_SIZE_FINDING_STEP,
+                    meta,
+                );
+                let (_, text_width, text_height) = text_meta_data(0f32, &meta.font_layout);
+
+                if text_width > max_width || text_height > max_height {
+                    break;
+                } else {
+                    result_width = text_width;
+                    result_height = text_height;
+                    current_text_size += TEXT_SIZE_FINDING_STEP; // now it is set, to what it was tested on before.
+                }
+
+                step += 1;
+                if step > MAX_STEPS {
+                    break;
+                }
+            }
+
+            (current_text_size, result_width, result_height)
+        };
 
     let x_space = max_width.saturating_sub(result_width) / 2;
     let y_space = max_height.saturating_sub(result_height) / 2;
@@ -89,9 +98,67 @@ pub fn draw_text_as_big_as_possible(
         text,
         pos_x + x_space as f32,
         pos_y + y_space as f32,
-        current_text_size,
+        result_text_size,
         meta,
     );
+    font_size_cache.update_cache(
+        text,
+        max_width,
+        max_height,
+        result_text_size,
+        result_width,
+        result_height,
+    );
+}
+
+pub struct FontSizeChooserCache {
+    key: Option<(String, usize, usize)>,
+    size: f32,
+    width: usize,
+    height: usize,
+}
+impl FontSizeChooserCache {
+    pub fn new() -> Self {
+        Self {
+            key: None,
+            size: 0.0,
+            height: 0,
+            width: 0,
+        }
+    }
+
+    fn update_cache(
+        &mut self,
+        text: &str,
+        max_width: usize,
+        max_height: usize,
+        font_size: f32,
+        width: usize,
+        height: usize,
+    ) {
+        self.key = Some((String::from(text), max_width, max_height));
+        self.size = font_size;
+        self.width = width;
+        self.height = height;
+    }
+
+    fn check_cache(
+        &self,
+        text: &str,
+        max_width: usize,
+        max_heigh: usize,
+    ) -> Option<(f32, usize, usize)> {
+        match &self.key {
+            Some((key_txt, key_width, key_height)) => {
+                if key_txt == text && max_width == *key_width && max_heigh == *key_height {
+                    Some((self.size, self.width, self.height))
+                } else {
+                    None
+                }
+            }
+            None => None,
+        }
+    }
 }
 
 pub fn draw_text_scrolling_with_width(

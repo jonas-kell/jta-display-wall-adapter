@@ -1,7 +1,7 @@
 use crate::args::Args;
 use crate::client::bitmap::png_to_bmp_bytes;
 use crate::client::rasterizing::RasterizerMeta;
-use crate::client::rendering::render_client_frame;
+use crate::client::rendering::{render_client_frame, RenderCache};
 use crate::client::{FRAME_TIME_NS, REPORT_FRAME_LOGS_EVERY_SECONDS, TARGET_FPS};
 use crate::file::{create_file_if_not_there_and_write, make_sure_folder_exists};
 use crate::interface::{ClientStateMachine, MessageFromClientToServer, MessageFromServerToClient};
@@ -51,6 +51,7 @@ pub fn run_display_task(
         shutdown_marker: shutdown_marker,
         state_machine: ClientStateMachine::new(&args, tx_to_ui),
         last_draw_call: Instant::now(),
+        draw_cache: RenderCache::new(),
     };
     let _ = event_loop.run_app(&mut app);
 }
@@ -66,6 +67,7 @@ pub struct App {
     shutdown_marker: Arc<AtomicBool>,
     state_machine: ClientStateMachine,
     last_draw_call: Instant,
+    draw_cache: RenderCache,
 }
 
 #[cfg(target_os = "linux")]
@@ -181,7 +183,11 @@ impl ApplicationHandler for App {
                                 .clone(),
                         };
 
-                        render_client_frame(&mut meta, &mut self.state_machine);
+                        render_client_frame(
+                            &mut meta,
+                            &mut self.state_machine,
+                            &mut self.draw_cache,
+                        );
 
                         let frame_count_to_emit: u64 = std::cmp::max(
                             (self.args.client_emits_frame_every_nr_of_ms * 1000000) / FRAME_TIME_NS,

@@ -3,14 +3,31 @@ use crate::{
         rasterizing::{
             clear, draw_image, draw_image_at_opacity, draw_text, draw_text_as_big_as_possible,
             draw_text_right_aligned, draw_text_scrolling_with_width, fill_with_color,
-            RasterizerMeta, JTA_COLOR,
+            FontPositionDebouncer, FontSizeChooserCache, RasterizerMeta, JTA_COLOR,
         },
         FRAME_TIME_NS,
     },
     interface::{ClientState, ClientStateMachine},
 };
 
-pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMachine) {
+pub struct RenderCache {
+    main_number_display_debouncer: FontPositionDebouncer,
+    font_size_cache: FontSizeChooserCache,
+}
+impl RenderCache {
+    pub fn new() -> Self {
+        Self {
+            main_number_display_debouncer: FontPositionDebouncer::new_for_number_debouncing(),
+            font_size_cache: FontSizeChooserCache::new(),
+        }
+    }
+}
+
+pub fn render_client_frame(
+    meta: &mut RasterizerMeta,
+    state: &mut ClientStateMachine,
+    cache: &mut RenderCache,
+) {
     match &mut state.state {
         ClientState::Created | ClientState::TimingEmptyInit => {
             clear(meta);
@@ -52,10 +69,11 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
             clear(meta);
             draw_text_as_big_as_possible(
                 &text,
+                5.0,
                 0.0,
-                0.0,
-                meta.texture_width,
+                meta.texture_width.saturating_sub(10),
                 meta.texture_height,
+                &mut cache.font_size_cache,
                 meta,
             );
         }
@@ -160,7 +178,7 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
                 130.0,
                 30.0,
                 20.0,
-                Some(&mut timing_state_machine.main_number_display_debouncer),
+                Some(&mut cache.main_number_display_debouncer),
                 meta,
             );
             if timing_state_machine.race_finished() {
