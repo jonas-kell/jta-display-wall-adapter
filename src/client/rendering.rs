@@ -1,8 +1,9 @@
 use crate::{
     client::{
         rasterizing::{
-            clear, draw_image, draw_image_at_opacity, draw_text, draw_text_right_aligned,
-            draw_text_scrolling_with_width, fill_with_color, RasterizerMeta, JTA_COLOR,
+            clear, draw_image, draw_image_at_opacity, draw_text, draw_text_as_big_as_possible,
+            draw_text_right_aligned, draw_text_scrolling_with_width, fill_with_color,
+            RasterizerMeta, JTA_COLOR,
         },
         FRAME_TIME_NS,
     },
@@ -49,7 +50,14 @@ pub fn render_client_frame(meta: &mut RasterizerMeta, state: &mut ClientStateMac
         }
         ClientState::DisplayText(text) => {
             clear(meta);
-            draw_text(&text, 55.0, 22.0, 20.0, meta);
+            draw_text_as_big_as_possible(
+                &text,
+                0.0,
+                0.0,
+                meta.texture_width,
+                meta.texture_height,
+                meta,
+            );
         }
         ClientState::DisplayExternalFrame(image) => {
             draw_image(0, 0, &image, meta);

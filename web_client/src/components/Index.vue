@@ -102,8 +102,9 @@
     <p v-else>Not loaded</p>
     <br />
 
-    <input type="text" v-model="freetext" />
-    <button @click="mainStore.sendFreetextCommand(freetext)">Freetext</button>
+    <textarea v-model="freetext" @keydown="checkFreetextSubmit"></textarea>
+    <br />
+    <button @click="mainStore.sendFreetextCommand(freetext.trim())">Send Freetext</button>
     <br />
     <br />
     <button @click="mainStore.sendGetHeatsCommand">Get Heats</button>
@@ -135,6 +136,27 @@
     const freetext = ref("");
 
     const mainStore = useMainStore();
+
+    let lastWasEnter = false;
+    function checkFreetextSubmit(event: KeyboardEvent) {
+        if (event.code == "Enter") {
+            if (lastWasEnter) {
+                lastWasEnter = false;
+                freetext.value = freetext.value.trim();
+                mainStore.sendFreetextCommand(freetext.value.trim());
+                return;
+            } else {
+                lastWasEnter = true;
+            }
+        } else {
+            lastWasEnter = false;
+        }
+        if (event.ctrlKey && event.code == "Enter") {
+            lastWasEnter = false;
+            freetext.value = freetext.value.trim();
+            mainStore.sendFreetextCommand(freetext.value.trim());
+        }
+    }
 </script>
 
 <style scoped></style>

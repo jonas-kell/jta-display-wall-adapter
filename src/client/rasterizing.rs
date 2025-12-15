@@ -43,6 +43,57 @@ impl<'a> RasterizerMeta<'a> {
     }
 }
 
+pub fn draw_text_as_big_as_possible(
+    text: &str,
+    pos_x: f32,
+    pos_y: f32,
+    max_width: usize,
+    max_height: usize,
+    meta: &mut RasterizerMeta,
+) {
+    const TEXT_SIZE_FINDING_STEP: f32 = 2.0;
+    const MAX_STEPS: usize = 400;
+
+    let mut current_text_size = 0f32;
+    let mut step = 0;
+    let mut result_width = 0;
+    let mut result_height = 0;
+    loop {
+        layout_text(
+            text,
+            Some(0f32),
+            None,
+            current_text_size + TEXT_SIZE_FINDING_STEP,
+            meta,
+        );
+        let (_, text_width, text_height) = text_meta_data(0f32, &meta.font_layout);
+
+        if text_width > max_width || text_height > max_height {
+            break;
+        } else {
+            result_width = text_width;
+            result_height = text_height;
+            current_text_size += TEXT_SIZE_FINDING_STEP; // now it is set, to what it was tested on before.
+        }
+
+        step += 1;
+        if step > MAX_STEPS {
+            break;
+        }
+    }
+
+    let x_space = max_width.saturating_sub(result_width) / 2;
+    let y_space = max_height.saturating_sub(result_height) / 2;
+
+    draw_text(
+        text,
+        pos_x + x_space as f32,
+        pos_y + y_space as f32,
+        current_text_size,
+        meta,
+    );
+}
+
 pub fn draw_text_scrolling_with_width(
     text: &str,
     x: f32,
@@ -76,20 +127,6 @@ fn draw_text_scrolling_with_width_internal(
     debouncer: Option<&mut FontPositionDebouncer>,
     meta: &mut RasterizerMeta,
 ) {
-    // filter for renderable glyphs
-    let filtered: String = text.replace('\n', "\r").replace("\r\r", "\r");
-
-    // typeset text to glyphs
-    meta.font_layout.reset(&LayoutSettings {
-        x: x,
-        y: y,
-        max_width: None, // no line wrap
-        ..LayoutSettings::default()
-    });
-    meta.font_layout
-        .append(&[meta.font], &TextStyle::new(&filtered, script_size, 0));
-    let glyphs: &Vec<GlyphPosition> = meta.font_layout.glyphs();
-
     // calculate bounding box for moving text
     let mut left_bound_box = 0isize.max(x.floor() as isize);
     let mut right_bound_box = meta.texture_width.min((x.floor() + box_w) as usize);
@@ -97,7 +134,9 @@ fn draw_text_scrolling_with_width_internal(
         left_bound_box = 0isize.max((x.floor() - box_w) as isize);
         right_bound_box = meta.texture_width.min(x.floor() as usize);
     }
-    let text_width = (0f32.max(rightmost_x(glyphs) - x)).ceil() as usize;
+
+    layout_text(text, Some(x), Some(y), script_size, meta);
+    let (glyphs, text_width, _) = text_meta_data(x, &meta.font_layout);
 
     let offset: isize = if left_align {
         // only on left aligned text, we possibly can have scrolling text (there is a box, technically nothing is aligned here)
@@ -199,6 +238,35 @@ fn rightmost_x(glyphs: &Vec<GlyphPosition>) -> f32 {
 
 fn widest_glyph(glyphs: &Vec<GlyphPosition>) -> usize {
     glyphs.iter().map(|g| g.width).fold(0, usize::max)
+}
+
+fn layout_text<'a>(
+    text: &'a str,
+    x: Option<f32>,
+    y: Option<f32>,
+    script_size: f32,
+    meta: &'a mut RasterizerMeta,
+) {
+    // filter for renderable glyphs
+    let filtered: String = text.replace('\n', "\r").replace("\r\r", "\r");
+
+    // typeset text to glyphs
+    meta.font_layout.reset(&LayoutSettings {
+        x: x.unwrap_or(0.0),
+        y: y.unwrap_or(0.0),
+        max_width: None, // no line wrap
+        ..LayoutSettings::default()
+    });
+    meta.font_layout
+        .append(&[meta.font], &TextStyle::new(&filtered, script_size, 0));
+}
+
+fn text_meta_data<'a>(x: f32, font_layout: &'a Layout) -> (&'a Vec<GlyphPosition>, usize, usize) {
+    let glyphs: &Vec<GlyphPosition> = font_layout.glyphs();
+    let text_width = (0f32.max(rightmost_x(glyphs) - x)).ceil() as usize;
+    let text_height = font_layout.height().ceil() as usize;
+
+    return (glyphs, text_width, text_height);
 }
 
 pub fn draw_text(text: &str, x: f32, y: f32, script_size: f32, meta: &mut RasterizerMeta) {
