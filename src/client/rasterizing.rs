@@ -57,7 +57,7 @@ pub fn draw_text_as_big_as_possible(
         if let Some(font_size_cached) = font_size_cache.check_cache(text, max_width, max_height) {
             font_size_cached
         } else {
-            const TEXT_SIZE_FINDING_STEP: f32 = 2.0;
+            const TEXT_SIZE_FINDING_STEP: f32 = 1.0; // think if this should be so small
             const MAX_STEPS: usize = 400;
 
             let mut current_text_size = 0f32;
