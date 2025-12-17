@@ -375,9 +375,11 @@ export default defineStore("main", () => {
         }
 
         if (Object.keys(parsed).includes("wind")) {
-            const windVal: RaceWind = parsed["wind"];
+            const windVal: RaceWind | null = parsed["wind"];
 
-            windValue.value = windStringRepr(windVal);
+            if (windVal) {
+                windValue.value = windStringRepr(windVal);
+            }
         }
 
         if (Object.keys(parsed).includes("probable_measurement_type")) {
