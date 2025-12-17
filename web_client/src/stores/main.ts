@@ -31,7 +31,7 @@ import {
 } from "../functions/interfaceInbound";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { TimingSettings } from "../functions/interfaceShared";
-import { dayTimeStringRepr, windStringRepr } from "../functions/representation";
+import { dayTimeStringRepr, imageURLfromBMPBytes, windStringRepr } from "../functions/representation";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -53,6 +53,8 @@ export default defineStore("main", () => {
             displayConnected.value = false;
         }
     });
+
+    const currentClientFrame = ref(null as null | string);
 
     const WIND_CONNECTION_TIMEOUT = 5_000; // ms
     const lastWindPing = ref<number>(Date.now() - 2 * WIND_CONNECTION_TIMEOUT);
@@ -125,6 +127,9 @@ export default defineStore("main", () => {
                 return;
             case InboundMessageType.WindMeasurements:
                 requestedWindMeasurements.value = msg.data;
+                return;
+            case InboundMessageType.CurrentDisplayFrame:
+                currentClientFrame.value = imageURLfromBMPBytes(msg.data);
                 return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);
@@ -403,5 +408,6 @@ export default defineStore("main", () => {
         windTime,
         windValue,
         requestedWindMeasurements,
+        currentClientFrame,
     };
 });

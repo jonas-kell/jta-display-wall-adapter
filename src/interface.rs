@@ -229,13 +229,19 @@ impl ServerStateMachine {
                     ));
                 }
                 MessageFromClientToServer::CurrentWindow(data) => {
-                    if self.state == ServerState::PassthroughClient
-                        && self.args.listen_to_timing_program
-                    {
+                    if self.state == ServerState::PassthroughClient {
                         // force our frame onto the timing program
-                        if self.comm_channel.timing_program_there_to_receive() {
+                        if self.args.listen_to_timing_program
+                            && self.comm_channel.timing_program_there_to_receive()
+                        {
                             self.send_message_to_timing_program(
-                                InstructionToTimingProgram::SendFrame(data),
+                                InstructionToTimingProgram::SendFrame(data.clone()),
+                            );
+                        }
+
+                        if self.comm_channel.web_control_there_to_receive() {
+                            self.send_message_to_web_control(
+                                MessageToWebControl::CurrentDisplayFrame(data),
                             );
                         }
                     }
@@ -279,10 +285,21 @@ impl ServerStateMachine {
                 InstructionFromTimingProgram::SendFrame(data) => {
                     // this is a bit of a hack, because technically this message comes from the display program
                     trace!("Got command to send a frame inbound (should be from external display program to send back and possibly proxy to our client)");
+
                     if self.state == ServerState::PassthroughDisplayProgram {
-                        self.send_message_to_client(
-                            MessageFromServerToClient::DisplayExternalFrame(data),
-                        );
+                        if self.comm_channel.web_control_there_to_receive() {
+                            self.send_message_to_client(
+                                MessageFromServerToClient::DisplayExternalFrame(data.clone()),
+                            );
+                            self.send_message_to_web_control(
+                                MessageToWebControl::CurrentDisplayFrame(data),
+                            );
+                        } else {
+                            // avoid clone in this case
+                            self.send_message_to_client(
+                                MessageFromServerToClient::DisplayExternalFrame(data),
+                            );
+                        }
                     }
                 }
                 InstructionFromTimingProgram::Advertisements => {

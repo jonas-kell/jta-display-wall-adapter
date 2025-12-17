@@ -202,6 +202,11 @@ export type WindMeasurements = {
     data: WindMeasurement[];
 };
 
+export type CurrentDisplayFrame = {
+    type: "CurrentDisplayFrame";
+    data: number[];
+};
+
 export type Unknown = {
     type: "Unknown";
     data: unknown;
@@ -215,6 +220,7 @@ export enum InboundMessageType {
     HeatDataMessage = "HeatDataMessage",
     TimingSettingsState = "TimingSettingsState",
     WindMeasurements = "WindMeasurements",
+    CurrentDisplayFrame = "CurrentDisplayFrame",
 }
 
 export type InboundMessage =
@@ -224,6 +230,7 @@ export type InboundMessage =
     | HeatDataMessage
     | TimingSettingsState
     | WindMeasurements
+    | CurrentDisplayFrame
     | Unknown;
 
 export function parseMessage(json: unknown): InboundMessage {
@@ -246,6 +253,8 @@ export function parseMessage(json: unknown): InboundMessage {
             return { type: "TimingSettingsState", data: obj.data } as TimingSettingsState;
         case InboundMessageType.WindMeasurements:
             return { type: "WindMeasurements", data: obj.data } as WindMeasurements;
+        case InboundMessageType.CurrentDisplayFrame:
+            return { type: "CurrentDisplayFrame", data: obj.data } as CurrentDisplayFrame;
 
         default:
             return { type: "Unknown", data: json } as Unknown;

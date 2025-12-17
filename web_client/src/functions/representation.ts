@@ -24,3 +24,9 @@ export function numberFromWind(wind: RaceWind): number {
 export function windStringRepr(wind: RaceWind): string {
     return `${numberFromWind(wind).toFixed(1)}`;
 }
+
+export function imageURLfromBMPBytes(data: number[]) {
+    const uint8 = new Uint8Array(data);
+    const blob = new Blob([uint8], { type: "image/bmp" });
+    return URL.createObjectURL(blob);
+}

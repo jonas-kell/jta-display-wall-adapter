@@ -50,4 +50,5 @@ pub enum MessageToWebControl {
     HeatDataMessage(HeatData),
     TimingSettingsState(TimingSettings),
     WindMeasurements(Vec<WindMeasurement>),
+    CurrentDisplayFrame(Vec<u8>), // TODO maybe this is not efficient enough. Think about serealizing this to JSON differently
 }

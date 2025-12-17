@@ -105,6 +105,16 @@
     <p v-else>Not loaded</p>
     <br />
 
+    Client Display:
+    <br />
+    <template v-if="mainStore.displayConnected">
+        <p v-if="mainStore.displayExternalPassthrough">External:</p>
+        <img v-if="mainStore.currentClientFrame" :src="mainStore.currentClientFrame" />
+    </template>
+    <p v-else>No Connection</p>
+    <br />
+    <br />
+
     <textarea v-model="freetext" :disabled="mainStore.displayExternalPassthrough" @keydown="checkFreetextSubmit"></textarea>
     <br />
     <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendFreetextCommand(freetext.trim())">
