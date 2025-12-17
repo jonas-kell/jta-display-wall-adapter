@@ -23,6 +23,8 @@
     <br />
     <b style="color: crimson">Caution!! For full functionality, Camera Program Display Wall Mode MUST be on: AUTO</b>
     <br />
+    <b style="color: crimson">To avoid unintended skipping, Timing Program Auto-Display must be: false</b>
+    <br />
     Otherwise only the first light barrier signal is forwarded as a HeatFinish
     <br />
     If the button <b>Anzeigetafel</b> is red and mode is fixed and can not be changed, you can click the title (red) to enable
@@ -100,6 +102,40 @@
                     Toggle
                 </button>
             </p>
+            <p>
+                Switch to Start List automatically:
+                {{ mainStore.timingSettings.switch_to_start_list_automatically ? "yes" : "no" }}
+                <button
+                    @click="
+                        mainStore.timingSettings.switch_to_start_list_automatically =
+                            !mainStore.timingSettings.switch_to_start_list_automatically
+                    "
+                >
+                    Toggle
+                </button>
+            </p>
+            <p>
+                Switch to timing automatically: {{ mainStore.timingSettings.switch_to_timing_automatically ? "yes" : "no" }}
+                <button
+                    @click="
+                        mainStore.timingSettings.switch_to_timing_automatically =
+                            !mainStore.timingSettings.switch_to_timing_automatically
+                    "
+                >
+                    Toggle
+                </button>
+            </p>
+            <p>
+                Switch to results automatically: {{ mainStore.timingSettings.switch_to_results_automatically ? "yes" : "no" }}
+                <button
+                    @click="
+                        mainStore.timingSettings.switch_to_results_automatically =
+                            !mainStore.timingSettings.switch_to_results_automatically
+                    "
+                >
+                    Toggle
+                </button>
+            </p>
         </div>
     </template>
     <p v-else>Not loaded</p>
@@ -108,7 +144,7 @@
     Client Display<span v-if="mainStore.displayExternalPassthrough"> (From External)</span>:
     <br />
     <template v-if="mainStore.displayConnected">
-        <img v-if="mainStore.currentClientFrame" :src="mainStore.currentClientFrame" />
+        <img width="360px" v-if="mainStore.currentClientFrame" :src="mainStore.currentClientFrame" />
     </template>
     <p v-else>No Connection</p>
     <br />

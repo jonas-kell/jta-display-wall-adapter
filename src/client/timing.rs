@@ -23,6 +23,9 @@ pub struct TimingSettings {
     pub play_sound_on_finish: bool,
     pub can_currently_update_meta: bool,
     pub time_continues_running: bool,
+    pub switch_to_start_list_automatically: bool,
+    pub switch_to_timing_automatically: bool,
+    pub switch_to_results_automatically: bool,
 }
 impl TimingSettings {
     pub fn new(args: &Args) -> Self {
@@ -36,6 +39,9 @@ impl TimingSettings {
             play_sound_on_finish: args.play_sound_on_finish,
             can_currently_update_meta: true,
             time_continues_running: false,
+            switch_to_start_list_automatically: true,
+            switch_to_timing_automatically: true,
+            switch_to_results_automatically: false,
         }
     }
 }
@@ -263,6 +269,7 @@ pub struct TimingStateMeta {
     pub distance: RaceDistance,
 }
 
+#[derive(PartialEq, Eq, Clone)]
 pub enum TimingMode {
     StartList,
     Timing,
@@ -345,6 +352,13 @@ impl TimingStateMachine {
                 } else {
                     warn!("Race Meta update was trashed, because update is blocked by settings");
                 }
+                if self.settings.switch_to_start_list_automatically
+                    && self.timing_mode != TimingMode::Timing
+                {
+                    // we do not want to switch BACK to start list from timing (e.g. on reset, as it sends both)
+                    // but if we are further along, we are probably already on the fresh start of a new run
+                    self.timing_mode = TimingMode::StartList;
+                }
             }
             TimingUpdate::ResultMeta(hr) => {
                 if self.settings.can_currently_update_meta {
@@ -356,15 +370,26 @@ impl TimingStateMachine {
                 } else {
                     warn!("Race Result Meta update was trashed, because update is blocked by settings");
                 }
+                if self.settings.switch_to_results_automatically {
+                    self.timing_mode = TimingMode::ResultList;
+                }
             }
             TimingUpdate::Reset => {
                 self.timing_state = TimingState::Stopped;
                 self.held_time_state = None; // make sure, to clear this
                 self.race_finished = false;
                 self.time_held_counter = 0;
+
+                // a reset gets sent with all start list requests, so we do not automatically switch anywhere
             }
             TimingUpdate::Running(rt) => {
                 self.update_reference_computation_time(&rt);
+                if self.settings.switch_to_timing_automatically
+                    && self.timing_mode == TimingMode::StartList
+                {
+                    // can only switch to timing automatically from start list, not from result list
+                    self.timing_mode = TimingMode::Timing;
+                }
 
                 match &self.timing_state {
                     TimingState::Stopped | TimingState::Running => {
@@ -391,6 +416,11 @@ impl TimingStateMachine {
             }
             TimingUpdate::Intermediate(rt) => {
                 self.update_reference_computation_time(&rt);
+                if self.settings.switch_to_timing_automatically
+                    && self.timing_mode == TimingMode::StartList
+                {
+                    self.timing_mode = TimingMode::Timing;
+                }
 
                 if matches!(self.timing_state, TimingState::Finished(_)) {
                     if !self.settings.time_continues_running {
@@ -412,6 +442,11 @@ impl TimingStateMachine {
             TimingUpdate::End(rt) => {
                 self.update_reference_computation_time(&rt);
                 self.race_finished = true;
+                if self.settings.switch_to_timing_automatically
+                    && self.timing_mode == TimingMode::StartList
+                {
+                    self.timing_mode = TimingMode::Timing;
+                }
 
                 if self.settings.time_continues_running {
                     self.hold_time(rt);
