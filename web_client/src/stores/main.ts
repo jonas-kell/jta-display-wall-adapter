@@ -31,7 +31,7 @@ import {
 } from "../functions/interfaceInbound";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { TimingSettings } from "../functions/interfaceShared";
-import { dayTimeStringRepr, imageURLfromBMPBytes, windStringRepr } from "../functions/representation";
+import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -80,7 +80,20 @@ export default defineStore("main", () => {
     const logEntriesRolling = new CircularBuffer<LogEntry>(10);
     const requestedWindMeasurements = ref([] as WindMeasurement[]);
 
-    function handleWSMessage(ev: any) {
+    function handleWSMessage(ev: MessageEvent) {
+        if (ev.data instanceof Blob) {
+            // Binary message (default browser behavior)
+            ev.data.arrayBuffer().then((buf) => {
+                currentClientFrame.value = imageURLfromBMPBytes(buf);
+            });
+            return;
+        }
+
+        if (ev.data instanceof ArrayBuffer) {
+            currentClientFrame.value = imageURLfromBMPBytes(ev.data);
+            return;
+        }
+
         let msg = parseMessage(JSON.parse(ev.data));
 
         switch (msg.type) {
@@ -129,7 +142,8 @@ export default defineStore("main", () => {
                 requestedWindMeasurements.value = msg.data;
                 return;
             case InboundMessageType.CurrentDisplayFrame:
-                currentClientFrame.value = imageURLfromBMPBytes(msg.data);
+                currentClientFrame.value = imageURLfromBMPBytesArray(msg.data);
+                console.error("Binary data should not be sent over JSON channel, but binary channel");
                 return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);

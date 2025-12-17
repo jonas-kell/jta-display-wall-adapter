@@ -5,6 +5,8 @@ use actix_ws::Message;
 use futures::StreamExt;
 use std::{sync::Arc, time::Duration};
 
+use super::MessageToWebControl;
+
 pub async fn ws_route(
     comm_channel_data: web::Data<Arc<InstructionCommunicationChannel>>,
     req: HttpRequest,
@@ -39,29 +41,45 @@ pub async fn ws_route(
                     error!("Error reading from internal channel: {}", e.to_string());
                     break;
                 }
-                Ok(Ok(msg)) => match sender_session
-                    .text(match serde_json::to_string(&msg) {
-                        Ok(str) => str,
-                        Err(e) => {
-                            error!(
-                                "Serde could not serealize message. This should not happen: {}",
-                                e
-                            );
-                            break;
+                Ok(Ok(msg)) => match msg {
+                    MessageToWebControl::CurrentDisplayFrame(frame) => {
+                        match sender_session.binary(frame).await {
+                            Ok(()) => {
+                                trace!("Binary Communication to web control was sent out");
+                                continue;
+                            }
+                            Err(e) => {
+                                warn!("Communication to web control went away while sending frame data: {}", e.to_string());
+                                break;
+                            }
                         }
-                    })
-                    .await
-                {
-                    Ok(()) => {
-                        trace!("Communication to web control was sent out");
-                        continue;
                     }
-                    Err(e) => {
-                        warn!(
-                            "Communication to web control went away while sending message: {}",
-                            e.to_string()
-                        );
-                        break;
+                    other => {
+                        match sender_session
+                                .text(match serde_json::to_string(&other) {
+                                    Ok(str) => str,
+                                    Err(e) => {
+                                        error!(
+                                            "Serde could not serealize message. This should not happen: {}",
+                                            e
+                                        );
+                                        break;
+                                    }
+                                })
+                                .await
+                            {
+                                Ok(()) => {
+                                    trace!("Communication to web control was sent out");
+                                    continue;
+                                }
+                                Err(e) => {
+                                    warn!(
+                                        "Communication to web control went away while sending message: {}",
+                                        e.to_string()
+                                    );
+                                    break;
+                                }
+                            }
                     }
                 },
             }
