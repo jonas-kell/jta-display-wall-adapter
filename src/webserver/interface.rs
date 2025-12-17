@@ -20,6 +20,8 @@ pub enum MessageFromWebControl {
     GetLogs(u32),
     SelectHeat(String),
     Timing,
+    StartList,
+    ResultList,
     UpdateTimingSettings(TimingSettings),
     RequestTimingSettings,
     Clock(DayTime),

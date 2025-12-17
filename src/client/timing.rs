@@ -4,7 +4,7 @@ use crate::{
         ClientInternalMessageFromServerToClient::EmitTimingSettingsUpdate,
         MessageFromServerToClient,
     },
-    server::camera_program_types::HeatStartList,
+    server::camera_program_types::{HeatResult, HeatStartList},
     times::{DayTime, RaceTime},
 };
 use async_channel::{Sender, TrySendError};
@@ -69,7 +69,11 @@ pub enum TimingState {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum TimingUpdate {
+    StartList,
+    Timing,
+    ResultList,
     Meta(HeatStartList),
+    ResultMeta(HeatResult),
     Reset,
     Running(RaceTime),
     Intermediate(RaceTime), // only ever produced by the camera program when sending manual intermediate signal (could never get the light barrier to emit it)
@@ -259,12 +263,19 @@ pub struct TimingStateMeta {
     pub distance: RaceDistance,
 }
 
+pub enum TimingMode {
+    StartList,
+    Timing,
+    ResultList,
+}
+
 pub struct TimingStateMachine {
     fireworks_animation: Animation,
     pub over_top_animation: Option<AnimationPlayer>,
     pub meta: Option<TimingStateMeta>,
     pub settings: TimingSettings,
     time_held_counter: u16,
+    pub timing_mode: TimingMode,
     timing_state: TimingState,
     held_time_state: Option<HeldTimeState>,
     reference_computation_time: Instant,
@@ -288,11 +299,21 @@ impl TimingStateMachine {
             reference_computation_time: Instant::now(),
             client_state_machine_sender,
             race_finished: false,
+            timing_mode: TimingMode::StartList,
         }
     }
 
-    pub fn update_race_time(&mut self, rtu: TimingUpdate) {
+    pub fn process_update(&mut self, rtu: TimingUpdate) {
         match rtu {
+            TimingUpdate::Timing => {
+                self.timing_mode = TimingMode::Timing;
+            }
+            TimingUpdate::StartList => {
+                self.timing_mode = TimingMode::StartList;
+            }
+            TimingUpdate::ResultList => {
+                self.timing_mode = TimingMode::ResultList;
+            }
             TimingUpdate::Meta(hsl) => {
                 if self.settings.can_currently_update_meta {
                     let rd = RaceDistance::new(hsl.distance_meters);
@@ -323,6 +344,17 @@ impl TimingStateMachine {
                     }
                 } else {
                     warn!("Race Meta update was trashed, because update is blocked by settings");
+                }
+            }
+            TimingUpdate::ResultMeta(hr) => {
+                if self.settings.can_currently_update_meta {
+                    let rd = RaceDistance::new(hr.distance_meters);
+                    self.meta = Some(TimingStateMeta {
+                        title: hr.name,
+                        distance: rd,
+                    });
+                } else {
+                    warn!("Race Result Meta update was trashed, because update is blocked by settings");
                 }
             }
             TimingUpdate::Reset => {

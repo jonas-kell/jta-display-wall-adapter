@@ -11,7 +11,9 @@ import {
     RequestDisplayClientState,
     RequestTimingSettings,
     RequestWindValues,
+    ResultList,
     SelectHeat,
+    StartList,
     SwitchMode,
     Timing,
     UpdateTimingSettings,
@@ -24,15 +26,18 @@ import {
     InboundMessageType,
     LogEntry,
     parseMessage,
+    RaceWind,
     WindMeasurement,
 } from "../functions/interfaceInbound";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { TimingSettings } from "../functions/interfaceShared";
-import { dayTimeStringRepr } from "../functions/representation";
+import { dayTimeStringRepr, windStringRepr } from "../functions/representation";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+const WIND_MESSAGE = "Not synced (start any Race in Camera Program to fix)";
 
 export default defineStore("main", () => {
     const connected = ref(false);
@@ -52,6 +57,7 @@ export default defineStore("main", () => {
     const WIND_CONNECTION_TIMEOUT = 5_000; // ms
     const lastWindPing = ref<number>(Date.now() - 2 * WIND_CONNECTION_TIMEOUT);
     const windTime = ref<string>("");
+    const windValue = ref<string>("");
     const now = ref<number>(Date.now());
     window.setInterval(() => {
         now.value = Date.now();
@@ -61,6 +67,12 @@ export default defineStore("main", () => {
     }
     const windServerConnected = computed<boolean>(() => {
         return now.value - lastWindPing.value <= WIND_CONNECTION_TIMEOUT;
+    });
+    watch(windServerConnected, () => {
+        if (!windServerConnected.value) {
+            windTime.value = WIND_MESSAGE;
+            windValue.value = "----";
+        }
     });
 
     const logEntriesRolling = new CircularBuffer<LogEntry>(10);
@@ -204,6 +216,20 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
 
+    function sendStartListCommand() {
+        const packet: StartList = {
+            type: "StartList",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+
+    function sendResultListCommand() {
+        const packet: ResultList = {
+            type: "ResultList",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+
     function sendIdleCommand() {
         const packet: Idle = {
             type: "Idle",
@@ -323,10 +349,16 @@ export default defineStore("main", () => {
             const timeElem: null | DayTime = parsed["time"];
 
             if (timeElem == null) {
-                windTime.value = "Not-synced";
+                windTime.value = WIND_MESSAGE;
             } else {
                 windTime.value = dayTimeStringRepr(timeElem);
             }
+        }
+
+        if (Object.keys(parsed).includes("wind")) {
+            const windVal: RaceWind = parsed["wind"];
+
+            windValue.value = windStringRepr(windVal);
         }
 
         if (Object.keys(parsed).includes("probable_measurement_type")) {
@@ -355,6 +387,8 @@ export default defineStore("main", () => {
         sendGetLogsCommand,
         sendSelectHeatCommand,
         sendTimingCommand,
+        sendStartListCommand,
+        sendResultListCommand,
         sendClockCommand,
         sendGetWindValuesCommand,
         canEditTimingSettings,
@@ -367,6 +401,7 @@ export default defineStore("main", () => {
         displayCanSwitchMode,
         windServerConnected,
         windTime,
+        windValue,
         requestedWindMeasurements,
     };
 });

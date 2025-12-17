@@ -40,6 +40,14 @@ export type Timing = {
     type: "Timing";
 };
 
+export type StartList = {
+    type: "StartList";
+};
+
+export type ResultList = {
+    type: "ResultList";
+};
+
 export type Clock = {
     type: "Clock";
     data: DayTime;

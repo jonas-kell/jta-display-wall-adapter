@@ -5,6 +5,7 @@ use crate::{
             draw_text_right_aligned, draw_text_scrolling_with_width, fill_with_color,
             FontPositionDebouncer, FontSizeChooserCache, RasterizerMeta, JTA_COLOR,
         },
+        timing::TimingMode,
         FRAME_TIME_NS,
     },
     interface::{ClientState, ClientStateMachine},
@@ -167,51 +168,62 @@ pub fn render_client_frame(
                     meta,
                 );
             }
-            // line 1
-            draw_text_right_aligned(
-                &timing_state_machine
-                    .get_main_display_race_time()
-                    .optimize_representation_for_display(Some(
-                        timing_state_machine.settings.max_decimal_places_after_comma,
-                    ))
-                    .to_string(),
-                130.0,
-                30.0,
-                20.0,
-                Some(&mut cache.main_number_display_debouncer),
-                meta,
-            );
-            if timing_state_machine.race_finished() {
-                draw_text("Finished", 150.0, 30.0, 20.0, meta);
-            }
-            // line 2
-            if let Some(hts) = timing_state_machine.get_held_display_race_time() {
-                draw_text(
-                    &hts.held_at_time
-                        .optimize_representation_for_display(Some(
-                            timing_state_machine.settings.max_decimal_places_after_comma,
-                        ))
-                        .to_string(),
-                    10.0,
-                    50.0,
-                    20.0,
-                    meta,
-                );
-                if let Some(held_distance) = hts.held_at_m {
-                    draw_text(&format!("{}m", held_distance), 150.0, 50.0, 20.0, meta);
-                }
-            }
 
-            // animations
-            if let Some(over_top_player) = &mut timing_state_machine.over_top_animation {
-                match over_top_player.get_current_frame(
-                    meta.texture_width as u32,
-                    meta.texture_height as u32,
-                    state.frame_counter,
-                    &mut state.permanent_images_storage.cached_rescaler,
-                ) {
-                    Some(frame) => draw_image(0, 0, &frame, meta),
-                    None => (),
+            match &timing_state_machine.timing_mode {
+                TimingMode::Timing => {
+                    // line 1
+                    draw_text_right_aligned(
+                        &timing_state_machine
+                            .get_main_display_race_time()
+                            .optimize_representation_for_display(Some(
+                                timing_state_machine.settings.max_decimal_places_after_comma,
+                            ))
+                            .to_string(),
+                        130.0,
+                        30.0,
+                        20.0,
+                        Some(&mut cache.main_number_display_debouncer),
+                        meta,
+                    );
+                    if timing_state_machine.race_finished() {
+                        draw_text("Finished", 150.0, 30.0, 20.0, meta);
+                    }
+                    // line 2
+                    if let Some(hts) = timing_state_machine.get_held_display_race_time() {
+                        draw_text(
+                            &hts.held_at_time
+                                .optimize_representation_for_display(Some(
+                                    timing_state_machine.settings.max_decimal_places_after_comma,
+                                ))
+                                .to_string(),
+                            10.0,
+                            50.0,
+                            20.0,
+                            meta,
+                        );
+                        if let Some(held_distance) = hts.held_at_m {
+                            draw_text(&format!("{}m", held_distance), 150.0, 50.0, 20.0, meta);
+                        }
+                    }
+
+                    // animations
+                    if let Some(over_top_player) = &mut timing_state_machine.over_top_animation {
+                        match over_top_player.get_current_frame(
+                            meta.texture_width as u32,
+                            meta.texture_height as u32,
+                            state.frame_counter,
+                            &mut state.permanent_images_storage.cached_rescaler,
+                        ) {
+                            Some(frame) => draw_image(0, 0, &frame, meta),
+                            None => (),
+                        }
+                    }
+                }
+                TimingMode::StartList => {
+                    draw_text("Start list", 100.0, 30.0, 20.0, meta);
+                }
+                TimingMode::ResultList => {
+                    draw_text("Result list", 100.0, 30.0, 20.0, meta);
                 }
             }
         }

@@ -303,7 +303,6 @@ impl ServerStateMachine {
             IncomingInstruction::FromCameraProgram(inst) => match inst {
                 InstructionFromCameraProgram::HeatStartList(list) => {
                     store_to_database!(list.clone(), self);
-
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::Meta(list),
                     ));
@@ -349,11 +348,17 @@ impl ServerStateMachine {
                 }
                 InstructionFromCameraProgram::CompetitorEvaluated(evaluated) => {
                     store_to_database!(evaluated, self);
+                    // we can assume, that the "always emit result list on change" setting is active in the camera program
+                    // for this reason, we ignore singular evaluation emits
                 }
                 InstructionFromCameraProgram::HeatResult(result) => {
-                    store_to_database!(result, self);
+                    store_to_database!(result.clone(), self);
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::ResultMeta(result),
+                    ));
                 }
                 InstructionFromCameraProgram::ZeroTime => {
+                    // TODO think about if we really want to reset (maybe not if meta-change = off)
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::Reset,
                     ));
@@ -459,6 +464,25 @@ impl ServerStateMachine {
                 MessageFromWebControl::Timing => {
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::Timing);
+                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                            TimingUpdate::Timing,
+                        ));
+                    }
+                }
+                MessageFromWebControl::StartList => {
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::Timing);
+                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                            TimingUpdate::StartList,
+                        ));
+                    }
+                }
+                MessageFromWebControl::ResultList => {
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::Timing);
+                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                            TimingUpdate::ResultList,
+                        ));
                     }
                 }
                 MessageFromWebControl::UpdateTimingSettings(set) => {
@@ -701,11 +725,11 @@ impl ClientStateMachine {
             }
             MessageFromServerToClient::TimingStateUpdate(update) => {
                 if let Some(tsm) = &mut self.timing_state_machine_storage {
-                    tsm.update_race_time(update);
+                    tsm.process_update(update);
                 } else {
                     match &mut self.state {
                         ClientState::Timing(tsm) => {
-                            tsm.update_race_time(update);
+                            tsm.process_update(update);
                         }
                         _ => {
                             let mut new_timing_state_machine = TimingStateMachine::new(
@@ -713,7 +737,7 @@ impl ClientStateMachine {
                                 &self.timing_settings_template,
                                 self.self_sender.clone(),
                             );
-                            new_timing_state_machine.update_race_time(update);
+                            new_timing_state_machine.process_update(update);
 
                             // there was no timing state machine to update
                             self.timing_state_machine_storage = Some(new_timing_state_machine);
@@ -742,7 +766,9 @@ impl ClientStateMachine {
             }
             MessageFromServerToClient::Clock(dt) => {
                 trace!("Switch to clock mode"); // this is called often if the camera program is in clock mode, so only trace
-                self.state = ClientState::Clock(ClockState::new(&dt));
+                self.switch_mode_with_stashing_timing_state(ClientState::Clock(ClockState::new(
+                    &dt,
+                )));
             }
             MessageFromServerToClient::ClientInternal(client_internal_message) => {
                 match client_internal_message {

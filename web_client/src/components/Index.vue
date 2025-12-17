@@ -6,14 +6,17 @@
     {{ mainStore.displayExternalPassthrough ? "External Passthrough" : "Default client" }}
     <button @click="mainStore.sendSwitchModeCommand" :disabled="!mainStore.displayCanSwitchMode">Switch Mode</button>
     <br />
-    Wind Connected: {{ mainStore.windServerConnected }}, {{ mainStore.windTime }}
+    Wind Connected: {{ mainStore.windServerConnected }} {{ mainStore.windValue }}
+    {{ mainStore.windServerConnected ? mainStore.windTime : "" }}
     <br />
     <br />
 
-    <button @click="mainStore.sendAdvertisementsCommand">Advertisements</button>
-    <button @click="mainStore.sendIdleCommand">Idle</button>
-    <button @click="mainStore.sendClockCommand">Clock</button>
-    <button @click="mainStore.sendTimingCommand">Timing</button>
+    <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendAdvertisementsCommand">Advertisements</button>
+    <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendIdleCommand">Idle</button>
+    <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendClockCommand">Clock</button>
+    <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendStartListCommand">Start List</button>
+    <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendTimingCommand">Timing</button>
+    <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendResultListCommand">Result List</button>
     <br />
     <br />
     Timing Settings:
@@ -102,9 +105,11 @@
     <p v-else>Not loaded</p>
     <br />
 
-    <textarea v-model="freetext" @keydown="checkFreetextSubmit"></textarea>
+    <textarea v-model="freetext" :disabled="mainStore.displayExternalPassthrough" @keydown="checkFreetextSubmit"></textarea>
     <br />
-    <button @click="mainStore.sendFreetextCommand(freetext.trim())">Send Freetext</button>
+    <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendFreetextCommand(freetext.trim())">
+        Send Freetext
+    </button>
     <br />
     <br />
     <button @click="mainStore.sendGetHeatsCommand">Get Heats</button>
