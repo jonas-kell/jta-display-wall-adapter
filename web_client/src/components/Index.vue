@@ -105,10 +105,9 @@
     <p v-else>Not loaded</p>
     <br />
 
-    Client Display:
+    Client Display<span v-if="mainStore.displayExternalPassthrough"> (From External)</span>:
     <br />
     <template v-if="mainStore.displayConnected">
-        <p v-if="mainStore.displayExternalPassthrough">External:</p>
         <img v-if="mainStore.currentClientFrame" :src="mainStore.currentClientFrame" />
     </template>
     <p v-else>No Connection</p>
