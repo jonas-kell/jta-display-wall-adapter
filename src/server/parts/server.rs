@@ -3,6 +3,7 @@ use crate::interface::{ServerStateMachine, ServerStateMachineServerStateReader};
 use crate::server::comm_channel::{InstructionCommunicationChannel, PacketCommunicationChannel};
 use crate::server::parts::client_communicator::client_communicator;
 use crate::server::parts::database::create_database_manager;
+use crate::server::parts::export::{test_data, write_to_xml_output_file};
 use crate::server::parts::intake_commands::intake_commands;
 use crate::server::parts::tcp_client_camera_program::tcp_client_camera_program;
 use crate::server::parts::tcp_forwarder_display_program::tcp_forwarder_display_program;
@@ -18,6 +19,10 @@ use std::sync::{
 
 /// Start server
 pub async fn run_server(args: &Args) -> () {
+    // TODO remove/move to proper location
+    write_to_xml_output_file(args, "test.meetxml", test_data());
+    // TODO end
+
     let passthrough_address_display_program: SocketAddr = format!(
         "{}:{}",
         args.passthrough_address_display_program, args.passthrough_port_display_program

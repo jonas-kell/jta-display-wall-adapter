@@ -343,6 +343,23 @@ impl DayTime {
         let start: Duration = self.clone().into();
         start.add(duration).into()
     }
+
+    pub fn from_hms_opt(h: u16, m: u16, s: u16) -> Option<Self> {
+        if h <= 23 {
+            if m <= 59 {
+                if s <= 59 {
+                    return Some(Self {
+                        hours: h,
+                        minutes: m,
+                        seconds: s,
+                        fractional_part_in_ten_thousands: None,
+                    });
+                }
+            }
+        }
+
+        None
+    }
 }
 impl Display for DayTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

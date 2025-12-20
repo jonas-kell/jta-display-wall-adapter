@@ -1,6 +1,7 @@
 mod audio;
 mod client_communicator;
 mod database;
+mod export;
 mod intake_commands;
 pub mod server;
 mod tcp_client_camera_program;

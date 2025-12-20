@@ -1,5 +1,5 @@
 use crate::times::{DayTime, RaceTime, RaceWind};
-use chrono::NaiveDateTime;
+use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -62,7 +62,7 @@ pub struct HeatStartList {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HeatCompetitor {
-    pub id: String,
+    pub id: String, // not used for output to meetxml
     pub lane: u32,
     pub bib: u32,
     pub class: String,
@@ -71,7 +71,7 @@ pub struct HeatCompetitor {
     pub nation: String,
     pub club: String,
     pub gender: String,
-    pub disqualified: Option<DisqualificationReason>,
+    pub disqualified: Option<DisqualificationReason>, // not used for output to meetxml
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -159,4 +159,60 @@ pub struct HeatData {
     pub finish: Option<HeatFinish>,
     pub evaluations: Option<Vec<CompetitorEvaluated>>,
     pub result: Option<HeatResult>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Meet {
+    pub name: String,
+    pub id: Uuid,
+    pub city: String,
+    pub sessions: Vec<Session>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Session {
+    pub location: String,
+    pub date: NaiveDate,
+    pub events: Vec<Event>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum DistanceType {
+    Relay,
+    Normal,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Event {
+    pub name: String,
+    pub id: Uuid,
+    pub distance: u32,
+    pub distance_type: DistanceType,
+    pub scheduled_start_time: DayTime,
+    pub heats: Vec<Heat>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Heat {
+    pub name: String,
+    pub id: Uuid,
+    pub distance: u32,
+    pub scheduled_start_time: DayTime,
+    pub distance_type: DistanceType,
+    pub competitors: Vec<HeatCompetitor>,
+}
+
+pub enum Gender {
+    Male,
+    Female,
+    Mixed,
+}
+impl Gender {
+    pub fn to_string(&self) -> String {
+        match self {
+            Gender::Male => "M".into(),
+            Gender::Female => "F".into(),
+            Gender::Mixed => "X".into(),
+        }
+    }
 }

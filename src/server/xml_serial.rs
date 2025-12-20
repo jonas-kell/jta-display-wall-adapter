@@ -7,7 +7,9 @@ use crate::server::camera_program_datatypes::{
     HeatCompetitorResult, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
     HeatStartList, HeatWind,
 };
-use crate::server::camera_program_types::HeatWindMissing;
+use crate::server::camera_program_types::{
+    DistanceType, Event, Heat, HeatWindMissing, Meet, Session,
+};
 use crate::times::{DayTime, RaceTime, RaceWind};
 use chrono::NaiveDateTime;
 use nom::branch::alt;
@@ -15,7 +17,8 @@ use nom::bytes::complete::tag;
 use nom::character::complete::multispace0;
 use nom::{IResult, Parser};
 use quick_xml::de::from_str;
-use serde::{Deserialize, Deserializer};
+use quick_xml::se::to_string_with_root;
+use serde::{Deserialize, Deserializer, Serialize};
 use uuid::Uuid;
 
 pub struct BufferedParserXML {
@@ -831,6 +834,189 @@ fn decode_single_xml(packet: &[u8]) -> Result<InstructionFromCameraProgram, Stri
     error!("XML message fell through:\n{}", decoded_string);
 
     Err("Could not decode".into())
+}
+
+#[derive(Serialize)]
+struct MeetXML {
+    #[serde(rename = "@Name")]
+    name: String,
+    #[serde(rename = "@Id")]
+    id: Uuid,
+    #[serde(rename = "@City")]
+    city: String,
+    #[serde(rename = "@xmlns:xsi")]
+    ns1: String,
+    #[serde(rename = "@xmlns:xsd")]
+    ns2: String,
+    #[serde(rename = "Session")]
+    sessions: Vec<SessionXML>,
+}
+impl From<Meet> for MeetXML {
+    fn from(value: Meet) -> Self {
+        Self {
+            id: value.id,
+            city: value.city,
+            name: value.name,
+            sessions: xml_session_vec_conversion(value.sessions),
+            ns1: String::from("http://www.w3.org/2001/XMLSchema-instance"),
+            ns2: String::from("http://www.w3.org/2001/XMLSchema"),
+        }
+    }
+}
+impl Meet {
+    pub fn as_xml_serealized_string(self) -> Result<String, String> {
+        let data = MeetXML::from(self);
+
+        match to_string_with_root("Meet", &data) {
+            Ok(a) => Ok(a),
+            Err(e) => Err(format!("Could not serialize the data: {}", e)),
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct SessionXML {
+    #[serde(rename = "@Name")]
+    name: String, // this is filled with the date in all reference files
+    #[serde(rename = "@Id")]
+    id: String, // this is filled with the date in all reference files
+    #[serde(rename = "@Nr")]
+    nr: u32,
+    #[serde(rename = "@Location")]
+    location: String,
+    #[serde(rename = "@Type")]
+    session_type: String,
+    #[serde(rename = "@Date")]
+    date: String,
+    #[serde(rename = "Event")]
+    events: Vec<EventXML>,
+}
+fn xml_session_vec_conversion(value: Vec<Session>) -> Vec<SessionXML> {
+    value
+        .into_iter()
+        .enumerate()
+        .map(|(i, a)| SessionXML {
+            events: a.events.into_iter().map(|e| e.into()).collect(),
+            id: a.date.format("%Y-%m-%d").to_string(),
+            location: a.location,
+            name: a.date.format("%Y-%m-%d").to_string(),
+            nr: (i + 1) as u32,
+            date: a.date.format("%Y-%m-%d").to_string(),
+            session_type: String::from("Run"),
+        })
+        .collect()
+}
+
+#[derive(Serialize)]
+pub struct EventXML {
+    #[serde(rename = "@Name")]
+    name: String,
+    #[serde(rename = "@Id")]
+    id: String,
+    #[serde(rename = "@Distance")]
+    distance: u32,
+    #[serde(rename = "@DistanceType")]
+    distance_type: String,
+    #[serde(rename = "@ScheduledStarttime")]
+    scheduled_start_time: String,
+    #[serde(rename = "Heat")]
+    heats: Vec<HeatXML>,
+}
+impl From<Event> for EventXML {
+    fn from(value: Event) -> Self {
+        Self {
+            distance: value.distance,
+            distance_type: value.distance_type.for_xml(),
+            id: value.id.to_string(),
+            name: value.name,
+            scheduled_start_time: value.scheduled_start_time.for_xml(),
+            heats: xml_heats_vec_conversion(value.heats),
+        }
+    }
+}
+impl DistanceType {
+    fn for_xml(&self) -> String {
+        match self {
+            DistanceType::Normal => "Regular".into(),
+            DistanceType::Relay => "Relay".into(),
+        }
+    }
+}
+impl DayTime {
+    fn for_xml(&self) -> String {
+        format!("{:02}:{:02}", self.hours, self.minutes)
+    }
+}
+
+#[derive(Serialize)]
+pub struct HeatXML {
+    #[serde(rename = "@Name")]
+    name: String,
+    #[serde(rename = "@Id")]
+    id: String,
+    #[serde(rename = "@Distance")]
+    distance: u32,
+    #[serde(rename = "@DistanceType")]
+    distance_type: String,
+    #[serde(rename = "@ScheduledStarttime")]
+    scheduled_start_time: String,
+    #[serde(rename = "@Nr")]
+    nr: u32,
+    #[serde(rename = "Competitor")]
+    competitors: Vec<CompetitorXML>,
+}
+
+fn xml_heats_vec_conversion(value: Vec<Heat>) -> Vec<HeatXML> {
+    value
+        .into_iter()
+        .enumerate()
+        .map(|(i, a)| HeatXML {
+            nr: (i + 1) as u32,
+            id: a.id.to_string(),
+            distance: a.distance,
+            distance_type: a.distance_type.for_xml(),
+            name: a.name,
+            scheduled_start_time: a.scheduled_start_time.for_xml(),
+            competitors: a.competitors.into_iter().map(|c| c.into()).collect(),
+        })
+        .collect()
+}
+
+#[derive(Serialize)]
+struct CompetitorXML {
+    #[serde(rename = "@Id")]
+    id: String,
+    #[serde(rename = "@Lane")]
+    lane: u32,
+    #[serde(rename = "@Bib")]
+    bib: u32,
+    #[serde(rename = "@Class")]
+    class: String,
+    #[serde(rename = "@Lastname")]
+    last_name: String,
+    #[serde(rename = "@Firstname")]
+    first_name: String,
+    #[serde(rename = "@Nation")]
+    nation: String,
+    #[serde(rename = "@Club")]
+    club: String,
+    #[serde(rename = "@Gender")]
+    gender: String,
+}
+impl From<HeatCompetitor> for CompetitorXML {
+    fn from(value: HeatCompetitor) -> Self {
+        Self {
+            bib: value.bib,
+            class: value.class,
+            club: value.club,
+            id: value.id,
+            last_name: value.last_name,
+            first_name: value.first_name,
+            nation: value.nation,
+            lane: value.lane,
+            gender: value.gender,
+        }
+    }
 }
 
 pub struct BufferedParserSerial {
