@@ -1,4 +1,5 @@
 use crate::args::Args;
+use crate::interface::ServerStateMachineServerStateReader;
 use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::server::xml_serial::{BufferedParserSerial, BufferedParserXML};
 use std::io::{self, Error, ErrorKind};
@@ -14,6 +15,7 @@ use tokio::time::{self, sleep};
 
 pub async fn tcp_client_camera_program(
     args: Args,
+    state_reader: ServerStateMachineServerStateReader,
     comm_channel: InstructionCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
     timing_addr: Option<SocketAddr>,
@@ -23,6 +25,7 @@ pub async fn tcp_client_camera_program(
     let args_timing = args.clone();
     let shutdown_marker_timing = shutdown_marker.clone();
     let comm_channel_timing = comm_channel.clone();
+    let state_reader_timing = state_reader.clone();
     let timing_task = async move {
         let timing_addr = if let Some(timing_addr) = timing_addr {
             timing_addr
@@ -40,6 +43,11 @@ pub async fn tcp_client_camera_program(
                     timing_addr
                 );
                 break;
+            }
+            if !state_reader_timing.external_connection_is_allowed().await {
+                warn!("Stopped external connection from forming for now");
+                time::sleep(Duration::from_millis(1000)).await;
+                continue;
             }
 
             // Wait for new connection with timeout so we can check shutdown flag periodically
@@ -125,6 +133,7 @@ pub async fn tcp_client_camera_program(
     let args_xml = args.clone();
     let shutdown_marker_xml = shutdown_marker.clone();
     let comm_channel_xml = comm_channel.clone();
+    let state_reader_xml = state_reader.clone();
     let xml_task = async move {
         let xml_addr = if let Some(xml_addr) = xml_addr {
             xml_addr
@@ -142,6 +151,11 @@ pub async fn tcp_client_camera_program(
                     xml_addr
                 );
                 break;
+            }
+            if !state_reader_xml.external_connection_is_allowed().await {
+                warn!("Stopped external connection from forming for now");
+                time::sleep(Duration::from_millis(1000)).await;
+                continue;
             }
 
             // Wait for new connection with timeout so we can check shutdown flag periodically
@@ -224,6 +238,7 @@ pub async fn tcp_client_camera_program(
     let args_data = args;
     let shutdown_marker_data = shutdown_marker;
     let comm_channel_data = comm_channel;
+    let state_reader_data = state_reader;
     let data_task = async move {
         let data_addr = if let Some(data_addr) = data_addr {
             data_addr
@@ -241,6 +256,11 @@ pub async fn tcp_client_camera_program(
                     data_addr
                 );
                 break;
+            }
+            if !state_reader_data.external_connection_is_allowed().await {
+                warn!("Stopped external connection from forming for now");
+                time::sleep(Duration::from_millis(1000)).await;
+                continue;
             }
 
             // Wait for new connection with timeout so we can check shutdown flag periodically

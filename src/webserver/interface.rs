@@ -1,6 +1,6 @@
 use crate::{
     client::TimingSettings,
-    database::PermanentlyStoredDataset,
+    database::{DatabaseStaticState, PermanentlyStoredDataset},
     server::camera_program_types::{HeatData, HeatMeta},
     times::DayTime,
     wind::format::WindMeasurement,
@@ -26,6 +26,8 @@ pub enum MessageFromWebControl {
     RequestTimingSettings,
     Clock(DayTime),
     RequestWindValues(WindValueRequestDateContainer),
+    InitStaticDatabaseState(DatabaseStaticState),
+    RequestStaticDatabaseState,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,6 +46,7 @@ pub struct DisplayClientState {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "type", content = "data")]
 pub enum MessageToWebControl {
+    DatabaseStaticState(DatabaseStaticState),
     DisplayClientState(DisplayClientState),
     HeatsMeta(Vec<HeatMeta>),
     Logs(Vec<PermanentlyStoredDataset>),

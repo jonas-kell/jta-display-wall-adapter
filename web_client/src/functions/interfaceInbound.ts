@@ -1,6 +1,6 @@
 // server Datatype formats (keep in sync with "./../../../src/server/camera_program_datatypes.rs")
 
-import { TimingSettings } from "./interfaceShared";
+import { DatabaseStaticState, TimingSettings } from "./interfaceShared";
 
 export type HeatMeta = {
     id: string;
@@ -166,6 +166,11 @@ export type DisplayClientStateState = {
     can_switch_mode: boolean;
 };
 
+export type DatabaseStaticStateMessage = {
+    type: "DatabaseStaticState";
+    data: DatabaseStaticState;
+};
+
 export type DisplayClientState = {
     type: "DisplayClientState";
     data: DisplayClientStateState;
@@ -221,9 +226,11 @@ export enum InboundMessageType {
     TimingSettingsState = "TimingSettingsState",
     WindMeasurements = "WindMeasurements",
     CurrentDisplayFrame = "CurrentDisplayFrame",
+    DatabaseStaticState = "DatabaseStaticState",
 }
 
 export type InboundMessage =
+    | DatabaseStaticStateMessage
     | DisplayClientState
     | HeatsMeta
     | Logs
@@ -255,6 +262,8 @@ export function parseMessage(json: unknown): InboundMessage {
             return { type: "WindMeasurements", data: obj.data } as WindMeasurements;
         case InboundMessageType.CurrentDisplayFrame:
             return { type: "CurrentDisplayFrame", data: obj.data } as CurrentDisplayFrame;
+        case InboundMessageType.DatabaseStaticState:
+            return { type: "DatabaseStaticState", data: obj.data } as DatabaseStaticStateMessage;
 
         default:
             return { type: "Unknown", data: json } as Unknown;

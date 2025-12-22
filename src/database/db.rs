@@ -94,6 +94,12 @@ impl From<serde_json::Error> for DatabaseError {
     }
 }
 
+impl From<String> for DatabaseError {
+    fn from(error: String) -> DatabaseError {
+        DatabaseError::new(format!("{}", error))
+    }
+}
+
 impl From<DatabaseError> for std::io::Error {
     fn from(value: DatabaseError) -> Self {
         return std::io::Error::new(

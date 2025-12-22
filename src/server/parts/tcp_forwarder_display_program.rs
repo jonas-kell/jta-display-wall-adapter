@@ -38,6 +38,12 @@ pub async fn tcp_forwarder_display_program(
             break;
         }
 
+        if !state_reader.external_connection_is_allowed().await {
+            warn!("Stopped external connection from forming for now");
+            time::sleep(Duration::from_millis(1000)).await;
+            continue;
+        }
+
         // Wait for new connection with timeout so we can check shutdown flag periodically
         match time::timeout(
             Duration::from_millis(args.wait_ms_before_testing_for_shutdown),

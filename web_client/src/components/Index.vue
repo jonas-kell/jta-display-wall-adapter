@@ -1,6 +1,6 @@
 <template>
     <h1>JTA Display Wall Adapter</h1>
-    Connected: {{ mainStore.connected }}
+    Connected: {{ mainStore.connected }} ({{ mainStore.staticConfiguration?.mode }} at {{ mainStore.staticConfiguration?.date }})
     <br />
     Display Connected: {{ mainStore.displayConnected }}, Mode:
     {{ mainStore.displayExternalPassthrough ? "External Passthrough" : "Default client" }}

@@ -12,3 +12,14 @@ export type TimingSettings = {
     switch_to_timing_automatically: boolean;
     switch_to_results_automatically: boolean;
 };
+
+export enum ApplicationMode {
+    TrackCompetition = "TrackCompetition",
+    StreetLongRun = "StreetLongRun",
+    SprinterKing = "SprinterKing",
+}
+
+export type DatabaseStaticState = {
+    mode: ApplicationMode;
+    date: string;
+};

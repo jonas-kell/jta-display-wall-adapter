@@ -1,5 +1,5 @@
 import { DayTime } from "./interfaceInbound";
-import { TimingSettings } from "./interfaceShared";
+import { DatabaseStaticState, TimingSettings } from "./interfaceShared";
 
 export type Idle = {
     type: "Idle";
@@ -70,4 +70,13 @@ export type WindValueRequestDateContainer = {
 export type RequestWindValues = {
     type: "RequestWindValues";
     data: WindValueRequestDateContainer;
+};
+
+export type InitStaticDatabaseState = {
+    type: "InitStaticDatabaseState";
+    data: DatabaseStaticState;
+};
+
+export type RequestStaticDatabaseState = {
+    type: "RequestStaticDatabaseState";
 };

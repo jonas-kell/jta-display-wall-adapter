@@ -3,9 +3,9 @@
 
 use crate::database::db::DatabaseError;
 use crate::database::schema::{
-    heat_evaluations, heat_false_starts, heat_finishes, heat_intermediates, heat_results,
-    heat_start_lists, heat_starts, heat_wind_missings, heat_winds, internal_wind_measurements,
-    internal_wind_readings, permanent_storage,
+    database_state, heat_evaluations, heat_false_starts, heat_finishes, heat_intermediates,
+    heat_results, heat_start_lists, heat_starts, heat_wind_missings, heat_winds,
+    internal_wind_measurements, internal_wind_readings, permanent_storage,
 };
 use crate::database::DatabaseManager;
 use crate::server::camera_program_types::{
@@ -16,6 +16,7 @@ use crate::times::DayTime;
 use crate::wind::format::{StartedWindMeasurement, WindMeasurement};
 use chrono::Utc;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
+use clap::crate_version;
 use diesel::associations::HasTable;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -476,4 +477,95 @@ pub fn get_wind_readings(
         .collect();
 
     return Ok(data_wind);
+}
+
+#[derive(Insertable, Queryable, Identifiable)]
+#[diesel(table_name = database_state)]
+struct DatabaseStaticStateDatabase {
+    id: i32,
+    created_with_version: String,
+    data: String,
+}
+impl TryFrom<DatabaseStaticState> for DatabaseStaticStateDatabase {
+    type Error = String;
+
+    fn try_from(value: DatabaseStaticState) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: 1,
+            created_with_version: String::from(crate_version!()),
+            data: serde_json::to_string(&value)
+                .map_err(|e| format!("Could not serialize static data: {}", e.to_string()))?,
+        })
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum ApplicationMode {
+    TrackCompetition,
+    StreetLongRun,
+    SprinterKing,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DatabaseStaticState {
+    mode: ApplicationMode,
+    date: NaiveDate,
+}
+impl TryFrom<DatabaseStaticStateDatabase> for DatabaseStaticState {
+    type Error = String;
+
+    fn try_from(value: DatabaseStaticStateDatabase) -> Result<Self, Self::Error> {
+        Ok(serde_json::from_str(&value.data)
+            .map_err(|e| format!("Could not deserialize static data: {}", e.to_string()))?)
+    }
+}
+
+pub fn get_database_static_state(
+    manager: &DatabaseManager,
+) -> Result<DatabaseStaticState, DatabaseError> {
+    let mut conn = manager.get_connection()?;
+
+    let static_data = database_state::table::table()
+        .filter(database_state::id.is(1))
+        .first::<DatabaseStaticStateDatabase>(&mut conn)?;
+
+    let current_version = String::from(crate_version!());
+
+    if static_data.created_with_version != current_version {
+        return Err(DatabaseError::new(format!("Could not read static data, as the database was created for a different program version. DB: {}, Current: {}", static_data.created_with_version, current_version)));
+    }
+
+    return Ok(static_data
+        .try_into()
+        .map_err(|e: String| Into::<DatabaseError>::into(e))?);
+}
+
+pub fn init_database_static_state(
+    value: DatabaseStaticState,
+    manager: &DatabaseManager,
+) -> Result<DatabaseStaticState, DatabaseError> {
+    match get_database_static_state(manager) {
+        Ok(_) => {
+            return Err(
+                String::from("To initialize, the database static state must be empty!").into(),
+            )
+        }
+        Err(_) => (),
+    };
+
+    let mut conn = manager.get_connection()?;
+
+    let data: DatabaseStaticStateDatabase = match value.try_into() {
+        Ok(d) => d,
+        Err(e) => return Err(e.into()),
+    };
+
+    let _ = diesel::insert_into(database_state::table::table())
+        .values(data)
+        .execute(&mut conn)?;
+
+    match get_database_static_state(manager) {
+        Ok(a) => return Ok(a),
+        Err(_) => Err(String::from("Even after initialization, database was found empty").into()),
+    }
 }

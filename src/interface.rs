@@ -1,3 +1,7 @@
+use crate::database::{
+    get_database_static_state, init_database_static_state, ApplicationMode, DatabaseStaticState,
+};
+use crate::open_webcontrol;
 use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::{
     args::Args,
@@ -125,6 +129,11 @@ impl ServerStateMachineServerStateReader {
         let guard = self.reference.lock().await;
         guard.state.clone()
     }
+
+    pub async fn external_connection_is_allowed(&self) -> bool {
+        let guard = self.reference.lock().await;
+        guard.allows_external_connections()
+    }
 }
 
 pub struct ServerStateMachine {
@@ -135,6 +144,7 @@ pub struct ServerStateMachine {
     database_manager: DatabaseManager,
     sound_engine: Option<AudioPlayer>,
     timing_settings_template: TimingSettings,
+    static_state: Option<DatabaseStaticState>,
 }
 impl ServerStateMachine {
     pub fn new(
@@ -150,6 +160,19 @@ impl ServerStateMachine {
             Ok(e) => Some(e),
         };
 
+        let static_state = match get_database_static_state(&database_manager) {
+            Err(e) => {
+                error!("Could not read static state from Database (might be un-initialized), because: {}", e);
+                warn!("Initialize over the web interface, otherwise nothing can work...");
+                if !comm_channel.web_control_there_to_receive() {
+                    info!("Optening webcontrol in browser");
+                    open_webcontrol(args);
+                }
+                None
+            }
+            Ok(s) => Some(s),
+        };
+
         Self {
             args: args.clone(),
             state: ServerState::PassthroughClient,
@@ -158,6 +181,7 @@ impl ServerStateMachine {
             database_manager,
             sound_engine,
             timing_settings_template: TimingSettings::new(args),
+            static_state,
         }
     }
 
@@ -169,6 +193,48 @@ impl ServerStateMachine {
     }
 
     pub async fn parse_incoming_command(&mut self, msg: IncomingInstruction) {
+        let dbss = if let Some(dbss) = &self.static_state {
+            let _ = ApplicationMode::TrackCompetition; // this always gets constructed from the websocket, but we want no unused warning on the export // TODO this can be removed later
+
+            dbss
+        } else {
+            // static state not initialized
+            let updated_successfully = match msg {
+                IncomingInstruction::FromWebControl(w) => match w {
+                    MessageFromWebControl::InitStaticDatabaseState(init) => {
+                        match init_database_static_state(init, &self.database_manager) {
+                            Ok(dbss) => {
+                                self.static_state = Some(dbss.clone());
+                                info!("Database static state was updated (if program misbehaves, it might be neede to restart it once)");
+                                Some(dbss)
+                            }
+                            Err(e) => {
+                                error!(
+                                    "Could not update the database static state: {}",
+                                    e.to_string()
+                                );
+                                None
+                            }
+                        }
+                    }
+                    _ => None,
+                },
+                _ => None,
+            };
+
+            if let Some(dbss) = updated_successfully {
+                self.send_message_to_web_control(MessageToWebControl::DatabaseStaticState(dbss));
+            } else {
+                warn!("Database is not initialized!! Initialize over the web interface, otherwise nothing can work...");
+                if !self.comm_channel.web_control_there_to_receive() {
+                    open_webcontrol(&self.args);
+                }
+            }
+
+            // do not allow processing, unless static state is set!!
+            return;
+        };
+
         // handle all messages
         match msg {
             IncomingInstruction::FromClient(inst) => match inst {
@@ -526,6 +592,15 @@ impl ServerStateMachine {
                         ),
                     }
                 }
+                MessageFromWebControl::InitStaticDatabaseState(_) => {
+                    error!("Received update to database static state. That should only be ever possible on an un-initialized database!");
+                }
+                MessageFromWebControl::RequestStaticDatabaseState => {
+                    // dbss is set
+                    self.send_message_to_web_control(MessageToWebControl::DatabaseStaticState(
+                        dbss.clone(),
+                    ));
+                }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {
                 Measured(wind_measurement) => {
@@ -600,6 +675,10 @@ impl ServerStateMachine {
 
     fn set_main_display_state(&mut self, state: bool) {
         self.display_connected = state;
+    }
+
+    pub fn allows_external_connections(&self) -> bool {
+        return self.static_state.is_some();
     }
 }
 

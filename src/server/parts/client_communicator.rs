@@ -2,7 +2,9 @@ use crate::args::Args;
 use crate::interface::ServerInternalMessageFromClientToServer::{
     MakeVersionRequestToAllClients, SetMainDisplayState,
 };
-use crate::interface::{MessageFromClientToServer, MessageFromServerToClient};
+use crate::interface::{
+    MessageFromClientToServer, MessageFromServerToClient, ServerStateMachineServerStateReader,
+};
 use crate::server::comm_channel::InstructionCommunicationChannel;
 use futures::prelude::*;
 use std::io;
@@ -20,6 +22,7 @@ use tokio_util::codec::{FramedRead, FramedWrite, LengthDelimitedCodec};
 
 pub async fn client_communicator(
     args: Args,
+    state_reader: ServerStateMachineServerStateReader,
     comm_channel: InstructionCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
     client_addr: Option<SocketAddr>,
@@ -35,6 +38,11 @@ pub async fn client_communicator(
         if shutdown_marker.load(Ordering::SeqCst) {
             info!("Shutdown requested, stopping listener on {}", client_addr);
             break;
+        }
+        if !state_reader.external_connection_is_allowed().await {
+            warn!("Stopped external connection from forming for now");
+            time::sleep(Duration::from_millis(1000)).await;
+            continue;
         }
         match comm_channel.take_in_command_from_client(MessageFromClientToServer::ServerInternal(
             SetMainDisplayState(false),

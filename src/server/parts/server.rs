@@ -162,7 +162,7 @@ pub async fn run_server(args: &Args) -> () {
 
     let tcp_forwarder_display_program_instance = tcp_forwarder_display_program(
         args.clone(),
-        server_state_reader,
+        server_state_reader.clone(),
         comm_channel.clone(),
         comm_channel_packets.clone(),
         Arc::clone(&shutdown_marker),
@@ -171,6 +171,7 @@ pub async fn run_server(args: &Args) -> () {
 
     let client_communicator_instance = client_communicator(
         args.clone(),
+        server_state_reader.clone(),
         comm_channel.clone(),
         Arc::clone(&shutdown_marker),
         internal_communication_address,
@@ -185,6 +186,7 @@ pub async fn run_server(args: &Args) -> () {
 
     let tcp_client_camera_program_instance = tcp_client_camera_program(
         args.clone(),
+        server_state_reader.clone(),
         comm_channel.clone(),
         Arc::clone(&shutdown_marker),
         camera_program_timing_address,
@@ -204,6 +206,7 @@ pub async fn run_server(args: &Args) -> () {
 
     let tcp_client_wind_server_instance = tcp_listener_wind_server(
         args.clone(),
+        server_state_reader,
         comm_channel.clone(),
         shutdown_marker.clone(),
         wind_server_address,

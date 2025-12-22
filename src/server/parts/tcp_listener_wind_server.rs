@@ -1,4 +1,5 @@
 use crate::args::Args;
+use crate::interface::ServerStateMachineServerStateReader;
 use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::wind::format::{make_json_exchange_codec, MessageToWindServer, WindMessageBroadcast};
 use futures::{SinkExt, StreamExt};
@@ -17,6 +18,7 @@ use tokio_util::codec::{FramedRead, FramedWrite};
 
 pub async fn tcp_listener_wind_server(
     args: Args,
+    state_reader: ServerStateMachineServerStateReader,
     comm_channel: InstructionCommunicationChannel,
     shutdown_marker: Arc<AtomicBool>,
     wind_server_addr: Option<SocketAddr>,
@@ -35,6 +37,11 @@ pub async fn tcp_listener_wind_server(
                 wind_server_addr
             );
             break;
+        }
+        if !state_reader.external_connection_is_allowed().await {
+            warn!("Stopped external connection from forming for now");
+            time::sleep(Duration::from_millis(1000)).await;
+            continue;
         }
 
         // Wait for new connection with timeout so we can check shutdown flag periodically

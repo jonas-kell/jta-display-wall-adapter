@@ -28,6 +28,13 @@ fn is_port_in_use(port: &str) -> bool {
     TcpListener::bind(addr).is_err()
 }
 
+pub fn open_webcontrol(args: &Args) {
+    let _ = open::that(&format!(
+        "http://localhost:{}/",
+        args.internal_webcontrol_port
+    ));
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     const THIRD_PARTY_LOG_LEVELS: &str = "actix=off,reqwest=off,hyper=off,mio=off,wgpu_core=info,wgpu_hal=info,naga=info,calloop=info,neli=info,tracing=off,symphonia=off";
@@ -58,12 +65,10 @@ async fn main() -> std::io::Result<()> {
             error!("The program could not be started, as the tcp ports are already in use.");
             error!("Either an incompatible program is already running, or a second instance of this program is");
 
-            info!("Opening control panel instead");
             // open the control panel as a helpful feature
-            let _ = open::that(&format!(
-                "http://localhost:{}/",
-                args.internal_webcontrol_port
-            ));
+            info!("Opening control panel instead");
+            open_webcontrol(&args);
+
             return Err(std::io::Error::new(
                 std::io::ErrorKind::AddrInUse,
                 "Server Address already used",

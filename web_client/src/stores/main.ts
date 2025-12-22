@@ -8,7 +8,9 @@ import {
     GetHeats,
     GetLogs,
     Idle,
+    InitStaticDatabaseState,
     RequestDisplayClientState,
+    RequestStaticDatabaseState,
     RequestTimingSettings,
     RequestWindValues,
     ResultList,
@@ -30,7 +32,7 @@ import {
     WindMeasurement,
 } from "../functions/interfaceInbound";
 import { CircularBuffer } from "../functions/circularBuffer";
-import { TimingSettings } from "../functions/interfaceShared";
+import { DatabaseStaticState, TimingSettings } from "../functions/interfaceShared";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
 
 function sleep(ms: number) {
@@ -40,6 +42,7 @@ function sleep(ms: number) {
 const WIND_MESSAGE = "Not synced (start any Race in Camera Program to fix)";
 
 export default defineStore("main", () => {
+    const staticConfiguration = ref(null as null | DatabaseStaticState);
     const connected = ref(false);
     const displayConnected = ref(false);
     const displayExternalPassthrough = ref(false);
@@ -145,6 +148,10 @@ export default defineStore("main", () => {
                 currentClientFrame.value = imageURLfromBMPBytesArray(msg.data);
                 console.error("Binary data should not be sent over JSON channel, but binary channel");
                 return;
+            case InboundMessageType.DatabaseStaticState:
+                console.log("Initialized static database state");
+                staticConfiguration.value = msg.data;
+                return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);
                 return;
@@ -184,6 +191,7 @@ export default defineStore("main", () => {
             console.log("Socket connected");
 
             // this is kind of an init also, as this gets requested on connection establish:
+            sendRequestStaticConfigCommand();
             sendGetHeatsCommand();
             sendRequestTimingSettingsCommand();
 
@@ -298,6 +306,19 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
 
+    function sendRequestStaticConfigCommand() {
+        const packet: RequestStaticDatabaseState = {
+            type: "RequestStaticDatabaseState",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    function sendStaticallyConfigureServerCommand(data: DatabaseStaticState) {
+        const packet: InitStaticDatabaseState = {
+            type: "InitStaticDatabaseState",
+            data: data,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
     function sendGetHeatsCommand() {
         const packet: GetHeats = {
             type: "GetHeats",
@@ -412,6 +433,7 @@ export default defineStore("main", () => {
         sendResultListCommand,
         sendClockCommand,
         sendGetWindValuesCommand,
+        sendStaticallyConfigureServerCommand,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,
@@ -425,5 +447,6 @@ export default defineStore("main", () => {
         windValue,
         requestedWindMeasurements,
         currentClientFrame,
+        staticConfiguration,
     };
 });
