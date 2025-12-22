@@ -13,16 +13,12 @@ tbody tr:nth-of-type(odd) td {
 a.router-link-style {
     color: rgb(var(--v-theme-on-surface));
     text-decoration: underline;
-    padding: 0.3em 0.8em;
     border-radius: 8px;
     font-weight: bold;
+    padding-top: 0.2em;
+    padding-bottom: 0.2em;
 }
 
 a.router-link-style:hover {
     background: rgba(25, 118, 210, 0.1);
-}
-
-a.router-link-style.no-y-space {
-    padding-left: 0;
-    padding-right: 0;
 }

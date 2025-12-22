@@ -5,6 +5,7 @@
     import { v4 as uuid } from "uuid";
     import Logs from "./components/Logs.vue";
     import ConnectionState from "./components/ConnectionState.vue";
+    import TimingButtons from "./components/TimingButtons.vue";
     const mainStore = useMainStore();
 
     const modeSelect = ref(ApplicationMode.TrackCompetition);
@@ -122,7 +123,22 @@
                 </div>
             </v-app-bar>
 
-            <v-navigation-drawer location="left" v-model="leftBar" :permanent="true"> </v-navigation-drawer>
+            <v-navigation-drawer location="left" v-model="leftBar" :permanent="true">
+                <v-list-item>
+                    <router-link to="/" class="router-link-style">Index</router-link>
+                </v-list-item>
+                <v-list-item>
+                    <router-link to="/timing" class="router-link-style">Timing</router-link>
+                </v-list-item>
+                <v-list-item>
+                    <router-link to="/wind_request" class="router-link-style">Wind Request</router-link>
+                </v-list-item>
+                <v-list-item>
+                    <router-link to="/pdf_test" class="router-link-style">PDF Test</router-link>
+                </v-list-item>
+                <v-divider></v-divider>
+                <TimingButtons :has-free-text="false"></TimingButtons>
+            </v-navigation-drawer>
 
             <v-navigation-drawer location="right" :permanent="false" :temporary="true" v-model="logs" width="600">
                 <Logs></Logs>
@@ -157,7 +173,7 @@
             </v-navigation-drawer>
 
             <v-main class="d-flex">
-                <v-container fluid class="flex-column flex-grow-1 fill-height pa-2">
+                <v-container fluid class="flex-column flex-grow-1 fill-height">
                     <v-sheet color="surface-light" rounded="lg" class="flex-grow-1 w-100 pa-3">
                         <RouterView />
                     </v-sheet>

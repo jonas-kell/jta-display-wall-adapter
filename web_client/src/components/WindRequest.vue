@@ -1,19 +1,13 @@
 <template>
-    <h1>JTA Display Wall Adapter</h1>
-    Wind Connected: {{ mainStore.windServerConnected }}, {{ mainStore.windTime }}
-    <br />
+    <v-text-field density="compact" type="date" v-model="windDate" label="Wind date" />
+    <v-text-field density="compact" type="time" v-model="duration" min="00:00" max="24:00" step="1" label="Wind from time" />
+    <v-text-field density="compact" type="number" min="5" max="20" v-model="duration" label="How many seconds" />
+
     <br />
 
-    Wind date: <input type="date" v-model="windDate" />
-    <br />
-    Wind from time: <input type="time" min="00:00" max="24:00" step="1" v-model="windFrom" />
-    <br />
-    How many seconds: <input type="number" min="5" max="20" v-model="duration" />
-    <br />
-    <br />
-    <br />
-
-    <button @click="sendWindRangeRequest" :disabled="!(windDate && windFrom && duration)">Request Wind for Range</button>
+    <v-btn @click="sendWindRangeRequest" :disabled="!(windDate && windFrom && duration)" density="comfortable"
+        >Request Wind for Range</v-btn
+    >
     <br />
     <br />
     {{ mainStore.requestedWindMeasurements }}

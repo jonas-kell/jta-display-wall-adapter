@@ -1,20 +1,29 @@
 <template>
-    <h1>JTA Display Wall Adapter</h1>
+    <div class="d-flex flex-row">
+        <div>
+            Background:
+            <input type="file" @change="backgroundFileChange" accept="application/pdf" />
+            <span v-if="processedBackgroundImage"
+                >Available! ({{ processedBackgroundImageLandscape ? "Landscape" : "Portrait" }})</span
+            >
+            <br />
+            <br />
+            <v-btn @click="pdfDataURI = generatePDF(true)" class="mr-2">Generate test</v-btn>
+            <v-btn @click="print" :disabled="pdfDataURI == null">Print test</v-btn>
+        </div>
 
-    Background:
-    <input type="file" @change="backgroundFileChange" accept="application/pdf" />
-    <span v-if="processedBackgroundImage">Available! ({{ processedBackgroundImageLandscape ? "Landscape" : "Portrait" }})</span>
-
-    <br />
-    <br />
-    <button @click="pdfDataURI = generatePDF(true)">Generate test</button>
-    <button @click="print" :disabled="pdfDataURI == null">Print test</button>
-    <br />
-    <br />
-
-    <div style="border: 1px solid black" :style="{ width: rendererWidth + 'px' }">
-        <p v-if="pdfDataURI == null">Nothing Rendered</p>
-        <VuePdfEmbed v-else :source="pdfDataURI" ref="pdf" v-on:rendered="handleFinishedRendering" :page="pageSelection" />
+        <div class="d-flex flex-grow-1 justify-end mx-2">
+            <div style="border: 1px solid black" :style="{ width: rendererWidth + 'px' }">
+                <p v-if="pdfDataURI == null">Nothing Rendered</p>
+                <VuePdfEmbed
+                    v-else
+                    :source="pdfDataURI"
+                    ref="pdf"
+                    v-on:rendered="handleFinishedRendering"
+                    :page="pageSelection"
+                />
+            </div>
+        </div>
     </div>
 </template>
 
@@ -124,7 +133,7 @@
         }
     }
 
-    const DEFAULT_RENDERER_WIDTH = 500;
+    const DEFAULT_RENDERER_WIDTH = 400;
     const BACKGROUND_GENERATION_RENDERER_WIDTH = 1000;
     const rendererWidth = ref(DEFAULT_RENDERER_WIDTH);
 
