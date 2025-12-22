@@ -1,0 +1,28 @@
+@use "vuetify";
+@use "@mdi/font/css/materialdesignicons.css";
+
+tbody tr td,
+thead tr th {
+    background-color: rgb(var(--v-theme-surface), 1);
+}
+
+tbody tr:nth-of-type(odd) td {
+    background-color: rgb(var(--v-theme-alternative-row-color), var(--v-enable-alternative-row-color));
+}
+
+a.router-link-style {
+    color: rgb(var(--v-theme-on-surface));
+    text-decoration: underline;
+    padding: 0.3em 0.8em;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+a.router-link-style:hover {
+    background: rgba(25, 118, 210, 0.1);
+}
+
+a.router-link-style.no-y-space {
+    padding-left: 0;
+    padding-right: 0;
+}
