@@ -51,12 +51,7 @@
                 <InitDB></InitDB>
             </div>
         </template>
-        <v-app
-            :class="{ 'v-theme--light': darkMode, 'v-theme--dark': darkMode }"
-            :theme="darkMode ? 'dark' : 'light'"
-            class="rounded rounded-md border"
-            v-else
-        >
+        <v-app :class="{ 'v-theme--light': darkMode, 'v-theme--dark': darkMode }" :theme="darkMode ? 'dark' : 'light'" v-else>
             <v-app-bar color="surface">
                 <template v-slot:prepend>
                     <v-app-bar-nav-icon @click="leftBar = !leftBar"></v-app-bar-nav-icon>
