@@ -505,6 +505,15 @@ pub enum ApplicationMode {
     StreetLongRun,
     SprinterKing,
 }
+impl ApplicationMode {
+    pub fn to_string(&self) -> String {
+        match self {
+            ApplicationMode::SprinterKing => "SprinterKing".into(),
+            ApplicationMode::StreetLongRun => "StreetLongRun".into(),
+            ApplicationMode::TrackCompetition => "TrackCompetition".into(),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DatabaseStaticState {

@@ -15,6 +15,7 @@ mod args;
 mod client;
 mod database;
 mod file;
+mod helpers;
 mod hex;
 mod instructions;
 mod interface;
