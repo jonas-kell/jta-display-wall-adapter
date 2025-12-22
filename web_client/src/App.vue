@@ -39,10 +39,14 @@
         localStorage.setItem(DARK_MODE_STORAGE_KEY, String(darkMode.value));
     });
 
-    const bottomExpanded = ref(false);
+    const BOTTOM_EXPANDED_STORAGE_KEY = "BOTTOM_EXPANDED_STORAGE_KEY";
+    const bottomExpanded = ref((localStorage.getItem(BOTTOM_EXPANDED_STORAGE_KEY) ?? "false") == "true");
     const toggle = () => {
         bottomExpanded.value = !bottomExpanded.value;
     };
+    watch(bottomExpanded, () => {
+        localStorage.setItem(BOTTOM_EXPANDED_STORAGE_KEY, String(bottomExpanded.value));
+    });
 </script>
 
 <template>
