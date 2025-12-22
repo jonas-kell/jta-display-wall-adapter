@@ -1,16 +1,4 @@
 <template>
-    <h1>JTA Display Wall Adapter</h1>
-    Connected: {{ mainStore.connected }} ({{ mainStore.staticConfiguration?.mode }} at {{ mainStore.staticConfiguration?.date }})
-    <br />
-    Display Connected: {{ mainStore.displayConnected }}, Mode:
-    {{ mainStore.displayExternalPassthrough ? "External Passthrough" : "Default client" }}
-    <button @click="mainStore.sendSwitchModeCommand" :disabled="!mainStore.displayCanSwitchMode">Switch Mode</button>
-    <br />
-    Wind Connected: {{ mainStore.windServerConnected }} {{ mainStore.windValue }}
-    {{ mainStore.windServerConnected ? mainStore.windTime : "" }}
-    <br />
-    <br />
-
     <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendAdvertisementsCommand">Advertisements</button>
     <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendIdleCommand">Idle</button>
     <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendClockCommand">Clock</button>
@@ -144,15 +132,6 @@
     <p v-else>Not loaded</p>
     <br />
 
-    Client Display<span v-if="mainStore.displayExternalPassthrough"> (From External)</span>:
-    <br />
-    <template v-if="mainStore.displayConnected">
-        <img width="360px" v-if="mainStore.currentClientFrame" :src="mainStore.currentClientFrame" />
-    </template>
-    <p v-else>No Connection</p>
-    <br />
-    <br />
-
     <textarea v-model="freetext" :disabled="mainStore.displayExternalPassthrough" @keydown="checkFreetextSubmit"></textarea>
     <br />
     <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendFreetextCommand(freetext.trim())">
@@ -173,13 +152,6 @@
         <pre>{{ mainStore.selectedHeat }}</pre>
     </template>
     <p v-else>No heat selected</p>
-    <br />
-    <br />
-    <button @click="mainStore.sendGetLogsCommand(10000)">Get Logs</button>
-    <p v-for="logEntry in mainStore.logEntries">
-        Time: {{ logEntry.stored_at }}, Key: {{ logEntry.name_key }}, Data: {{ JSON.parse(logEntry.data) }}
-    </p>
-    <p v-if="mainStore.logEntries.length == 0">No logs loaded/available</p>
 </template>
 
 <script setup lang="ts">
