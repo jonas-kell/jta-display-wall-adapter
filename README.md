@@ -259,9 +259,12 @@ cargo license -a > THIRD-PARTY-LICENSES-RUST
 JS:
 
 ```cmd
-npx license-checker
+npx generate-license-file
 cd web_client
-npx license-checker > ./../THIRD-PARTY-LICENSES-JS
+npx generate-license-file \
+  --input package.json \
+  --output ./../THIRD-PARTY-LICENSES-JS \
+  --overwrite
 ```
 
 ## License
