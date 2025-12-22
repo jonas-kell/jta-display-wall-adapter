@@ -44,6 +44,7 @@
                             hide-details
                         />
                         <v-switch
+                            class="ml-2"
                             color="primary"
                             density="compact"
                             v-model="mainStore.timingSettings.fireworks_on_intermediate"
@@ -52,6 +53,7 @@
                         >
                         </v-switch>
                         <v-switch
+                            class="ml-2"
                             color="primary"
                             density="compact"
                             v-model="mainStore.timingSettings.fireworks_on_finish"
@@ -60,6 +62,7 @@
                         >
                         </v-switch>
                         <v-switch
+                            class="ml-2"
                             color="primary"
                             density="compact"
                             v-model="mainStore.timingSettings.play_sound_on_start"
@@ -68,6 +71,7 @@
                         >
                         </v-switch>
                         <v-switch
+                            class="ml-2"
                             color="primary"
                             density="compact"
                             v-model="mainStore.timingSettings.play_sound_on_intermediate"
@@ -76,6 +80,7 @@
                         >
                         </v-switch>
                         <v-switch
+                            class="ml-2"
                             color="primary"
                             density="compact"
                             v-model="mainStore.timingSettings.play_sound_on_finish"
@@ -84,6 +89,7 @@
                         >
                         </v-switch>
                         <v-switch
+                            class="ml-2"
                             color="primary"
                             density="compact"
                             v-model="mainStore.timingSettings.can_currently_update_meta"
@@ -92,6 +98,7 @@
                         >
                         </v-switch>
                         <v-switch
+                            class="ml-2"
                             color="primary"
                             density="compact"
                             v-model="mainStore.timingSettings.time_continues_running"
@@ -101,6 +108,7 @@
                         </v-switch>
 
                         <v-switch
+                            class="ml-2"
                             color="primary"
                             density="compact"
                             v-model="mainStore.timingSettings.switch_to_start_list_automatically"
@@ -109,6 +117,7 @@
                         >
                         </v-switch>
                         <v-switch
+                            class="ml-2"
                             color="primary"
                             density="compact"
                             v-model="mainStore.timingSettings.switch_to_timing_automatically"
@@ -117,6 +126,7 @@
                         >
                         </v-switch>
                         <v-switch
+                            class="ml-2"
                             color="primary"
                             density="compact"
                             v-model="mainStore.timingSettings.switch_to_results_automatically"
