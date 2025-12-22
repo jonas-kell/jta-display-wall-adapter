@@ -123,7 +123,7 @@
                 location="bottom"
                 :permanent="true"
                 :width="bottomExpanded ? 180 : 60"
-                rounded="lg"
+                rounded="t-lg"
                 class="px-4 py-1"
             >
                 <div class="w-100 fill-height d-flex flex-row">
