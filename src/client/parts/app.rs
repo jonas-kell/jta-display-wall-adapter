@@ -96,9 +96,14 @@ impl ApplicationHandler for App {
                 .with_position(PhysicalPosition::new(
                     self.args.dp_pos_x,
                     self.args.dp_pos_y,
-                ))
-                .with_window_level(winit::window::WindowLevel::AlwaysOnTop),
+                )),
         );
+
+        let attrs = if self.args.do_not_set_client_window_always_on_top {
+            attrs
+        } else {
+            attrs.with_window_level(winit::window::WindowLevel::AlwaysOnTop)
+        };
 
         self.window = Some(Arc::new(event_loop.create_window(attrs).unwrap()));
 

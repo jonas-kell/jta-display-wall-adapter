@@ -102,6 +102,9 @@ pub struct Args {
     /// Export folder path
     #[arg(long)]
     pub export_folder_path: Option<String>,
+    /// overwrite the client to place window not "Always on top"
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub do_not_set_client_window_always_on_top: bool,
     /// If the system date day does not match the database day, you can only store anything, if this is set
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub can_store_to_database_on_off_day: bool,
