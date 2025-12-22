@@ -377,7 +377,6 @@ export default defineStore("main", () => {
         timingSettings,
         () => {
             if (timingSettings.value && timingSettingsBeingChanged.value == false) {
-                timingSettingsBeingChanged.value = true;
                 const packet: UpdateTimingSettings = {
                     type: "UpdateTimingSettings",
                     data: timingSettings.value,
