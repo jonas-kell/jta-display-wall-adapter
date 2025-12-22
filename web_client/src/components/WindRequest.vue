@@ -1,7 +1,26 @@
 <template>
-    <v-text-field density="compact" type="date" v-model="windDate" label="Wind date" />
-    <v-text-field density="compact" type="time" v-model="duration" min="00:00" max="24:00" step="1" label="Wind from time" />
-    <v-text-field density="compact" type="number" min="5" max="20" v-model="duration" label="How many seconds" />
+    <h2>Wind Request</h2>
+
+    <v-text-field density="compact" type="date" v-model="windDate" label="Wind date" hide-details="auto" />
+    <v-text-field
+        density="compact"
+        type="time"
+        v-model="duration"
+        min="00:00"
+        max="24:00"
+        step="1"
+        label="Wind from time"
+        hide-details="auto"
+    />
+    <v-text-field
+        density="compact"
+        type="number"
+        min="5"
+        max="20"
+        v-model="duration"
+        label="How many seconds"
+        hide-details="auto"
+    />
 
     <br />
 

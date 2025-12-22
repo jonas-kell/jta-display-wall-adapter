@@ -1,4 +1,6 @@
 <template>
+    <h2>PDF Test</h2>
+
     <div class="d-flex flex-row">
         <div>
             Background:

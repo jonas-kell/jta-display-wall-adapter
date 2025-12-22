@@ -6,6 +6,7 @@
     import TimingButtons from "./components/TimingButtons.vue";
     import InitDB from "./components/InitDB.vue";
     import { TODAY } from "./functions/date";
+    import { ApplicationMode } from "./functions/interfaceShared";
     const mainStore = useMainStore();
 
     const connectedOnce = ref(false);
@@ -103,6 +104,14 @@
                 <v-list-item>
                     <router-link to="/timing" class="router-link-style">Timing</router-link>
                 </v-list-item>
+                <v-list-item
+                    v-if="
+                        mainStore.staticConfiguration.mode == ApplicationMode.SprinterKing ||
+                        mainStore.staticConfiguration.mode == ApplicationMode.StreetLongRun
+                    "
+                >
+                    <router-link to="/manage_athletes" class="router-link-style">Manage Athletes</router-link>
+                </v-list-item>
                 <v-list-item>
                     <router-link to="/wind_request" class="router-link-style">Wind Request</router-link>
                 </v-list-item>
@@ -110,7 +119,7 @@
                     <router-link to="/pdf_test" class="router-link-style">PDF Test</router-link>
                 </v-list-item>
                 <v-divider></v-divider>
-                <div class="ma-2">
+                <div class="ma-2" v-if="mainStore.displayConnected">
                     <TimingButtons :has-free-text="false"></TimingButtons>
                 </div>
             </v-navigation-drawer>

@@ -1,11 +1,16 @@
 <template>
+    <h2>Home</h2>
+
+    Welcome to the web-control of the <b>JTA Display Wall Adapter</b>
+
+    <h3 class="mt-4">Query Heats</h3>
+
     <v-btn @click="mainStore.sendGetHeatsCommand">Get Heats</v-btn>
     <p v-for="heatEntry in mainStore.heatsMetaResult">
         {{ heatEntry.name }}, Nr: {{ heatEntry.number }}, Time: {{ heatEntry.scheduled_start_time_string }}
-        <button @click="mainStore.sendSelectHeatCommand(heatEntry.id)">Select</button>
+        <v-btn @click="mainStore.sendSelectHeatCommand(heatEntry.id)" density="compact">Select</v-btn>
     </p>
     <p v-if="mainStore.heatsMetaResult.length == 0">No heats loaded/available</p>
-    <br />
     <br />
     <template v-if="mainStore.selectedHeat">
         Heat Selected: {{ mainStore.selectedHeat.meta.name }} <br />

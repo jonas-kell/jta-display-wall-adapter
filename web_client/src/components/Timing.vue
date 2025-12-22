@@ -15,8 +15,8 @@
                 to enable editing the wall state again
             </div>
 
-            <div class="mt-5">
-                <h3>Settings</h3>
+            <div>
+                <h3 class="mt-4">Settings</h3>
                 <template v-if="mainStore.timingSettings">
                     <div>
                         <v-text-field
