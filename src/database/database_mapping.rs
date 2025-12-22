@@ -511,6 +511,8 @@ pub struct DatabaseStaticState {
     pub mode: ApplicationMode,
     pub date: NaiveDate,
     pub meet_id: Uuid,
+    pub meet_city: String,
+    pub meet_location: String,
 }
 impl TryFrom<DatabaseStaticStateDatabase> for DatabaseStaticState {
     type Error = String;

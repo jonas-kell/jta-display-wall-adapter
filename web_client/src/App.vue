@@ -1,25 +1,11 @@
 <script setup lang="ts">
     import { ref, watch } from "vue";
     import useMainStore from "./stores/main";
-    import { ApplicationMode } from "./functions/interfaceShared";
-    import { v4 as uuid } from "uuid";
     import Logs from "./components/Logs.vue";
     import ConnectionState from "./components/ConnectionState.vue";
     import TimingButtons from "./components/TimingButtons.vue";
+    import InitDB from "./components/InitDB.vue";
     const mainStore = useMainStore();
-
-    const modeSelect = ref(ApplicationMode.TrackCompetition);
-
-    const today = new Date().toISOString().split("T")[0];
-    const appDate = ref(today);
-
-    function configure() {
-        mainStore.sendStaticallyConfigureServerCommand({
-            date: appDate.value,
-            mode: modeSelect.value,
-            meet_id: uuid(),
-        });
-    }
 
     const connectedOnce = ref(false);
     watch(
@@ -60,37 +46,7 @@
     <template v-else>
         <template v-if="mainStore.staticConfiguration == null">
             <div class="ma-2">
-                <h1>JTA Display Wall Adapter</h1>
-                <div class="ma-5">
-                    <p class="mb-5">Server not Configured!!</p>
-
-                    <v-text-field type="date" v-model="appDate" density="compact" label="Date this database will be used" />
-                    <v-select
-                        v-model="modeSelect"
-                        density="compact"
-                        label="Mode"
-                        item-title="label"
-                        item-value="value"
-                        :items="[
-                            {
-                                label: 'Normal Track Competition',
-                                value: ApplicationMode.TrackCompetition,
-                            },
-                            {
-                                label: 'Street Long Run',
-                                value: ApplicationMode.StreetLongRun,
-                            },
-                            {
-                                label: 'Sprinter König',
-                                value: ApplicationMode.SprinterKing,
-                            },
-                        ]"
-                    >
-                    </v-select>
-
-                    <br />
-                    <v-btn @click="configure">Configure!</v-btn>
-                </div>
+                <InitDB></InitDB>
             </div>
         </template>
         <v-app
@@ -113,7 +69,8 @@
                 <div class="d-flex flex-grow-1 justify-space-between align-center">
                     <h2>JTA Display Wall Adapter</h2>
                     <span v-if="mainStore.staticConfiguration != null">
-                        {{ mainStore.staticConfiguration.mode }} at {{ mainStore.staticConfiguration.date }}</span
+                        {{ mainStore.staticConfiguration.mode }} at {{ mainStore.staticConfiguration.date }} in
+                        {{ mainStore.staticConfiguration.meet_city }}, {{ mainStore.staticConfiguration.meet_location }}</span
                     >
                     <v-switch inset color="primary" v-model="darkMode" hide-details class="mr-5">
                         <template v-slot:label>

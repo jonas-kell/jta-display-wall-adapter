@@ -23,4 +23,6 @@ export type DatabaseStaticState = {
     mode: ApplicationMode;
     date: string;
     meet_id: string;
+    meet_city: string;
+    meet_location: string;
 };

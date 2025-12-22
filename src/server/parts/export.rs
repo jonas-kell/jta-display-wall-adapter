@@ -71,10 +71,10 @@ pub fn generate_meet_data(dbss: &DatabaseStaticState) -> Meet {
             }
         },
         id: dbss.meet_id.clone(),
-        city: "Irgendeine Stadt".into(), // TODO
+        city: dbss.meet_city.clone(),
         sessions: [Session {
             date: dbss.date.clone(),
-            location: "Irgendein Stadion".into(), // TODO
+            location: dbss.meet_location.clone(),
             events: [Event {
                 distance: 100,
                 distance_type: DistanceType::Normal,
