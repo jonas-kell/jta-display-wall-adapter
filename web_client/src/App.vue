@@ -5,6 +5,7 @@
     import ConnectionState from "./components/ConnectionState.vue";
     import TimingButtons from "./components/TimingButtons.vue";
     import InitDB from "./components/InitDB.vue";
+    import { TODAY } from "./functions/date";
     const mainStore = useMainStore();
 
     const connectedOnce = ref(false);
@@ -69,8 +70,23 @@
                 <div class="d-flex flex-grow-1 justify-space-between align-center">
                     <h2>JTA Display Wall Adapter</h2>
                     <span v-if="mainStore.staticConfiguration != null">
-                        {{ mainStore.staticConfiguration.mode }} at {{ mainStore.staticConfiguration.date }} in
-                        {{ mainStore.staticConfiguration.meet_city }}, {{ mainStore.staticConfiguration.meet_location }}</span
+                        {{ mainStore.staticConfiguration.mode }} at
+                        <span>
+                            <v-tooltip
+                                text="!!No changes are written to database, as database date does not match current date!!"
+                                location="bottom center"
+                                :disabled="mainStore.staticConfiguration.date == TODAY"
+                            >
+                                <template v-slot:activator="{ props }">
+                                    <span
+                                        v-bind="props"
+                                        :style="{ color: mainStore.staticConfiguration.date == TODAY ? undefined : 'crimson' }"
+                                        >{{ mainStore.staticConfiguration.date }}</span
+                                    >
+                                </template>
+                            </v-tooltip>
+                        </span>
+                        in {{ mainStore.staticConfiguration.meet_city }}, {{ mainStore.staticConfiguration.meet_location }}</span
                     >
                     <v-switch inset color="primary" v-model="darkMode" hide-details class="mr-5">
                         <template v-slot:label>
@@ -94,7 +110,9 @@
                     <router-link to="/pdf_test" class="router-link-style">PDF Test</router-link>
                 </v-list-item>
                 <v-divider></v-divider>
-                <TimingButtons :has-free-text="false"></TimingButtons>
+                <div class="ma-2">
+                    <TimingButtons :has-free-text="false"></TimingButtons>
+                </div>
             </v-navigation-drawer>
 
             <v-navigation-drawer location="right" :permanent="false" :temporary="true" v-model="logs" width="600">

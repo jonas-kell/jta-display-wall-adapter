@@ -3,12 +3,13 @@
     import useMainStore from "./../stores/main";
     import { ApplicationMode } from "./../functions/interfaceShared";
     import { v4 as uuid } from "uuid";
+    import { TODAY } from "../functions/date";
+
     const mainStore = useMainStore();
 
     const modeSelect = ref(ApplicationMode.TrackCompetition);
 
-    const today = new Date().toISOString().split("T")[0];
-    const appDate = ref(today);
+    const appDate = ref(TODAY);
 
     function configure() {
         mainStore.sendStaticallyConfigureServerCommand({

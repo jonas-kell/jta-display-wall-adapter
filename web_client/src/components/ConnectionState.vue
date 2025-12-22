@@ -2,7 +2,21 @@
     <div class="w-100 d-flex flex-row justify-space-between">
         <div class="d-flex" :class="props.collapsed ? 'flex-row' : 'flex-column'">
             <span class="py-1 px-2">
-                Server: <v-icon icon="mdi-circle" :color="mainStore.connected ? 'green' : 'red'"></v-icon>
+                Server:
+
+                <v-tooltip
+                    text="!!No changes are written to database, as database date does not match current date!!"
+                    location="bottom center"
+                    :disabled="rightDate"
+                >
+                    <template v-slot:activator="{ props }">
+                        <v-icon
+                            v-bind="props"
+                            icon="mdi-circle"
+                            :color="mainStore.connected ? (rightDate ? 'green' : 'yellow') : 'red'"
+                        ></v-icon>
+                    </template>
+                </v-tooltip>
             </span>
             <span class="py-1 px-2">
                 Display: <v-icon icon="mdi-circle" :color="mainStore.displayConnected ? 'green' : 'red'"></v-icon> (Mode:
@@ -44,10 +58,16 @@
 </template>
 
 <script setup lang="ts">
+    import { computed } from "vue";
     import useMainStore from "../stores/main";
+    import { TODAY } from "../functions/date";
     const mainStore = useMainStore();
 
     const props = defineProps<{ collapsed: boolean }>();
+
+    const rightDate = computed(() => {
+        return (mainStore.staticConfiguration?.date ?? "") == TODAY;
+    });
 </script>
 
 <style scoped></style>
