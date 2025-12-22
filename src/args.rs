@@ -102,6 +102,9 @@ pub struct Args {
     /// Export folder path
     #[arg(long)]
     pub export_folder_path: Option<String>,
+    /// If the system date day does not match the database day, you can only store anything, if this is set
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub can_store_to_database_on_off_day: bool,
     /// Timing control variable for fireworks (initial for client, will get sent from server to client, can be set over webcontrol)
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub fireworks_on_intermediate: bool,

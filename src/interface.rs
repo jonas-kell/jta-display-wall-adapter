@@ -1,8 +1,8 @@
-use crate::database::{
-    get_database_static_state, init_database_static_state, ApplicationMode, DatabaseStaticState,
-};
+use crate::database::{get_database_static_state, init_database_static_state, DatabaseStaticState};
 use crate::open_webcontrol;
+use crate::server::audio_types::{AudioPlayer, Sound};
 use crate::server::comm_channel::InstructionCommunicationChannel;
+use crate::server::export_functions::{generate_meet_data, write_to_xml_output_file};
 use crate::{
     args::Args,
     client::{ClockState, TimingSettings, TimingStateMachine, TimingUpdate},
@@ -15,7 +15,7 @@ use crate::{
         IncomingInstruction, InstructionFromCameraProgram, InstructionFromTimingProgram,
         InstructionToTimingProgram,
     },
-    server::{camera_program_types::HeatStartList, AudioPlayer, Sound},
+    server::camera_program_types::HeatStartList,
     times::DayTime,
     webserver::{DisplayClientState, MessageFromWebControl, MessageToWebControl},
     wind::format::{
@@ -24,6 +24,7 @@ use crate::{
     },
 };
 use async_channel::Sender;
+use chrono::Local;
 use clap::crate_version;
 use images_core::images::{ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
@@ -95,16 +96,25 @@ pub enum ServerState {
 
 macro_rules! store_to_database_log_conditionally {
     ($value:expr, $self_val:expr, $log:expr) => {
-        match $value.store_to_database(&$self_val.database_manager) {
-            Ok(()) => {
-                trace!("Success, we stored an instruction into the database");
+        if let Some(dbss) = &$self_val.static_state {
+            let today = Local::now().date_naive();
+            if $self_val.args.can_store_to_database_on_off_day || dbss.date == today {
+                match $value.store_to_database(&$self_val.database_manager) {
+                    Ok(()) => {
+                        trace!("Success, we stored an instruction into the database");
+                    }
+                    Err(e) => {
+                        error!("Database storage error: {}", e);
+                    }
+                }
+                if $log {
+                    $self_val.send_out_latest_n_logs_to_webclient(1);
+                }
+            } else {
+                warn!("Storage can not be usead on a day that is not the database day. You might enable 'can_store_to_database_on_off_day' to change this");
             }
-            Err(e) => {
-                error!("Database storage error: {}", e);
-            }
-        }
-        if $log {
-            $self_val.send_out_latest_n_logs_to_webclient(1);
+        } else {
+            error!("Database static state is not initialized. Can not store to database");
         }
     };
 }
@@ -194,8 +204,6 @@ impl ServerStateMachine {
 
     pub async fn parse_incoming_command(&mut self, msg: IncomingInstruction) {
         let dbss = if let Some(dbss) = &self.static_state {
-            let _ = ApplicationMode::TrackCompetition; // this always gets constructed from the websocket, but we want no unused warning on the export // TODO this can be removed later
-
             dbss
         } else {
             // static state not initialized
@@ -600,6 +608,13 @@ impl ServerStateMachine {
                     self.send_message_to_web_control(MessageToWebControl::DatabaseStaticState(
                         dbss.clone(),
                     ));
+                }
+                MessageFromWebControl::ExportDataToFile => {
+                    let file_name = format!("jta-dwa-{}.meetxml", dbss.date.to_string());
+
+                    let meet = generate_meet_data(&dbss);
+
+                    write_to_xml_output_file(&self.args, &file_name, meet);
                 }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {

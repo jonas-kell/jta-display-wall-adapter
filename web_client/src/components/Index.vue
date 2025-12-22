@@ -19,6 +19,9 @@
     <button :disabled="mainStore.displayExternalPassthrough" @click="mainStore.sendResultListCommand">Result List</button>
     <br />
     <br />
+    <button :disabled="!mainStore.connected" @click="mainStore.sendExportToFileCommand">Export Data</button>
+    <br />
+    <br />
     Timing Settings:
     <br />
     <b style="color: crimson">Caution!! For full functionality, Camera Program Display Wall Mode MUST be on: AUTO</b>

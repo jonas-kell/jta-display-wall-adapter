@@ -2,6 +2,7 @@
     import { ref, watch } from "vue";
     import useMainStore from "./stores/main";
     import { ApplicationMode } from "./functions/interfaceShared";
+    import { v4 as uuid } from "uuid";
     const mainStore = useMainStore();
 
     const modeSelect = ref(ApplicationMode.TrackCompetition);
@@ -13,6 +14,7 @@
         mainStore.sendStaticallyConfigureServerCommand({
             date: appDate.value,
             mode: modeSelect.value,
+            meet_id: uuid(),
         });
     }
 

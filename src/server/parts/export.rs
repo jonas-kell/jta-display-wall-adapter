@@ -1,11 +1,13 @@
 use crate::{
     args::Args,
+    database::{ApplicationMode, DatabaseStaticState},
     file::{create_file_if_not_there_and_write, make_sure_folder_exists},
     server::camera_program_types::{
         DistanceType, Event, Gender, Heat, HeatCompetitor, Meet, Session,
     },
     times::DayTime,
 };
+use chrono::Datelike;
 use chrono::NaiveDate;
 use std::path::Path;
 use uuid::Uuid;
@@ -44,18 +46,35 @@ pub fn write_to_xml_output_file(args: &Args, file_name: &str, data: Meet) {
     };
 }
 
-pub fn test_data() -> Meet {
+fn rounded_year(date: NaiveDate) -> i32 {
+    match date.month() {
+        11 | 12 => date.year() + 1,
+        _ => date.year(),
+    }
+}
+
+pub fn generate_meet_data(dbss: &DatabaseStaticState) -> Meet {
     let _ = Gender::Female;
     let _ = Gender::Mixed;
     let _ = Gender::Male;
 
     Meet {
-        name: "Test Meet".into(),
-        id: Uuid::new_v4(),
-        city: "Augsburg".into(),
+        name: match dbss.mode {
+            ApplicationMode::SprinterKing => {
+                format!("Sprinter König {}", rounded_year(dbss.date.clone()))
+            }
+            ApplicationMode::StreetLongRun => {
+                format!("Lauf {}", dbss.date.to_string())
+            }
+            ApplicationMode::TrackCompetition => {
+                format!("Bahnveranstaltung {}", dbss.date.to_string())
+            }
+        },
+        id: dbss.meet_id.clone(),
+        city: "Irgendeine Stadt".into(), // TODO
         sessions: [Session {
-            date: NaiveDate::from_ymd_opt(2025, 12, 20).unwrap(),
-            location: "Irgendein Stadion".into(),
+            date: dbss.date.clone(),
+            location: "Irgendein Stadion".into(), // TODO
             events: [Event {
                 distance: 100,
                 distance_type: DistanceType::Normal,

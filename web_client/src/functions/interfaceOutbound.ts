@@ -80,3 +80,7 @@ export type InitStaticDatabaseState = {
 export type RequestStaticDatabaseState = {
     type: "RequestStaticDatabaseState";
 };
+
+export type ExportDataToFile = {
+    type: "ExportDataToFile";
+};

@@ -4,6 +4,7 @@ import { WS_URL } from "../functions/environment";
 import {
     Advertisements,
     Clock,
+    ExportDataToFile,
     FreeText,
     GetHeats,
     GetLogs,
@@ -250,6 +251,13 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
 
+    function sendExportToFileCommand() {
+        const packet: ExportDataToFile = {
+            type: "ExportDataToFile",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+
     function sendResultListCommand() {
         const packet: ResultList = {
             type: "ResultList",
@@ -434,6 +442,7 @@ export default defineStore("main", () => {
         sendClockCommand,
         sendGetWindValuesCommand,
         sendStaticallyConfigureServerCommand,
+        sendExportToFileCommand,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,

@@ -508,8 +508,9 @@ pub enum ApplicationMode {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DatabaseStaticState {
-    mode: ApplicationMode,
-    date: NaiveDate,
+    pub mode: ApplicationMode,
+    pub date: NaiveDate,
+    pub meet_id: Uuid,
 }
 impl TryFrom<DatabaseStaticStateDatabase> for DatabaseStaticState {
     type Error = String;

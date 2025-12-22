@@ -28,6 +28,7 @@ pub enum MessageFromWebControl {
     RequestWindValues(WindValueRequestDateContainer),
     InitStaticDatabaseState(DatabaseStaticState),
     RequestStaticDatabaseState,
+    ExportDataToFile,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -22,4 +22,5 @@ export enum ApplicationMode {
 export type DatabaseStaticState = {
     mode: ApplicationMode;
     date: string;
+    meet_id: string;
 };

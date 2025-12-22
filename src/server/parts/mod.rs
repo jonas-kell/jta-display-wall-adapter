@@ -9,4 +9,9 @@ mod tcp_forwarder_display_program;
 mod tcp_listener_timing_program;
 mod tcp_listener_wind_server;
 
-pub use audio::{AudioPlayer, Sound};
+pub mod audio_types {
+    pub use super::audio::{AudioPlayer, Sound};
+}
+pub mod export_functions {
+    pub use super::export::*;
+}

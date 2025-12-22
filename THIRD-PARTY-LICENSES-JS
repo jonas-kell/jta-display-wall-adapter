@@ -804,6 +804,11 @@
 │  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
 │  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/trusted-types
 │  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/trusted-types/LICENSE
+├─ @types/uuid@9.0.8
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/DefinitelyTyped/DefinitelyTyped
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/uuid
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/@types/uuid/LICENSE
 ├─ @vitejs/plugin-vue@5.2.4
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/vitejs/vite-plugin-vue
@@ -2594,6 +2599,11 @@
 │  ├─ url: https://hertzen.com
 │  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/utrie
 │  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/utrie/LICENSE
+├─ uuid@9.0.1
+│  ├─ licenses: MIT
+│  ├─ repository: https://github.com/uuidjs/uuid
+│  ├─ path: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/uuid
+│  └─ licenseFile: /home/jonas/github/jta-display-wall-adapter/web_client/node_modules/uuid/LICENSE.md
 ├─ vite-plugin-pwa@0.19.8
 │  ├─ licenses: MIT
 │  ├─ repository: https://github.com/vite-pwa/vite-plugin-pwa
