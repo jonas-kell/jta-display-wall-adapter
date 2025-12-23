@@ -152,7 +152,7 @@ pub fn generate_meet_data(dbss: &DatabaseStaticState) -> Meet {
         ApplicationMode::SprinterKing => {
             let mut start = CountingOrderedStartTime::new(DayTime::from_hms_opt(10, 0, 0).unwrap());
 
-            for distance in [10u32, 20, 30] {
+            for distance in [15u32, 20, 30] {
                 let ids = uuids_from_seed(&format!("{}_event_id_{}", event_key, distance), 2);
                 let id_a = ids[0];
                 let id_b = ids[1];

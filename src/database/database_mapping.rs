@@ -716,6 +716,7 @@ pub fn get_all_athletes_meta_data(
     let mut res: Vec<AthleteWithMetadata> = Vec::new();
     for athlete in athletes {
         let mut heats = Vec::new();
+        let mut heat_assignments_ath = Vec::new();
 
         for heat_assignment in &heat_assignments {
             if heat_assignment
@@ -723,6 +724,8 @@ pub fn get_all_athletes_meta_data(
                 .iter()
                 .any(|(_, v)| *v == athlete.id)
             {
+                heat_assignments_ath.push(heat_assignment.clone());
+
                 match get_heat_data(heat_assignment.heat_id.clone(), manager) {
                     Ok(data) => heats.push((heat_assignment.clone(), data)),
                     Err(e) => warn!("Found a heat assignment, but there is NO heat data yet, OR we are having database trouble...: {}", e.to_string()),
@@ -730,7 +733,11 @@ pub fn get_all_athletes_meta_data(
             }
         }
 
-        res.push(AthleteWithMetadata { athlete, heats });
+        res.push(AthleteWithMetadata {
+            athlete,
+            heats,
+            heat_assignments: heat_assignments_ath,
+        });
     }
 
     Ok(res)

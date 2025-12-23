@@ -159,6 +159,7 @@ export type WindMeasurement = {
 
 export type AthleteWithMetadata = {
     athlete: Athlete;
+    heat_assignments: HeatAssignment[];
     heats: [HeatAssignment, HeatData][];
 };
 

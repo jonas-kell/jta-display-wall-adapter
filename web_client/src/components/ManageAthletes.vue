@@ -22,6 +22,16 @@
                 <th scope="col">Last Name</th>
                 <th scope="col"></th>
                 <th scope="col"></th>
+                <!--from here sprinterkönig data -->
+                <th>15-1</th>
+                <th>15-2</th>
+                <th>20-1</th>
+                <th>20-2</th>
+                <th>30-1</th>
+                <th>30-2</th>
+                <th>Guess</th>
+                <th>Time</th>
+                <th>Place</th>
             </tr>
             <tr>
                 <th scope="col"><input type="number" v-model="bibRef" style="width: 100%" /></th>
@@ -41,6 +51,16 @@
                         </template>
                     </v-tooltip>
                 </th>
+                <th></th>
+                <!--from here sprinterkönig data -->
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
                 <th></th>
             </tr>
         </thead>
@@ -65,17 +85,94 @@
                         :disabled="!canEditAthletes"
                     ></v-btn>
                 </td>
+                <!--from here sprinterkönig data -->
+                <td style="text-align: center">
+                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run15_1, athlete)" time=""></SPKStateDot>
+                </td>
+                <td style="text-align: center">
+                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run15_2, athlete)" time=""></SPKStateDot>
+                </td>
+                <td style="text-align: center">
+                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run20_1, athlete)" time=""></SPKStateDot>
+                </td>
+                <td style="text-align: center">
+                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run20_2, athlete)" time=""></SPKStateDot>
+                </td>
+                <td style="text-align: center">
+                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run30_1, athlete)" time=""></SPKStateDot>
+                </td>
+                <td style="text-align: center">
+                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run30_2, athlete)" time=""></SPKStateDot>
+                </td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 class="mt-4">Heats</h3>
+    <!--from here sprinterkönig data -->
+    <v-row class="pt-4 align-center">
+        <v-select
+            :items="runSelectionOptions"
+            v-model="runSelection"
+            density="compact"
+            class="v-col-2"
+            hide-details="auto"
+        ></v-select>
+        <v-combobox
+            :items="selectableRunnersA"
+            item-title="label"
+            item-value="id"
+            density="compact"
+            v-model="selectedRunnerA"
+            class="v-col-3"
+            hide-details="auto"
+            :auto-select-first="true"
+        ></v-combobox>
+        <v-combobox
+            :items="selectableRunnersB"
+            item-title="label"
+            item-value="id"
+            density="compact"
+            v-model="selectedRunnerB"
+            class="v-col-3"
+            hide-details="auto"
+            :auto-select-first="true"
+        ></v-combobox>
+        <v-btn class="v-col-1" :disabled="!heatCanBeAdded" @click="addHeatSPK"> ADD Heat </v-btn>
+    </v-row>
+    <table class="mt-2">
+        <thead>
+            <tr>
+                <th></th>
+                <th scope="col">Runner A</th>
+                <th scope="col">Runner B</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="heat in heats">
+                <td>{{ heat[1].distance }}-{{ heat[1].heat_descriminator }}</td>
+                <td>{{ heat[0][0] }}</td>
+                <td>{{ heat[0][1] }}</td>
+                <td style="text-align: center">
+                    <v-btn icon="mdi-delete" density="compact" @click="deleteHeat(heat[1])"></v-btn>
+                </td>
             </tr>
         </tbody>
     </table>
 </template>
 
 <script setup lang="ts">
-    import { computed } from "vue";
-    import { ApplicationMode, Athlete, Gender } from "../functions/interfaceShared";
+    import { computed, watch } from "vue";
+    import { ApplicationMode, Athlete, Gender, HeatAssignment } from "../functions/interfaceShared";
     import useMainStore from "../stores/main";
     import { ref } from "vue";
     import { v4 as uuid } from "uuid";
+    import SPKStateDot from "./SPKStateDot.vue";
+    import { AthleteWithMetadata } from "../functions/interfaceInbound";
 
     const mainStore = useMainStore();
 
@@ -141,6 +238,155 @@
         };
 
         mainStore.sendUpsertAthleteCommand(athlete);
+    }
+
+    // Sprinterkönig logic
+    enum RunPossibilities {
+        Run15_1 = "Run15_1",
+        Run15_2 = "Run15_2",
+        Run20_1 = "Run20_1",
+        Run20_2 = "Run20_2",
+        Run30_1 = "Run30_1",
+        Run30_2 = "Run30_2",
+    }
+    function distanceFromPossibilities(d: RunPossibilities): number {
+        switch (d) {
+            case RunPossibilities.Run15_1:
+                return 15;
+            case RunPossibilities.Run15_2:
+                return 15;
+            case RunPossibilities.Run20_1:
+                return 20;
+            case RunPossibilities.Run20_2:
+                return 20;
+            case RunPossibilities.Run30_1:
+                return 30;
+            case RunPossibilities.Run30_2:
+                return 30;
+        }
+    }
+    function indexFromPossibilities(d: RunPossibilities): number {
+        switch (d) {
+            case RunPossibilities.Run15_1:
+                return 1;
+            case RunPossibilities.Run15_2:
+                return 2;
+            case RunPossibilities.Run20_1:
+                return 1;
+            case RunPossibilities.Run20_2:
+                return 2;
+            case RunPossibilities.Run30_1:
+                return 1;
+            case RunPossibilities.Run30_2:
+                return 2;
+        }
+    }
+    function heatIsDistributed(d: RunPossibilities, athlete: AthleteWithMetadata): boolean {
+        return athlete.heat_assignments.some((ha) => {
+            return ha.distance == distanceFromPossibilities(d) && ha.heat_descriminator == indexFromPossibilities(d);
+        });
+    }
+    const runSelection = ref(RunPossibilities.Run15_1);
+    const runSelectionOptions = Object.values(RunPossibilities);
+    watch(runSelection, () => {
+        selectedRunnerA.value = null;
+        selectedRunnerB.value = null;
+    });
+    const heats = computed(() => {
+        let heats: HeatAssignment[] = [];
+
+        athletesByBib.value.forEach((a) => {
+            a.heat_assignments.forEach((ha) => {
+                if (
+                    !heats.some((storedHeat) => {
+                        return storedHeat.id == ha.id;
+                    })
+                ) {
+                    heats.push(ha);
+                }
+            });
+        });
+
+        heats.sort((a, b) => {
+            return b.id - a.id;
+        });
+
+        return heats.map((ha) => {
+            const ida = ha.athlete_ids[1];
+            const athleteA = athletesByBib.value.find((a) => {
+                return a.athlete.id == ida;
+            });
+            const idb = ha.athlete_ids[2];
+            const athleteB = athletesByBib.value.find((a) => {
+                return a.athlete.id == idb;
+            });
+            let aName = "unknown";
+            if (athleteA) {
+                aName = athleteA.athlete.first_name + " " + athleteA.athlete.last_name;
+            }
+            let bName = "unknown";
+            if (athleteB) {
+                bName = athleteB.athlete.first_name + " " + athleteB.athlete.last_name;
+            }
+
+            return [[aName, bName], ha] as [[string, string], HeatAssignment];
+        });
+    });
+    function deleteHeat(ha: HeatAssignment) {
+        if (window.confirm(`Do you want to delete the heat ${ha.distance} ${ha.heat_descriminator}?`)) {
+            mainStore.sendDeleteHeatAssignmentCommand(ha.id);
+        }
+    }
+    const selectableRunnersA = computed(() => {
+        const currentDistance = distanceFromPossibilities(runSelection.value);
+        const currentIndex = indexFromPossibilities(runSelection.value);
+
+        return athletesByBib.value
+            .map((a) => {
+                return {
+                    id: a.athlete.id,
+                    label: a.athlete.first_name + " " + a.athlete.last_name,
+                    heats: a.heat_assignments,
+                };
+            })
+            .filter((a) => {
+                return !a.heats.some((heat) => {
+                    return heat.distance == currentDistance && heat.heat_descriminator == currentIndex;
+                });
+            })
+            .map((a) => {
+                return {
+                    id: a.id,
+                    label: a.label,
+                };
+            });
+    });
+    const selectedRunnerA = ref(null as null | { id: string; label: string });
+    const selectableRunnersB = computed(() => {
+        return selectableRunnersA.value.filter((a) => {
+            return a.id != (selectedRunnerA.value?.id ?? "asdasdasd");
+        });
+    });
+    const selectedRunnerB = ref(null as null | { id: string; label: string });
+    const heatCanBeAdded = computed(() => {
+        return selectedRunnerA.value != null && selectedRunnerB.value != null;
+    });
+    const EMPTY_UUID = "00000000-0000-0000-0000-000000000000";
+    function addHeatSPK() {
+        if (selectedRunnerA.value && selectedRunnerB.value) {
+            const runnerAId = selectedRunnerA.value.id;
+            selectedRunnerA.value = null;
+            const runnerBId = selectedRunnerB.value.id;
+            selectedRunnerB.value = null;
+
+            mainStore.sendCreateHeatAssignmentCommand({
+                athlete_ids: { 1: runnerAId, 2: runnerBId },
+                id: -1, // is ignored on creation
+                heat_id: EMPTY_UUID, // is ignored on creation
+                distance: distanceFromPossibilities(runSelection.value),
+                heat_descriminator: indexFromPossibilities(runSelection.value),
+            });
+        }
     }
 </script>
 
