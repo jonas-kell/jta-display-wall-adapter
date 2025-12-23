@@ -1,10 +1,14 @@
 use crate::{
     args::Args,
-    database::{ApplicationMode, DatabaseStaticState},
+    database::{
+        get_all_athletes_meta_data, get_all_heat_assignments, ApplicationMode, DatabaseManager,
+        DatabaseStaticState,
+    },
     file::{create_file_if_not_there_and_write, make_sure_folder_exists},
     helpers::uuids_from_seed,
     server::camera_program_types::{
-        DistanceType, Event, Gender, Heat, HeatCompetitor, Meet, Session,
+        Athlete, AthleteWithMetadata, DistanceType, Event, Gender, Heat, HeatAssignment,
+        HeatCompetitor, Meet, Session,
     },
     times::DayTime,
 };
@@ -59,35 +63,58 @@ fn generate_heats_spk(
     distance: u32,
     index: u8,
     start: &mut CountingOrderedStartTime,
+    athletes_meta: &Vec<AthleteWithMetadata>,
+    all_heats: &Vec<HeatAssignment>,
 ) -> Vec<Heat> {
-    let ids = uuids_from_seed(
-        &format!("{}_heat_dist{}_id{}", event_key, distance, index),
-        1,
-    );
-    let id = ids[0];
+    let _ = event_key;
 
-    [Heat {
-        id,
-        distance,
-        distance_type: DistanceType::Normal,
-        name: format!("SPK {}m Run {}", distance, index), // TODO increment name
-        scheduled_start_time: start.get_next(),
-        competitors: [HeatCompetitor {
-            // TODO from db
-            bib: 101,
-            class: Gender::Male.to_string(),
-            club: "Testverein".into(),
-            first_name: "Test Name".into(),
-            last_name: "Test Nachname".into(),
-            gender: Gender::Male.to_string(),
-            id: Uuid::new_v4().to_string(),
-            lane: 1,
-            nation: "GER".into(),
-            disqualified: None,
-        }]
-        .into(),
-    }]
-    .into()
+    let mut relevant_heats: Vec<&HeatAssignment> = all_heats
+        .iter()
+        .filter(|h| h.distance == distance && h.heat_descriminator == index)
+        .collect();
+    relevant_heats.sort_by(|h1, h2| h1.id.cmp(&h2.id));
+
+    let mut heats = Vec::new();
+
+    for (i, heat) in relevant_heats.into_iter().enumerate() {
+        let mut athletes_with_lanes: Vec<(&u32, &Athlete)> = heat
+            .athlete_ids
+            .iter()
+            .filter_map(
+                |(lane, id)| match athletes_meta.iter().find(|a| a.athlete.id == *id) {
+                    Some(a) => Some((lane, &a.athlete)),
+                    None => return None,
+                },
+            )
+            .collect();
+        athletes_with_lanes.sort_by(|a, b| a.0.cmp(b.0));
+        let competitors: Vec<HeatCompetitor> = athletes_with_lanes
+            .into_iter()
+            .map(|(lane, athlete)| HeatCompetitor {
+                lane: lane.clone(),
+                bib: athlete.bib.clone(),
+                class: athlete.gender.to_string(),
+                gender: athlete.gender.to_string(),
+                club: athlete.club.clone(),
+                first_name: athlete.first_name.clone(),
+                last_name: athlete.last_name.clone(),
+                id: athlete.id.to_string(),
+                nation: athlete.nation.clone(),
+                disqualified: None,
+            })
+            .collect();
+
+        heats.push(Heat {
+            id: heat.heat_id.clone(),
+            distance,
+            distance_type: DistanceType::Normal,
+            name: format!("SPK {}m-{}, Run {}", distance, index, i),
+            scheduled_start_time: start.get_next(),
+            competitors,
+        });
+    }
+
+    heats
 }
 
 fn generate_heats_street_race(event_key: String, distance: u32) -> Vec<Heat> {
@@ -139,7 +166,7 @@ impl CountingOrderedStartTime {
     }
 }
 
-pub fn generate_meet_data(dbss: &DatabaseStaticState) -> Meet {
+pub fn generate_meet_data(dbss: &DatabaseStaticState, manager: &DatabaseManager) -> Meet {
     let _ = Gender::Female;
     let _ = Gender::Mixed;
     let _ = Gender::Male;
@@ -151,6 +178,26 @@ pub fn generate_meet_data(dbss: &DatabaseStaticState) -> Meet {
         ApplicationMode::TrackCompetition => (), // the program does not generate meetxml for this case (currently)
         ApplicationMode::SprinterKing => {
             let mut start = CountingOrderedStartTime::new(DayTime::from_hms_opt(10, 0, 0).unwrap());
+            let athletes_meta = match get_all_athletes_meta_data(manager) {
+                Ok(e) => e,
+                Err(e) => {
+                    error!(
+                        "Error while generating export - could not read from database: {}",
+                        e
+                    );
+                    Vec::new()
+                }
+            };
+            let all_heats = match get_all_heat_assignments(manager) {
+                Ok(e) => e,
+                Err(e) => {
+                    error!(
+                        "Error while generating export - could not read from database: {}",
+                        e
+                    );
+                    Vec::new()
+                }
+            };
 
             for distance in [15u32, 20, 30] {
                 let ids = uuids_from_seed(&format!("{}_event_id_{}", event_key, distance), 2);
@@ -163,7 +210,14 @@ pub fn generate_meet_data(dbss: &DatabaseStaticState) -> Meet {
                     id: id_a,
                     name: format!("SPK {}m Run 1", distance),
                     scheduled_start_time: start.get_next(),
-                    heats: generate_heats_spk(event_key.clone(), distance, 1, &mut start),
+                    heats: generate_heats_spk(
+                        event_key.clone(),
+                        distance,
+                        1,
+                        &mut start,
+                        &athletes_meta,
+                        &all_heats,
+                    ),
                 });
                 events.push(Event {
                     distance,
@@ -171,7 +225,14 @@ pub fn generate_meet_data(dbss: &DatabaseStaticState) -> Meet {
                     id: id_b,
                     name: format!("SPK {}m Run 2", distance),
                     scheduled_start_time: start.get_next(),
-                    heats: generate_heats_spk(event_key.clone(), distance, 2, &mut start),
+                    heats: generate_heats_spk(
+                        event_key.clone(),
+                        distance,
+                        2,
+                        &mut start,
+                        &athletes_meta,
+                        &all_heats,
+                    ),
                 });
             }
         }

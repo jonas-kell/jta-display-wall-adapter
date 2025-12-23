@@ -621,7 +621,7 @@ impl ServerStateMachine {
                 MessageFromWebControl::ExportDataToFile => {
                     let file_name = format!("jta-dwa-{}.meetxml", dbss.date.to_string());
 
-                    let meet = generate_meet_data(&dbss);
+                    let meet = generate_meet_data(&dbss, &self.database_manager);
 
                     write_to_xml_output_file(&self.args, &file_name, meet);
                 }
