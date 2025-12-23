@@ -13,6 +13,7 @@
         }}
     </h3>
 
+    <!-- TODO table must have different properties, depending on the ApplicationMode -->
     <table>
         <thead>
             <tr>
