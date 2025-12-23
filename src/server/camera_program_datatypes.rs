@@ -229,6 +229,7 @@ pub struct Athlete {
     pub first_name: String,
     pub last_name: String,
     pub nation: String,
+    pub spk_guess: Option<f32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

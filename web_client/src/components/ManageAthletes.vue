@@ -31,6 +31,7 @@
                 <th>30-2</th>
                 <th>Guess</th>
                 <th>Time</th>
+                <th>Diff</th>
                 <th>Place</th>
             </tr>
             <tr>
@@ -59,6 +60,7 @@
                 <th></th>
                 <th></th>
                 <th></th>
+                <th style="width: 2cm"><input type="number" v-model="guessRef" min="0" step="0.01" style="width: 100%" /></th>
                 <th></th>
                 <th></th>
                 <th></th>
@@ -128,9 +130,10 @@
                         :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run30_2])"
                     ></SPKStateDot>
                 </td>
-                <td></td>
-                <td></td>
-                <td></td>
+                <td class="pl-1">{{ athlete.athlete.spk_guess?.toFixed(2) ?? "" }}</td>
+                <td class="pl-1">{{ (finalTimes[athlete.athlete.id] ?? ["", null])[1]?.toFixed(2) ?? "" }}</td>
+                <td class="pl-1">{{ (finalTimes[athlete.athlete.id] ?? ["", "", null])[2]?.toFixed(2) ?? "" }}</td>
+                <td class="pl-1">{{ places[athlete.athlete.id] ?? "" }}</td>
             </tr>
         </tbody>
     </table>
@@ -205,6 +208,7 @@
     const bibRef = ref("");
     const lastNameRef = ref("");
     const firstNameRef = ref("");
+    const guessRef = ref(""); // SPK
 
     const athletesByBib = computed(() => {
         return [...mainStore.athletesData].sort((a, b) => {
@@ -222,6 +226,7 @@
         bibRef.value = String(ath.bib);
         lastNameRef.value = ath.last_name;
         firstNameRef.value = ath.first_name;
+        guessRef.value = String(ath.spk_guess ?? "");
     }
     const canEditAthletes = computed(() => {
         return idRef.value == null;
@@ -252,6 +257,12 @@
         const updateLastName = lastNameRef.value;
         lastNameRef.value = "";
 
+        let spkGuess = null;
+        if (guessRef.value) {
+            spkGuess = parseFloat(guessRef.value);
+        }
+        guessRef.value = "";
+
         const athlete: Athlete = {
             id: id,
             bib: updateBib,
@@ -260,6 +271,7 @@
             nation: "GER", // TODO
             first_name: updateFirstName,
             last_name: updateLastName,
+            spk_guess: spkGuess,
         };
 
         mainStore.sendUpsertAthleteCommand(athlete);
@@ -339,6 +351,56 @@
             return "";
         }
     }
+    const finalTimes = computed(() => {
+        let res: { [key: string]: [number, number, number] | null } = {};
+        athletesByBib.value.forEach((athlete) => {
+            const times = finishTimes.value[athlete.athlete.id];
+            if (times) {
+                const a = times[RunPossibilities.Run15_1];
+                const b = times[RunPossibilities.Run15_2];
+                const c = times[RunPossibilities.Run20_1];
+                const d = times[RunPossibilities.Run20_2];
+                const e = times[RunPossibilities.Run30_1];
+                const f = times[RunPossibilities.Run30_2];
+                if (a && b && c && d && e && f) {
+                    const sum = a + b + c + d + e + f;
+                    const guess = athlete.athlete.spk_guess;
+                    if (guess) {
+                        res[athlete.athlete.id] = [guess, sum, Math.abs(guess - sum)];
+                        return;
+                    }
+                }
+            }
+
+            res[athlete.athlete.id] = null;
+        });
+
+        return res;
+    });
+    const places = computed(() => {
+        let resIntermediate = [] as { id: string; diff: number }[];
+        athletesByBib.value.forEach((athlete) => {
+            const final = finalTimes.value[athlete.athlete.id];
+
+            if (final) {
+                resIntermediate.push({
+                    id: athlete.athlete.id,
+                    diff: final[2],
+                });
+            }
+        });
+        resIntermediate.sort((a, b) => {
+            return a.diff - b.diff;
+        });
+
+        let res: { [key: string]: number } = {};
+        for (let index = 0; index < resIntermediate.length; index++) {
+            const element = resIntermediate[index];
+            res[element.id] = index + 1;
+        }
+
+        return res;
+    });
     function heatIsDistributed(d: RunPossibilities, athlete: AthleteWithMetadata): boolean {
         return athlete.heat_assignments.some((ha) => {
             return ha.distance == distanceFromPossibilities(d) && ha.heat_descriminator == indexFromPossibilities(d);
