@@ -235,7 +235,7 @@ pub struct Athlete {
 pub struct AthleteWithMetadata {
     pub athlete: Athlete,
     pub heat_assignments: Vec<HeatAssignment>,
-    pub heats: Vec<(HeatAssignment, HeatData)>,
+    pub heats: Vec<(Option<HeatCompetitorResult>, HeatAssignment, HeatData)>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

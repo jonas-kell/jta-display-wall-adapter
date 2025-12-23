@@ -456,6 +456,19 @@ impl ServerStateMachine {
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::ResultMeta(result),
                     ));
+
+                    // TODO maybe only send this out on sprinterkönig mode
+                    match get_all_athletes_meta_data(&self.database_manager) {
+                        Ok(d) => {
+                            self.send_message_to_web_control(MessageToWebControl::AthletesData(d))
+                        }
+                        Err(e) => {
+                            error!(
+                                "Encountered error, after heat result possibly changed data: {}",
+                                e
+                            )
+                        }
+                    }
                 }
                 InstructionFromCameraProgram::ZeroTime => {
                     // TODO think about if we really want to reset (maybe not if meta-change = off)

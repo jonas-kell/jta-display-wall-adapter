@@ -87,22 +87,46 @@
                 </td>
                 <!--from here sprinterkönig data -->
                 <td style="text-align: center">
-                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run15_1, athlete)" time=""></SPKStateDot>
+                    <SPKStateDot
+                        :done="heatIsFinished(RunPossibilities.Run15_1, athlete)"
+                        :set="heatIsDistributed(RunPossibilities.Run15_1, athlete)"
+                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run15_1])"
+                    ></SPKStateDot>
                 </td>
                 <td style="text-align: center">
-                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run15_2, athlete)" time=""></SPKStateDot>
+                    <SPKStateDot
+                        :done="heatIsFinished(RunPossibilities.Run15_2, athlete)"
+                        :set="heatIsDistributed(RunPossibilities.Run15_2, athlete)"
+                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run15_2])"
+                    ></SPKStateDot>
                 </td>
                 <td style="text-align: center">
-                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run20_1, athlete)" time=""></SPKStateDot>
+                    <SPKStateDot
+                        :done="heatIsFinished(RunPossibilities.Run20_1, athlete)"
+                        :set="heatIsDistributed(RunPossibilities.Run20_1, athlete)"
+                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run20_1])"
+                    ></SPKStateDot>
                 </td>
                 <td style="text-align: center">
-                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run20_2, athlete)" time=""></SPKStateDot>
+                    <SPKStateDot
+                        :done="heatIsFinished(RunPossibilities.Run20_2, athlete)"
+                        :set="heatIsDistributed(RunPossibilities.Run20_2, athlete)"
+                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run20_2])"
+                    ></SPKStateDot>
                 </td>
                 <td style="text-align: center">
-                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run30_1, athlete)" time=""></SPKStateDot>
+                    <SPKStateDot
+                        :done="heatIsFinished(RunPossibilities.Run30_1, athlete)"
+                        :set="heatIsDistributed(RunPossibilities.Run30_1, athlete)"
+                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run30_1])"
+                    ></SPKStateDot>
                 </td>
                 <td style="text-align: center">
-                    <SPKStateDot :done="false" :set="heatIsDistributed(RunPossibilities.Run30_2, athlete)" time=""></SPKStateDot>
+                    <SPKStateDot
+                        :done="heatIsFinished(RunPossibilities.Run30_2, athlete)"
+                        :set="heatIsDistributed(RunPossibilities.Run30_2, athlete)"
+                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run30_2])"
+                    ></SPKStateDot>
                 </td>
                 <td></td>
                 <td></td>
@@ -173,6 +197,7 @@
     import { v4 as uuid } from "uuid";
     import SPKStateDot from "./SPKStateDot.vue";
     import { AthleteWithMetadata } from "../functions/interfaceInbound";
+    import { numberFromRaceTime } from "../functions/representation";
 
     const mainStore = useMainStore();
 
@@ -281,10 +306,74 @@
                 return 2;
         }
     }
+    function possibilityFromNumberAndIndex(d: number, index: number): RunPossibilities | null {
+        switch (index) {
+            case 1:
+                switch (d) {
+                    case 15:
+                        return RunPossibilities.Run15_1;
+                    case 20:
+                        return RunPossibilities.Run20_1;
+                    case 30:
+                        return RunPossibilities.Run30_1;
+                }
+                break;
+            case 2:
+                switch (d) {
+                    case 15:
+                        return RunPossibilities.Run15_2;
+                    case 20:
+                        return RunPossibilities.Run20_2;
+                    case 30:
+                        return RunPossibilities.Run30_2;
+                }
+                break;
+        }
+
+        return null;
+    }
+    function formatForCircle(data: number | null): string {
+        if (data != null) {
+            return data.toFixed(2);
+        } else {
+            return "";
+        }
+    }
     function heatIsDistributed(d: RunPossibilities, athlete: AthleteWithMetadata): boolean {
         return athlete.heat_assignments.some((ha) => {
             return ha.distance == distanceFromPossibilities(d) && ha.heat_descriminator == indexFromPossibilities(d);
         });
+    }
+    const finishTimes = computed(() => {
+        let res: { [key: string]: { [key in RunPossibilities]: number | null } } = {};
+        athletesByBib.value.forEach((athlete) => {
+            let data = {
+                [RunPossibilities.Run15_1]: null as number | null,
+                [RunPossibilities.Run15_2]: null as number | null,
+                [RunPossibilities.Run20_1]: null as number | null,
+                [RunPossibilities.Run20_2]: null as number | null,
+                [RunPossibilities.Run30_1]: null as number | null,
+                [RunPossibilities.Run30_2]: null as number | null,
+            };
+
+            athlete.heats.forEach((heat) => {
+                const poss = possibilityFromNumberAndIndex(heat[1].distance, heat[1].heat_descriminator);
+
+                if (poss) {
+                    const heatCompetitorResult = heat[0];
+                    if (heatCompetitorResult) {
+                        data[poss] = numberFromRaceTime(heatCompetitorResult.runtime_full_precision);
+                    }
+                }
+            });
+
+            res[athlete.athlete.id] = data;
+        });
+
+        return res;
+    });
+    function heatIsFinished(d: RunPossibilities, athlete: AthleteWithMetadata): boolean {
+        return finishTimes.value[athlete.athlete.id][d] != null;
     }
     const runSelection = ref(RunPossibilities.Run15_1);
     const runSelectionOptions = Object.values(RunPossibilities);

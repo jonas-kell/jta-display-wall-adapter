@@ -108,7 +108,7 @@ fn generate_heats_spk(
             id: heat.heat_id.clone(),
             distance,
             distance_type: DistanceType::Normal,
-            name: format!("SPK {}m-{}, Run {}", distance, index, i),
+            name: format!("SPK {}m-{}, Run {}", distance, index, i + 1),
             scheduled_start_time: start.get_next(),
             competitors,
         });

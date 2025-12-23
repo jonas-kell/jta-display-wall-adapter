@@ -727,7 +727,16 @@ pub fn get_all_athletes_meta_data(
                 heat_assignments_ath.push(heat_assignment.clone());
 
                 match get_heat_data(heat_assignment.heat_id.clone(), manager) {
-                    Ok(data) => heats.push((heat_assignment.clone(), data)),
+                    Ok(data) => {
+                        let their_result = match &data.result {
+                            Some(r) => match r.competitors_evaluated.iter().find(|e|e.competitor.bib == athlete.bib) {
+                                None => None,
+                                Some(hcr) => Some(hcr.clone())
+                            }
+                            None => None,
+                        };
+                        heats.push((their_result, heat_assignment.clone(), data))
+                    },
                     Err(e) => warn!("Found a heat assignment, but there is NO heat data yet, OR we are having database trouble...: {}", e.to_string()),
                 }
             }

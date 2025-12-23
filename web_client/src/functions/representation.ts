@@ -1,4 +1,4 @@
-import { DayTime, RaceWind } from "./interfaceInbound";
+import { DayTime, RaceTime, RaceWind } from "./interfaceInbound";
 
 function zeroPad(value: number, length: number): string {
     return String(value).padStart(length, "0");
@@ -35,4 +35,17 @@ export function imageURLfromBMPBytesArray(data: number[]) {
     const uint8 = new Uint8Array(data);
     const blob = new Blob([uint8], { type: "image/bmp" });
     return URL.createObjectURL(blob);
+}
+
+export function numberFromRaceTime(rt: RaceTime): number {
+    let secs =
+        (rt.hours ?? 0) * 3600 +
+        (rt.minutes ?? 0) * 60 +
+        rt.seconds +
+        (rt.tenths ?? 0) * 0.1 +
+        (rt.hundrets ?? 0) * 0.01 +
+        (rt.thousands ?? 0) * 0.001 +
+        (rt.ten_thousands ?? 0) * 0.0001;
+
+    return Math.round(secs * 100) / 100;
 }
