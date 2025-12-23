@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::times::{DayTime, RaceTime, RaceWind};
 use chrono::{NaiveDate, NaiveDateTime};
 use serde::{Deserialize, Serialize};
@@ -202,6 +204,7 @@ pub struct Heat {
     pub competitors: Vec<HeatCompetitor>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Gender {
     Male,
     Female,
@@ -215,4 +218,30 @@ impl Gender {
             Gender::Mixed => "X".into(),
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Athlete {
+    pub id: Uuid,
+    pub gender: Gender,
+    pub bib: u32,
+    pub club: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub nation: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AthleteWithMetadata {
+    pub athlete: Athlete,
+    pub heats: Vec<(HeatAssignment, HeatData)>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct HeatAssignment {
+    pub id: i32,
+    pub heat_id: Uuid,
+    pub distance: u32,
+    pub heat_descriminator: u8,
+    pub athlete_ids: HashMap<u32, Uuid>,
 }

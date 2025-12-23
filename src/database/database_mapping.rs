@@ -1,16 +1,18 @@
 // to avoid mapping this into the database for real (as we only basically process the datatypes in rust and make really no computations on the database) we just store everything serealized
 // TODO sqlite has a json type for efficiency
 
+use std::collections::HashMap;
+
 use crate::database::db::DatabaseError;
 use crate::database::schema::{
-    database_state, heat_evaluations, heat_false_starts, heat_finishes, heat_intermediates,
-    heat_results, heat_start_lists, heat_starts, heat_wind_missings, heat_winds,
-    internal_wind_measurements, internal_wind_readings, permanent_storage,
+    athletes, database_state, heat_assignments, heat_evaluations, heat_false_starts, heat_finishes,
+    heat_intermediates, heat_results, heat_start_lists, heat_starts, heat_wind_missings,
+    heat_winds, internal_wind_measurements, internal_wind_readings, permanent_storage,
 };
 use crate::database::DatabaseManager;
 use crate::server::camera_program_types::{
-    CompetitorEvaluated, HeatData, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult,
-    HeatStart, HeatStartList, HeatWind, HeatWindMissing,
+    Athlete, AthleteWithMetadata, CompetitorEvaluated, HeatAssignment, HeatData, HeatFalseStart,
+    HeatFinish, HeatIntermediate, HeatResult, HeatStart, HeatStartList, HeatWind, HeatWindMissing,
 };
 use crate::times::DayTime;
 use crate::wind::format::{StartedWindMeasurement, WindMeasurement};
@@ -580,4 +582,156 @@ pub fn init_database_static_state(
         Ok(a) => return Ok(a),
         Err(_) => Err(String::from("Even after initialization, database was found empty").into()),
     }
+}
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = athletes)]
+pub struct AthleteDatabase {
+    id: String,
+    data: String,
+}
+impl_database_serializable!(
+    Athlete,
+    AthleteDatabase,
+    athletes::table,
+    athletes::id,
+    |self_obj: &Athlete| Ok(AthleteDatabase {
+        id: self_obj.id.to_string(),
+        data: serde_json::to_string(self_obj)?,
+    })
+);
+
+pub fn delete_athlete(id: Uuid, manager: &DatabaseManager) -> Result<(), DatabaseError> {
+    let mut conn = manager.get_connection()?;
+
+    diesel::delete(athletes::table::table().filter(athletes::id.eq(id.to_string())))
+        .execute(&mut conn)?;
+
+    Ok(())
+}
+
+/// this must have a special format, because we require being able to sort by creation (time/order)
+#[derive(Serialize, Deserialize)]
+struct HeatAssignmentDatabaseContent {
+    distance: u32,
+    heat_id: Uuid,
+    heat_descriminator: u8,
+    athlete_ids: HashMap<u32, Uuid>,
+}
+
+/// ignores id and heat_id
+pub fn create_heat_assignment(
+    mut assignment: HeatAssignment,
+    manager: &DatabaseManager,
+) -> Result<HeatAssignment, DatabaseError> {
+    assignment.id = -1; // in storage, the id is always -1, as it has a separate, real col
+    assignment.heat_id = Uuid::new_v4(); // this is controlled by the backend
+
+    let storage = serde_json::to_string(&assignment)?;
+
+    let mut conn = manager.get_connection()?;
+
+    let res = diesel::insert_into(heat_assignments::table::table())
+        .values(heat_assignments::data.eq(storage))
+        .on_conflict_do_nothing()
+        .execute(&mut conn)?;
+
+    if res == 1 {
+        // get latest heat assignment as return val
+        let re_read_data: (i32, String) = heat_assignments::table::table()
+            .order(heat_assignments::id.desc())
+            .select((heat_assignments::id, heat_assignments::data))
+            .get_result(&mut conn)?;
+
+        let deserealized: HeatAssignmentDatabaseContent = serde_json::from_str(&re_read_data.1)
+            .map_err(|e| {
+                DatabaseError::new(format!(
+                    "Could not deserialize heat assignment data: {}",
+                    e.to_string()
+                ))
+            })?;
+
+        Ok(HeatAssignment {
+            id: re_read_data.0, // re-insert id
+            heat_id: deserealized.heat_id,
+            distance: deserealized.distance,
+            heat_descriminator: deserealized.heat_descriminator,
+            athlete_ids: deserealized.athlete_ids,
+        })
+    } else {
+        Err(DatabaseError::new("Nothing was inserted...".into()))
+    }
+}
+
+pub fn get_all_heat_assignments(
+    manager: &DatabaseManager,
+) -> Result<Vec<HeatAssignment>, DatabaseError> {
+    let mut conn = manager.get_connection()?;
+
+    let data = heat_assignments::table::table().load::<(i32, String)>(&mut conn)?;
+
+    let collected = match data
+        .into_iter()
+        .map(|(id, string_data)| {
+            let dat: HeatAssignmentDatabaseContent =
+                serde_json::from_str(&string_data).map_err(|e| {
+                    DatabaseError::new(format!(
+                        "Could not deserialize heat assignment data: {}",
+                        e.to_string()
+                    ))
+                })?;
+
+            Ok(HeatAssignment {
+                id,
+                heat_id: dat.heat_id,
+                distance: dat.distance,
+                heat_descriminator: dat.heat_descriminator,
+                athlete_ids: dat.athlete_ids,
+            })
+        })
+        .collect::<Result<Vec<HeatAssignment>, DatabaseError>>()
+    {
+        Ok(a) => a,
+        Err(e) => return Err(e),
+    };
+
+    Ok(collected)
+}
+
+pub fn delete_heat_assignment(id: i32, manager: &DatabaseManager) -> Result<(), DatabaseError> {
+    let mut conn = manager.get_connection()?;
+
+    diesel::delete(heat_assignments::table::table().filter(heat_assignments::id.eq(id)))
+        .execute(&mut conn)?;
+
+    Ok(())
+}
+
+pub fn get_all_athletes_meta_data(
+    manager: &DatabaseManager,
+) -> Result<Vec<AthleteWithMetadata>, DatabaseError> {
+    let athletes = Athlete::get_all_from_database(manager)?;
+    let heat_assignments = get_all_heat_assignments(manager)?;
+
+    let mut res: Vec<AthleteWithMetadata> = Vec::new();
+    for athlete in athletes {
+        let mut heats = Vec::new();
+
+        for heat_assignment in &heat_assignments {
+            if heat_assignment
+                .athlete_ids
+                .iter()
+                .any(|(_, v)| *v == athlete.id)
+            {
+                match get_heat_data(heat_assignment.heat_id.clone(), manager) {
+                    Ok(data) => heats.push((heat_assignment.clone(), data)),
+                    Err(e) => warn!("Found a heat assignment, but there is NO heat data yet, OR we are having database trouble...: {}", e.to_string()),
+                }
+            }
+        }
+
+        res.push(AthleteWithMetadata { athlete, heats });
+    }
+
+    Ok(res)
 }

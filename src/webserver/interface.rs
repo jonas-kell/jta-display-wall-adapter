@@ -1,12 +1,15 @@
 use crate::{
     client::TimingSettings,
     database::{DatabaseStaticState, PermanentlyStoredDataset},
-    server::camera_program_types::{HeatData, HeatMeta},
+    server::camera_program_types::{
+        Athlete, AthleteWithMetadata, HeatAssignment, HeatData, HeatMeta,
+    },
     times::DayTime,
     wind::format::WindMeasurement,
 };
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
@@ -29,6 +32,11 @@ pub enum MessageFromWebControl {
     InitStaticDatabaseState(DatabaseStaticState),
     RequestStaticDatabaseState,
     ExportDataToFile,
+    CreateAthlete(Athlete),
+    DeleteAthlete(Uuid),
+    CreateHeatAssignment(HeatAssignment),
+    DeleteHeatAssignment(i32),
+    RequestAthletes,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -55,4 +63,5 @@ pub enum MessageToWebControl {
     TimingSettingsState(TimingSettings),
     WindMeasurements(Vec<WindMeasurement>),
     CurrentDisplayFrame(Vec<u8>), // gets handled extra and sent as binary data
+    AthletesData(Vec<AthleteWithMetadata>),
 }

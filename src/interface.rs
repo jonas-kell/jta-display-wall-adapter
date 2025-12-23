@@ -1,4 +1,7 @@
-use crate::database::{get_database_static_state, init_database_static_state, DatabaseStaticState};
+use crate::database::{
+    create_heat_assignment, delete_athlete, delete_heat_assignment, get_all_athletes_meta_data,
+    get_database_static_state, init_database_static_state, DatabaseStaticState,
+};
 use crate::open_webcontrol;
 use crate::server::audio_types::{AudioPlayer, Sound};
 use crate::server::comm_channel::InstructionCommunicationChannel;
@@ -95,10 +98,10 @@ pub enum ServerState {
 }
 
 macro_rules! store_to_database_log_conditionally {
-    ($value:expr, $self_val:expr, $log:expr) => {
+    ($value:expr, $self_val:expr, $log:expr, $ignore_date:expr) => {
         if let Some(dbss) = &$self_val.static_state {
             let today = Local::now().date_naive();
-            if $self_val.args.can_store_to_database_on_off_day || dbss.date == today {
+            if $self_val.args.can_store_to_database_on_off_day || dbss.date == today || $ignore_date {
                 match $value.store_to_database(&$self_val.database_manager) {
                     Ok(()) => {
                         trace!("Success, we stored an instruction into the database");
@@ -121,7 +124,13 @@ macro_rules! store_to_database_log_conditionally {
 
 macro_rules! store_to_database {
     ($value:expr, $self_val:expr) => {
-        store_to_database_log_conditionally!($value, $self_val, true);
+        store_to_database_log_conditionally!($value, $self_val, true, false);
+    };
+}
+
+macro_rules! store_to_database_ignore_date {
+    ($value:expr, $self_val:expr) => {
+        store_to_database_log_conditionally!($value, $self_val, true, true);
     };
 }
 
@@ -615,6 +624,88 @@ impl ServerStateMachine {
                     let meet = generate_meet_data(&dbss);
 
                     write_to_xml_output_file(&self.args, &file_name, meet);
+                }
+                MessageFromWebControl::CreateAthlete(ath) => {
+                    store_to_database_ignore_date!(ath, self);
+
+                    match get_all_athletes_meta_data(&self.database_manager) {
+                        Ok(d) => {
+                            self.send_message_to_web_control(MessageToWebControl::AthletesData(d))
+                        }
+                        Err(e) => error!("Encountered error, after creation of athlete: {}", e),
+                    }
+                }
+                MessageFromWebControl::DeleteAthlete(ath_id) => {
+                    match delete_athlete(ath_id, &self.database_manager) {
+                        Ok(_) => {
+                            debug!("Deleted athlete");
+                            match get_all_athletes_meta_data(&self.database_manager) {
+                                Ok(d) => self.send_message_to_web_control(
+                                    MessageToWebControl::AthletesData(d),
+                                ),
+                                Err(e) => {
+                                    error!("Encountered error, after deletion of athlete: {}", e)
+                                }
+                            }
+                        }
+                        Err(e) => error!(
+                            "Encountered error, while deleting an athlete: {}",
+                            e.to_string()
+                        ),
+                    }
+                }
+                MessageFromWebControl::CreateHeatAssignment(ha) => {
+                    match create_heat_assignment(ha, &self.database_manager) {
+                        Ok(a) => {
+                            debug!("Created heat assignment: {:?}", a);
+                            match get_all_athletes_meta_data(&self.database_manager) {
+                                Ok(d) => self.send_message_to_web_control(
+                                    MessageToWebControl::AthletesData(d),
+                                ),
+                                Err(e) => {
+                                    error!(
+                                        "Encountered error, after creation of heat assignment: {}",
+                                        e
+                                    )
+                                }
+                            }
+                        }
+                        Err(e) => error!(
+                            "Encountered error, while creating a heat assignment: {}",
+                            e.to_string()
+                        ),
+                    }
+                }
+                MessageFromWebControl::DeleteHeatAssignment(id) => {
+                    match delete_heat_assignment(id, &self.database_manager) {
+                        Ok(_) => {
+                            debug!("Deleted heat assignment");
+
+                            match get_all_athletes_meta_data(&self.database_manager) {
+                                Ok(d) => self.send_message_to_web_control(
+                                    MessageToWebControl::AthletesData(d),
+                                ),
+                                Err(e) => error!(
+                                    "Encountered error, after deletion of heat assignment: {}",
+                                    e
+                                ),
+                            }
+                        }
+                        Err(e) => error!(
+                            "Encountered error, while deleting a heat assignment: {}",
+                            e.to_string()
+                        ),
+                    }
+                }
+                MessageFromWebControl::RequestAthletes => {
+                    match get_all_athletes_meta_data(&self.database_manager) {
+                        Ok(d) => {
+                            self.send_message_to_web_control(MessageToWebControl::AthletesData(d))
+                        }
+                        Err(e) => {
+                            error!("Encountered error, while getting athlete metadata: {}", e)
+                        }
+                    }
                 }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {

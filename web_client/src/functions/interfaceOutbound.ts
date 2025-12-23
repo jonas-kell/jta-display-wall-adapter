@@ -1,5 +1,5 @@
 import { DayTime } from "./interfaceInbound";
-import { DatabaseStaticState, TimingSettings } from "./interfaceShared";
+import { Athlete, DatabaseStaticState, HeatAssignment, TimingSettings, Uuid } from "./interfaceShared";
 
 export type Idle = {
     type: "Idle";
@@ -83,4 +83,28 @@ export type RequestStaticDatabaseState = {
 
 export type ExportDataToFile = {
     type: "ExportDataToFile";
+};
+
+export type CreateAthlete = {
+    type: "CreateAthlete";
+    data: Athlete;
+};
+
+export type DeleteAthlete = {
+    type: "DeleteAthlete";
+    data: Uuid;
+};
+
+export type CreateHeatAssignment = {
+    type: "CreateHeatAssignment";
+    data: HeatAssignment;
+};
+
+export type DeleteHeatAssignment = {
+    type: "DeleteHeatAssignment";
+    data: number;
+};
+
+export type RequestAthletes = {
+    type: "RequestAthletes";
 };

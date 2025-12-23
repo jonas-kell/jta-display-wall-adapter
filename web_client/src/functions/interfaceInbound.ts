@@ -1,6 +1,6 @@
 // server Datatype formats (keep in sync with "./../../../src/server/camera_program_datatypes.rs")
 
-import { DatabaseStaticState, TimingSettings } from "./interfaceShared";
+import { Athlete, DatabaseStaticState, HeatAssignment, TimingSettings, Uuid } from "./interfaceShared";
 
 export type HeatMeta = {
     id: string;
@@ -9,7 +9,6 @@ export type HeatMeta = {
     scheduled_start_time_string: string;
 };
 
-export type Uuid = string;
 export type NaiveDateTime = string;
 
 export type RaceWind = {
@@ -158,6 +157,11 @@ export type WindMeasurement = {
     time: DayTime | null;
 };
 
+export type AthleteWithMetadata = {
+    athlete: Athlete;
+    heats: [HeatAssignment, HeatData][];
+};
+
 // message formats
 
 export type DisplayClientStateState = {
@@ -212,6 +216,11 @@ export type CurrentDisplayFrame = {
     data: number[];
 };
 
+export type AthletesData = {
+    type: "AthletesData";
+    data: AthleteWithMetadata[];
+};
+
 export type Unknown = {
     type: "Unknown";
     data: unknown;
@@ -227,6 +236,7 @@ export enum InboundMessageType {
     WindMeasurements = "WindMeasurements",
     CurrentDisplayFrame = "CurrentDisplayFrame",
     DatabaseStaticState = "DatabaseStaticState",
+    AthletesData = "AthletesData",
 }
 
 export type InboundMessage =
@@ -238,6 +248,7 @@ export type InboundMessage =
     | TimingSettingsState
     | WindMeasurements
     | CurrentDisplayFrame
+    | AthletesData
     | Unknown;
 
 export function parseMessage(json: unknown): InboundMessage {
@@ -264,6 +275,8 @@ export function parseMessage(json: unknown): InboundMessage {
             return { type: "CurrentDisplayFrame", data: obj.data } as CurrentDisplayFrame;
         case InboundMessageType.DatabaseStaticState:
             return { type: "DatabaseStaticState", data: obj.data } as DatabaseStaticStateMessage;
+        case InboundMessageType.AthletesData:
+            return { type: "AthletesData", data: obj.data } as AthletesData;
 
         default:
             return { type: "Unknown", data: json } as Unknown;

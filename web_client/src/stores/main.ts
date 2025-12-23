@@ -4,12 +4,17 @@ import { WS_URL } from "../functions/environment";
 import {
     Advertisements,
     Clock,
+    CreateAthlete,
+    CreateHeatAssignment,
+    DeleteAthlete,
+    DeleteHeatAssignment,
     ExportDataToFile,
     FreeText,
     GetHeats,
     GetLogs,
     Idle,
     InitStaticDatabaseState,
+    RequestAthletes,
     RequestDisplayClientState,
     RequestStaticDatabaseState,
     RequestTimingSettings,
@@ -23,6 +28,7 @@ import {
     WindValueRequestDateContainer,
 } from "../functions/interfaceOutbound";
 import {
+    AthleteWithMetadata,
     DayTime,
     HeatData,
     HeatMeta,
@@ -33,7 +39,7 @@ import {
     WindMeasurement,
 } from "../functions/interfaceInbound";
 import { CircularBuffer } from "../functions/circularBuffer";
-import { DatabaseStaticState, TimingSettings } from "../functions/interfaceShared";
+import { Athlete, DatabaseStaticState, HeatAssignment, TimingSettings, Uuid } from "../functions/interfaceShared";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
 
 function sleep(ms: number) {
@@ -83,6 +89,7 @@ export default defineStore("main", () => {
 
     const logEntriesRolling = new CircularBuffer<LogEntry>(10);
     const requestedWindMeasurements = ref([] as WindMeasurement[]);
+    const athletesData = ref([] as AthleteWithMetadata[]);
 
     function handleWSMessage(ev: MessageEvent) {
         if (ev.data instanceof Blob) {
@@ -153,6 +160,9 @@ export default defineStore("main", () => {
                 console.log("Initialized static database state");
                 staticConfiguration.value = msg.data;
                 return;
+            case InboundMessageType.AthletesData:
+                athletesData.value = msg.data;
+                return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);
                 return;
@@ -195,6 +205,7 @@ export default defineStore("main", () => {
             sendRequestStaticConfigCommand();
             sendGetHeatsCommand();
             sendRequestTimingSettingsCommand();
+            sendRequestAthletesCommand();
 
             // only assign the handlers if actually open
             if (ws) {
@@ -327,6 +338,43 @@ export default defineStore("main", () => {
         };
         sendWSCommand(JSON.stringify(packet));
     }
+    function sendRequestAthletesCommand() {
+        const packet: RequestAthletes = {
+            type: "RequestAthletes",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    function sendUpsertAthleteCommand(athlete: Athlete) {
+        const packet: CreateAthlete = {
+            type: "CreateAthlete",
+            data: athlete,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    function sendDeleteAthleteCommand(id: Uuid) {
+        const packet: DeleteAthlete = {
+            type: "DeleteAthlete",
+            data: id,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    /**
+     * @param ha id and heat_id are ignored, as they are set by the server
+     */
+    function sendCreateHeatAssignmentCommand(ha: HeatAssignment) {
+        const packet: CreateHeatAssignment = {
+            type: "CreateHeatAssignment",
+            data: ha,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    function sendDeleteHeatAssignmentCommand(id: number) {
+        const packet: DeleteHeatAssignment = {
+            type: "DeleteHeatAssignment",
+            data: id,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
     function sendGetHeatsCommand() {
         const packet: GetHeats = {
             type: "GetHeats",
@@ -442,6 +490,11 @@ export default defineStore("main", () => {
         sendGetWindValuesCommand,
         sendStaticallyConfigureServerCommand,
         sendExportToFileCommand,
+        sendRequestAthletesCommand,
+        sendUpsertAthleteCommand,
+        sendDeleteAthleteCommand,
+        sendCreateHeatAssignmentCommand,
+        sendDeleteHeatAssignmentCommand,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,
@@ -456,5 +509,6 @@ export default defineStore("main", () => {
         requestedWindMeasurements,
         currentClientFrame,
         staticConfiguration,
+        athletesData,
     };
 });

@@ -1,3 +1,5 @@
+export type Uuid = string;
+
 export type TimingSettings = {
     fireworks_on_intermediate: boolean;
     fireworks_on_finish: boolean;
@@ -25,4 +27,28 @@ export type DatabaseStaticState = {
     meet_id: string;
     meet_city: string;
     meet_location: string;
+};
+
+export enum Gender {
+    Male = "Male",
+    Female = "Female",
+    Mixed = "Mixed",
+}
+
+export type Athlete = {
+    id: Uuid;
+    gender: Gender;
+    bib: number;
+    club: string;
+    first_name: string;
+    last_name: string;
+    nation: string;
+};
+
+export type HeatAssignment = {
+    id: number;
+    heat_id: Uuid;
+    distance: number;
+    heat_descriminator: number;
+    athlete_ids: { [key: number]: Uuid };
 };
