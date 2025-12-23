@@ -28,12 +28,18 @@
                 <th scope="col"><input type="text" v-model="firstNameRef" style="width: 100%" /></th>
                 <th scope="col"><input type="text" v-model="lastNameRef" style="width: 100%" /></th>
                 <th scope="col">
-                    <v-btn
-                        :icon="athleteBeingEdited ? 'mdi-content-save-outline' : 'mdi-plus'"
-                        density="compact"
-                        @click="addAthlete"
-                        :disabled="!canAddAthlete"
-                    ></v-btn>
+                    <v-tooltip text="Bib already used!" :disabled="bibAvailableForAdding">
+                        <template v-slot:activator="{ props }">
+                            <span v-bind="props">
+                                <v-btn
+                                    :icon="athleteBeingEdited ? 'mdi-content-save-outline' : 'mdi-plus'"
+                                    density="compact"
+                                    @click="addAthlete"
+                                    :disabled="!canAddAthlete"
+                                ></v-btn>
+                            </span>
+                        </template>
+                    </v-tooltip>
                 </th>
                 <th></th>
             </tr>
@@ -85,7 +91,7 @@
     });
 
     const canAddAthlete = computed(() => {
-        return bibRef.value != "" && lastNameRef.value != "" && firstNameRef.value != "";
+        return bibRef.value != "" && lastNameRef.value != "" && firstNameRef.value != "" && bibAvailableForAdding.value;
     });
 
     function editAthlete(ath: Athlete) {
@@ -101,6 +107,11 @@
     const athleteBeingEdited = computed(() => {
         return idRef.value != null;
     });
+    const bibAvailableForAdding = computed(() => {
+        return athletesByBib.value.every(
+            (a) => a.athlete.bib != parseInt(bibRef.value) || (athleteBeingEdited.value && a.athlete.id == idRef.value)
+        );
+    });
 
     function deleteAthlete(ath: Athlete) {
         if (window.confirm(`Do you want to delete the athlete ${ath.first_name} ${ath.last_name}?`)) {
@@ -108,7 +119,7 @@
         }
     }
 
-    // als odoes upsert
+    // also does upsert
     function addAthlete() {
         const id = idRef.value ?? uuid();
         idRef.value = null;
