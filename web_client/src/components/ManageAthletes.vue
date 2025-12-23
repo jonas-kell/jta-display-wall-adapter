@@ -12,18 +12,21 @@
                 : "Sprinterkönig"
         }}
         <template v-if="modeIsSPK">
-            <v-tooltip text="Show Sprinterkönig results" location="bottom center">
-                <template v-slot:activator="{ props }">
-                    <v-switch
-                        v-bind="props"
-                        class="mr-5 float-right"
-                        color="primary"
-                        density="compact"
-                        v-model="showSPKData"
-                        hide-details
-                    ></v-switch>
-                </template>
-            </v-tooltip>
+            <div class="float-right d-flex align-center">
+                <v-btn @click="generateSPKPDF" density="compact" class="mr-5"> Export Results </v-btn>
+                <v-tooltip text="Show Sprinterkönig results" location="bottom center">
+                    <template v-slot:activator="{ props }">
+                        <v-switch
+                            v-bind="props"
+                            class="mr-5"
+                            color="primary"
+                            density="compact"
+                            v-model="showSPKData"
+                            hide-details
+                        ></v-switch>
+                    </template>
+                </v-tooltip>
+            </div>
         </template>
     </h3>
 
@@ -223,6 +226,7 @@
     import SPKStateDot from "./SPKStateDot.vue";
     import { AthleteWithMetadata } from "../functions/interfaceInbound";
     import { numberFromRaceTime } from "../functions/representation";
+    import jsPDF from "jspdf";
 
     const mainStore = useMainStore();
 
@@ -592,6 +596,67 @@
                 heat_descriminator: indexFromPossibilities(runSelection.value),
             });
         }
+    }
+    function generateSPKPDF() {
+        // A4 page
+        const PAGE_HEIGHT = 210;
+        const PAGE_WIDTH = 297;
+        const doc = new jsPDF({ orientation: "l", unit: "mm", format: [PAGE_WIDTH, PAGE_HEIGHT] });
+        const TEXT_FONT = "times";
+        const TEXT_SIZE = 15;
+
+        // header
+        doc.setFont(TEXT_FONT, "normal"); // also bold or italic
+        doc.setFontSize(TEXT_SIZE);
+        doc.text("Sprinterkönig Ergebnisse " + mainStore.staticConfiguration?.date, 10, 10);
+
+        // table
+        const placeKey = "Platz";
+        const differenceKey = "Diff.";
+        const guessedKey = "Getippt";
+        const ranKey = "Gelaufen";
+        const nameKey = "Name";
+        const run1Key = "15m-1";
+        const run2Key = "15m-2";
+        const run3Key = "20m-1";
+        const run4Key = "20m-2";
+        const run5Key = "30m-1";
+        const run6Key = "30m-2";
+        const tableEntries = athletesArraySorted.value.map(
+            (
+                athlete
+            ): {
+                [key: string]: string;
+            } => {
+                let times = finalTimes.value[athlete.athlete.id] ?? [null, null, null];
+
+                return {
+                    [placeKey]: String(places.value[athlete.athlete.id] ?? " "),
+                    [differenceKey]: String(times[2]?.toFixed(2) ?? " "),
+                    [guessedKey]: String(times[0]?.toFixed(2) ?? " "),
+                    [ranKey]: String(times[1]?.toFixed(2) ?? " "),
+                    [nameKey]: athlete.athlete.first_name + " " + athlete.athlete.last_name,
+                    [run1Key]: formatForCircle(finishTimes.value[athlete.athlete.id][RunPossibilities.Run15_1]),
+                    [run2Key]: formatForCircle(finishTimes.value[athlete.athlete.id][RunPossibilities.Run15_2]),
+                    [run3Key]: formatForCircle(finishTimes.value[athlete.athlete.id][RunPossibilities.Run20_1]),
+                    [run4Key]: formatForCircle(finishTimes.value[athlete.athlete.id][RunPossibilities.Run20_2]),
+                    [run5Key]: formatForCircle(finishTimes.value[athlete.athlete.id][RunPossibilities.Run30_1]),
+                    [run6Key]: formatForCircle(finishTimes.value[athlete.athlete.id][RunPossibilities.Run30_2]),
+                };
+            }
+        );
+        doc.table(
+            10,
+            15,
+            [...tableEntries],
+            [placeKey, differenceKey, guessedKey, ranKey, nameKey, run1Key, run2Key, run3Key, run4Key, run5Key, run6Key],
+            {
+                autoSize: true,
+                padding: 2,
+            }
+        );
+
+        return doc.save("Sprinterkoenig_Ergebnisse.pdf");
     }
 </script>
 
