@@ -11,6 +11,20 @@
                 ? "Long-Run"
                 : "Sprinterkönig"
         }}
+        <template v-if="modeIsSPK">
+            <v-tooltip text="Show Sprinterkönig results" location="bottom center">
+                <template v-slot:activator="{ props }">
+                    <v-switch
+                        v-bind="props"
+                        class="mr-5 float-right"
+                        color="primary"
+                        density="compact"
+                        v-model="showSPKData"
+                        hide-details
+                    ></v-switch>
+                </template>
+            </v-tooltip>
+        </template>
     </h3>
 
     <!-- TODO table must have different properties, depending on the ApplicationMode -->
@@ -67,7 +81,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr v-for="athlete in athletesByBib">
+            <tr v-for="athlete in athletesArraySorted">
                 <td>{{ athlete.athlete.bib }}</td>
                 <td>{{ athlete.athlete.first_name }}</td>
                 <td>{{ athlete.athlete.last_name }}</td>
@@ -130,10 +144,18 @@
                         :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run30_2])"
                     ></SPKStateDot>
                 </td>
-                <td class="pl-1">{{ athlete.athlete.spk_guess?.toFixed(2) ?? "" }}</td>
-                <td class="pl-1">{{ (finalTimes[athlete.athlete.id] ?? ["", null])[1]?.toFixed(2) ?? "" }}</td>
-                <td class="pl-1">{{ (finalTimes[athlete.athlete.id] ?? ["", "", null])[2]?.toFixed(2) ?? "" }}</td>
-                <td class="pl-1">{{ places[athlete.athlete.id] ?? "" }}</td>
+                <template v-if="showSPKData">
+                    <td class="pl-1">{{ athlete.athlete.spk_guess?.toFixed(2) ?? "" }}</td>
+                    <td class="pl-1">{{ (finalTimes[athlete.athlete.id] ?? ["", null])[1]?.toFixed(2) ?? "" }}</td>
+                    <td class="pl-1">{{ (finalTimes[athlete.athlete.id] ?? ["", "", null])[2]?.toFixed(2) ?? "" }}</td>
+                    <td class="pl-1">{{ places[athlete.athlete.id] ?? "" }}</td>
+                </template>
+                <template v-else>
+                    <td class="pl-1">----</td>
+                    <td class="pl-1">----</td>
+                    <td class="pl-1">----</td>
+                    <td class="pl-1">----</td>
+                </template>
             </tr>
         </tbody>
     </table>
@@ -210,10 +232,33 @@
     const firstNameRef = ref("");
     const guessRef = ref(""); // SPK
 
+    const athletesArray = computed(() => {
+        return mainStore.athletesData;
+    });
     const athletesByBib = computed(() => {
-        return [...mainStore.athletesData].sort((a, b) => {
+        return [...athletesArray.value].sort((a, b) => {
             return a.athlete.bib - b.athlete.bib;
         });
+    });
+    const athletesArraySorted = computed(() => {
+        if (!finalTimesAvailable.value || !modeIsSPK.value || !showSPKData.value) {
+            return athletesByBib.value;
+        } else {
+            return [...athletesByBib.value].sort((a, b) => {
+                const aPlace: number | null = places.value[a.athlete.id] ?? null;
+                const bPlace: number | null = places.value[b.athlete.id] ?? null;
+                if (aPlace == null && bPlace != null) {
+                    return 1;
+                }
+                if (aPlace != null && bPlace == null) {
+                    return -1;
+                }
+                if (aPlace != null && bPlace != null) {
+                    return aPlace - bPlace;
+                }
+                return a.athlete.bib - b.athlete.bib;
+            });
+        }
     });
 
     const canAddAthlete = computed(() => {
@@ -235,7 +280,7 @@
         return idRef.value != null;
     });
     const bibAvailableForAdding = computed(() => {
-        return athletesByBib.value.every(
+        return athletesArray.value.every(
             (a) => a.athlete.bib != parseInt(bibRef.value) || (athleteBeingEdited.value && a.athlete.id == idRef.value)
         );
     });
@@ -278,6 +323,10 @@
     }
 
     // Sprinterkönig logic
+    const modeIsSPK = computed(() => {
+        return (mainStore.staticConfiguration?.mode ?? ApplicationMode.StreetLongRun) == ApplicationMode.SprinterKing;
+    });
+    const showSPKData = ref(true);
     enum RunPossibilities {
         Run15_1 = "Run15_1",
         Run15_2 = "Run15_2",
@@ -353,7 +402,7 @@
     }
     const finalTimes = computed(() => {
         let res: { [key: string]: [number, number, number] | null } = {};
-        athletesByBib.value.forEach((athlete) => {
+        athletesArray.value.forEach((athlete) => {
             const times = finishTimes.value[athlete.athlete.id];
             if (times) {
                 const a = times[RunPossibilities.Run15_1];
@@ -377,9 +426,14 @@
 
         return res;
     });
+    const finalTimesAvailable = computed(() => {
+        return Object.values(finalTimes.value).some((e) => {
+            return e != null;
+        });
+    });
     const places = computed(() => {
         let resIntermediate = [] as { id: string; diff: number }[];
-        athletesByBib.value.forEach((athlete) => {
+        athletesArray.value.forEach((athlete) => {
             const final = finalTimes.value[athlete.athlete.id];
 
             if (final) {
@@ -408,7 +462,7 @@
     }
     const finishTimes = computed(() => {
         let res: { [key: string]: { [key in RunPossibilities]: number | null } } = {};
-        athletesByBib.value.forEach((athlete) => {
+        athletesArray.value.forEach((athlete) => {
             let data = {
                 [RunPossibilities.Run15_1]: null as number | null,
                 [RunPossibilities.Run15_2]: null as number | null,
@@ -446,7 +500,7 @@
     const heats = computed(() => {
         let heats: HeatAssignment[] = [];
 
-        athletesByBib.value.forEach((a) => {
+        athletesArray.value.forEach((a) => {
             a.heat_assignments.forEach((ha) => {
                 if (
                     !heats.some((storedHeat) => {
@@ -464,11 +518,11 @@
 
         return heats.map((ha) => {
             const ida = ha.athlete_ids[1];
-            const athleteA = athletesByBib.value.find((a) => {
+            const athleteA = athletesArray.value.find((a) => {
                 return a.athlete.id == ida;
             });
             const idb = ha.athlete_ids[2];
-            const athleteB = athletesByBib.value.find((a) => {
+            const athleteB = athletesArray.value.find((a) => {
                 return a.athlete.id == idb;
             });
             let aName = "unknown";
@@ -492,7 +546,7 @@
         const currentDistance = distanceFromPossibilities(runSelection.value);
         const currentIndex = indexFromPossibilities(runSelection.value);
 
-        return athletesByBib.value
+        return athletesArray.value
             .map((a) => {
                 return {
                     id: a.athlete.id,
