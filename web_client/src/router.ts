@@ -3,7 +3,8 @@ import { createWebHashHistory, createRouter } from "vue-router";
 import Index from "./components/Index.vue";
 import Heats from "./components/Heats.vue";
 import WindRequest from "./components/WindRequest.vue";
-import PDFTest from "./components/PDFTest.vue";
+import PDFSettings from "./components/PDFSettings.vue";
+import PDFPrint from "./components/PDFPrint.vue";
 import Timing from "./components/Timing.vue";
 import ManageAthletes from "./components/ManageAthletes.vue";
 
@@ -13,7 +14,8 @@ const routes = [
     { path: "/timing", component: Timing, name: "timing" },
     { path: "/manage_athletes", component: ManageAthletes, name: "manage_athletes" },
     { path: "/wind_request", component: WindRequest, name: "wind_request" },
-    { path: "/pdf_test", component: PDFTest, name: "pdf_test" },
+    { path: "/pdf_settings", component: PDFSettings, name: "pdf_settings" },
+    { path: "/pdf_print", component: PDFPrint, name: "pdf_print" },
     { path: "/:catchAll(.*)*", redirect: "/" },
 ];
 

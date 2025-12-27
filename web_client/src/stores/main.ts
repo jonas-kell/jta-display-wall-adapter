@@ -8,6 +8,7 @@ import {
     CreateHeatAssignment,
     DeleteAthlete,
     DeleteHeatAssignment,
+    DeletePDFConfigurationSetting,
     ExportDataToFile,
     FreeText,
     GetHeats,
@@ -22,6 +23,7 @@ import {
     ResultList,
     SelectHeat,
     StartList,
+    StorePDFConfigurationSetting,
     SwitchMode,
     Timing,
     UpdateTimingSettings,
@@ -39,7 +41,14 @@ import {
     WindMeasurement,
 } from "../functions/interfaceInbound";
 import { CircularBuffer } from "../functions/circularBuffer";
-import { Athlete, DatabaseStaticState, HeatAssignment, TimingSettings, Uuid } from "../functions/interfaceShared";
+import {
+    Athlete,
+    DatabaseStaticState,
+    HeatAssignment,
+    PDFConfigurationSetting,
+    TimingSettings,
+    Uuid,
+} from "../functions/interfaceShared";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
 
 function sleep(ms: number) {
@@ -90,6 +99,7 @@ export default defineStore("main", () => {
     const logEntriesRolling = new CircularBuffer<LogEntry>(10);
     const requestedWindMeasurements = ref([] as WindMeasurement[]);
     const athletesData = ref([] as AthleteWithMetadata[]);
+    const pdfConfigurationSettings = ref([] as PDFConfigurationSetting[]);
 
     function handleWSMessage(ev: MessageEvent) {
         if (ev.data instanceof Blob) {
@@ -162,6 +172,9 @@ export default defineStore("main", () => {
                 return;
             case InboundMessageType.AthletesData:
                 athletesData.value = msg.data;
+                return;
+            case InboundMessageType.PDFConfigurationSettingsData:
+                pdfConfigurationSettings.value = msg.data;
                 return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);
@@ -358,6 +371,20 @@ export default defineStore("main", () => {
         };
         sendWSCommand(JSON.stringify(packet));
     }
+    function sendUpsertPDBSettingCommand(setting: PDFConfigurationSetting) {
+        const packet: StorePDFConfigurationSetting = {
+            type: "StorePDFConfigurationSetting",
+            data: setting,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    function sendDeletePDFSettingCommand(id: Uuid) {
+        const packet: DeletePDFConfigurationSetting = {
+            type: "DeletePDFConfigurationSetting",
+            data: id,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
     /**
      * @param ha id and heat_id are ignored, as they are set by the server
      */
@@ -495,6 +522,8 @@ export default defineStore("main", () => {
         sendDeleteAthleteCommand,
         sendCreateHeatAssignmentCommand,
         sendDeleteHeatAssignmentCommand,
+        sendUpsertPDBSettingCommand,
+        sendDeletePDFSettingCommand,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,
@@ -510,5 +539,6 @@ export default defineStore("main", () => {
         currentClientFrame,
         staticConfiguration,
         athletesData,
+        pdfConfigurationSettings,
     };
 });

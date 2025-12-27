@@ -1,6 +1,6 @@
 // server Datatype formats (keep in sync with "./../../../src/server/camera_program_datatypes.rs")
 
-import { Athlete, DatabaseStaticState, HeatAssignment, TimingSettings, Uuid } from "./interfaceShared";
+import { Athlete, DatabaseStaticState, HeatAssignment, PDFConfigurationSetting, TimingSettings, Uuid } from "./interfaceShared";
 
 export type HeatMeta = {
     id: string;
@@ -222,6 +222,11 @@ export type AthletesData = {
     data: AthleteWithMetadata[];
 };
 
+export type PDFConfigurationSettingsData = {
+    type: "PDFConfigurationSettingsData";
+    data: PDFConfigurationSetting[];
+};
+
 export type Unknown = {
     type: "Unknown";
     data: unknown;
@@ -238,6 +243,7 @@ export enum InboundMessageType {
     CurrentDisplayFrame = "CurrentDisplayFrame",
     DatabaseStaticState = "DatabaseStaticState",
     AthletesData = "AthletesData",
+    PDFConfigurationSettingsData = "PDFConfigurationSettingsData",
 }
 
 export type InboundMessage =
@@ -250,6 +256,7 @@ export type InboundMessage =
     | WindMeasurements
     | CurrentDisplayFrame
     | AthletesData
+    | PDFConfigurationSettingsData
     | Unknown;
 
 export function parseMessage(json: unknown): InboundMessage {
@@ -278,6 +285,8 @@ export function parseMessage(json: unknown): InboundMessage {
             return { type: "DatabaseStaticState", data: obj.data } as DatabaseStaticStateMessage;
         case InboundMessageType.AthletesData:
             return { type: "AthletesData", data: obj.data } as AthletesData;
+        case InboundMessageType.PDFConfigurationSettingsData:
+            return { type: "PDFConfigurationSettingsData", data: obj.data } as PDFConfigurationSettingsData;
 
         default:
             return { type: "Unknown", data: json } as Unknown;

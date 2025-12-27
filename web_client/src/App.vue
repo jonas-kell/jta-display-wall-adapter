@@ -114,7 +114,10 @@
                     <router-link to="/wind_request" class="router-link-style">Wind Request</router-link>
                 </v-list-item>
                 <v-list-item>
-                    <router-link to="/pdf_test" class="router-link-style">PDF Test</router-link>
+                    <router-link to="/pdf_settings" class="router-link-style">PDF Settings</router-link>
+                </v-list-item>
+                <v-list-item>
+                    <router-link to="/pdf_print" class="router-link-style">PDF Print</router-link>
                 </v-list-item>
                 <v-divider></v-divider>
                 <div class="ma-2" v-if="mainStore.displayConnected">
