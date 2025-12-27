@@ -1,0 +1,4 @@
+CREATE TABLE pdf_settings (
+  id VARCHAR NOT NULL PRIMARY KEY,
+  data VARCHAR NOT NULL
+);

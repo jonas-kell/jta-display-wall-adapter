@@ -2,8 +2,8 @@
     import { ref } from "vue";
     import useMainStore from "./../stores/main";
     import { ApplicationMode } from "./../functions/interfaceShared";
-    import { v4 as uuid } from "uuid";
     import { TODAY } from "../functions/date";
+    import { uuid } from "../functions/uuid";
 
     const mainStore = useMainStore();
 

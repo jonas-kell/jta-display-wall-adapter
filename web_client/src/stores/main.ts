@@ -17,6 +17,7 @@ import {
     InitStaticDatabaseState,
     RequestAthletes,
     RequestDisplayClientState,
+    RequestPDFConfigurationSettings,
     RequestStaticDatabaseState,
     RequestTimingSettings,
     RequestWindValues,
@@ -219,6 +220,7 @@ export default defineStore("main", () => {
             sendGetHeatsCommand();
             sendRequestTimingSettingsCommand();
             sendRequestAthletesCommand();
+            sendRequestAllPDFSettingsCommand();
 
             // only assign the handlers if actually open
             if (ws) {
@@ -371,7 +373,7 @@ export default defineStore("main", () => {
         };
         sendWSCommand(JSON.stringify(packet));
     }
-    function sendUpsertPDBSettingCommand(setting: PDFConfigurationSetting) {
+    function sendUpsertPDFSettingCommand(setting: PDFConfigurationSetting) {
         const packet: StorePDFConfigurationSetting = {
             type: "StorePDFConfigurationSetting",
             data: setting,
@@ -382,6 +384,12 @@ export default defineStore("main", () => {
         const packet: DeletePDFConfigurationSetting = {
             type: "DeletePDFConfigurationSetting",
             data: id,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    function sendRequestAllPDFSettingsCommand() {
+        const packet: RequestPDFConfigurationSettings = {
+            type: "RequestPDFConfigurationSettings",
         };
         sendWSCommand(JSON.stringify(packet));
     }
@@ -522,7 +530,7 @@ export default defineStore("main", () => {
         sendDeleteAthleteCommand,
         sendCreateHeatAssignmentCommand,
         sendDeleteHeatAssignmentCommand,
-        sendUpsertPDBSettingCommand,
+        sendUpsertPDFSettingCommand,
         sendDeletePDFSettingCommand,
         canEditTimingSettings,
         timingSettings,

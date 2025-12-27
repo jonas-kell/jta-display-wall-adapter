@@ -82,7 +82,7 @@
     }
 
     // USE
-    mainStore.sendUpsertPDBSettingCommand;
+    // mainStore.sendUpsertPDBSettingCommand;
     mainStore.sendDeletePDFSettingCommand;
     mainStore.pdfConfigurationSettings;
 </script>

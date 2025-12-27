@@ -37,6 +37,35 @@ pub enum MessageFromWebControl {
     CreateHeatAssignment(HeatAssignment),
     DeleteHeatAssignment(i32),
     RequestAthletes,
+    StorePDFConfigurationSetting(PDFConfigurationSetting),
+    DeletePDFConfigurationSetting(Uuid),
+    RequestPDFConfigurationSettings,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum PDFSettingFor {
+    Bib,
+    Certificate,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "type")]
+pub struct PDFConfigurationSetting {
+    pub id: Uuid,
+    #[serde(rename = "for")]
+    pub for_: PDFSettingFor,
+    pub pos_x: f64,
+    pub pos_y: f64,
+    pub content: PDFConfigurationContent,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(tag = "type")]
+pub enum PDFConfigurationContent {
+    #[serde(rename = "PDFConfigurationContentText")]
+    Text { text: String },
+    #[serde(rename = "PDFConfigurationContentReference")]
+    Time { reference: String },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -64,4 +93,5 @@ pub enum MessageToWebControl {
     WindMeasurements(Vec<WindMeasurement>),
     CurrentDisplayFrame(Vec<u8>), // gets handled extra and sent as binary data
     AthletesData(Vec<AthleteWithMetadata>),
+    PDFConfigurationSettingsData(Vec<PDFConfigurationSetting>),
 }

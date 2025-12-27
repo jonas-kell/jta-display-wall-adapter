@@ -54,29 +54,27 @@ export type HeatAssignment = {
     athlete_ids: { [key: number]: Uuid };
 };
 
-export type PDFConfigurationSetting = PDFConfigurationSettingText | PDFConfigurationSettingTime; //...;
-
 export enum PDFSettingFor {
     Bib = "Bib",
     Certificate = "Certificate",
 }
 
-export type PDFConfigurationSettingText = {
-    type: "PDFConfigurationSettingText";
+export type PDFConfigurationSetting = {
     id: Uuid;
     for: PDFSettingFor;
     pos_x: number;
     pos_y: number;
-    text: string;
-    // ...
+    content: PDFConfigurationContent;
 };
 
-export type PDFConfigurationSettingTime = {
-    type: "PDFConfigurationSettingTime";
-    id: Uuid;
-    for: PDFSettingFor;
-    pos_x: number;
-    pos_y: number;
+export type PDFConfigurationContent = PDFConfigurationContentText | PDFConfigurationContentReference; //...;
+
+export type PDFConfigurationContentText = {
+    type: "PDFConfigurationContentText";
+    text: string;
+};
+
+export type PDFConfigurationContentReference = {
+    type: "PDFConfigurationContentReference";
     reference: string;
-    // ...
 };

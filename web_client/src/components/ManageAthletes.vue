@@ -222,11 +222,11 @@
     import { ApplicationMode, Athlete, Gender, HeatAssignment } from "../functions/interfaceShared";
     import useMainStore from "../stores/main";
     import { ref } from "vue";
-    import { v4 as uuid } from "uuid";
     import SPKStateDot from "./SPKStateDot.vue";
     import { AthleteWithMetadata } from "../functions/interfaceInbound";
     import { numberFromRaceTime } from "../functions/representation";
     import jsPDF from "jspdf";
+    import { uuid } from "../functions/uuid";
 
     const mainStore = useMainStore();
 

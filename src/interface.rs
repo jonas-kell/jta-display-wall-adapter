@@ -1,11 +1,13 @@
 use crate::database::{
-    create_heat_assignment, delete_athlete, delete_heat_assignment, get_all_athletes_meta_data,
-    get_database_static_state, init_database_static_state, DatabaseStaticState,
+    create_heat_assignment, delete_athlete, delete_heat_assignment, delete_pdf_setting,
+    get_all_athletes_meta_data, get_database_static_state, init_database_static_state,
+    DatabaseStaticState,
 };
 use crate::open_webcontrol;
 use crate::server::audio_types::{AudioPlayer, Sound};
 use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::server::export_functions::{generate_meet_data, write_to_xml_output_file};
+use crate::webserver::PDFConfigurationSetting;
 use crate::{
     args::Args,
     client::{ClockState, TimingSettings, TimingStateMachine, TimingUpdate},
@@ -720,6 +722,33 @@ impl ServerStateMachine {
                         }
                     }
                 }
+                MessageFromWebControl::StorePDFConfigurationSetting(set) => {
+                    match set.store_to_database(&self.database_manager) {
+                        Ok(_) => {
+                            debug!("Upserted pdf setting");
+                            self.send_out_all_database_settings_to_webclient();
+                        }
+                        Err(e) => error!(
+                            "Encountered error, while upserting a pdf setting: {}",
+                            e.to_string()
+                        ),
+                    }
+                }
+                MessageFromWebControl::DeletePDFConfigurationSetting(id) => {
+                    match delete_pdf_setting(id, &self.database_manager) {
+                        Ok(_) => {
+                            debug!("Deleted pdf setting");
+                            self.send_out_all_database_settings_to_webclient();
+                        }
+                        Err(e) => error!(
+                            "Encountered error, while deleting a pdf setting: {}",
+                            e.to_string()
+                        ),
+                    }
+                }
+                MessageFromWebControl::RequestPDFConfigurationSettings => {
+                    self.send_out_all_database_settings_to_webclient();
+                }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {
                 Measured(wind_measurement) => {
@@ -732,13 +761,26 @@ impl ServerStateMachine {
         }
     }
 
+    fn send_out_all_database_settings_to_webclient(&mut self) {
+        match PDFConfigurationSetting::get_all_from_database(&self.database_manager) {
+            Ok(data) => {
+                self.send_message_to_web_control(
+                    MessageToWebControl::PDFConfigurationSettingsData(data),
+                );
+            }
+            Err(e) => {
+                error!("Database log loading error for pdf settings: {}", e);
+            }
+        }
+    }
+
     fn send_out_latest_n_logs_to_webclient(&mut self, n: u32) {
         match get_log_limited(Some(n), &self.database_manager) {
             Ok(data) => {
                 self.send_message_to_web_control(MessageToWebControl::Logs(data));
             }
             Err(e) => {
-                error!("Database log loading error: {}", e);
+                error!("Database log loading error for logs: {}", e);
             }
         }
     }

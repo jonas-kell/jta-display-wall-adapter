@@ -7,7 +7,8 @@ use crate::database::db::DatabaseError;
 use crate::database::schema::{
     athletes, database_state, heat_assignments, heat_evaluations, heat_false_starts, heat_finishes,
     heat_intermediates, heat_results, heat_start_lists, heat_starts, heat_wind_missings,
-    heat_winds, internal_wind_measurements, internal_wind_readings, permanent_storage,
+    heat_winds, internal_wind_measurements, internal_wind_readings, pdf_settings,
+    permanent_storage,
 };
 use crate::database::DatabaseManager;
 use crate::server::camera_program_types::{
@@ -15,6 +16,7 @@ use crate::server::camera_program_types::{
     HeatFinish, HeatIntermediate, HeatResult, HeatStart, HeatStartList, HeatWind, HeatWindMissing,
 };
 use crate::times::DayTime;
+use crate::webserver::PDFConfigurationSetting;
 use crate::wind::format::{StartedWindMeasurement, WindMeasurement};
 use chrono::Utc;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
@@ -750,4 +752,30 @@ pub fn get_all_athletes_meta_data(
     }
 
     Ok(res)
+}
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = pdf_settings)]
+pub struct PDFSettingsDatabase {
+    id: String,
+    data: String,
+}
+impl_database_serializable!(
+    PDFConfigurationSetting,
+    PDFSettingsDatabase,
+    pdf_settings::table,
+    pdf_settings::id,
+    |self_obj: &PDFConfigurationSetting| Ok(PDFSettingsDatabase {
+        id: self_obj.id.to_string(),
+        data: serde_json::to_string(self_obj)?,
+    })
+);
+
+pub fn delete_pdf_setting(id: Uuid, manager: &DatabaseManager) -> Result<(), DatabaseError> {
+    let mut conn = manager.get_connection()?;
+
+    diesel::delete(pdf_settings::table::table().filter(pdf_settings::id.eq(id.to_string())))
+        .execute(&mut conn)?;
+
+    Ok(())
 }
