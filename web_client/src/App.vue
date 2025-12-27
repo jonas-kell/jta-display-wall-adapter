@@ -97,6 +97,9 @@
                     <router-link to="/" class="router-link-style">Index</router-link>
                 </v-list-item>
                 <v-list-item>
+                    <router-link to="/heats" class="router-link-style">Heats</router-link>
+                </v-list-item>
+                <v-list-item>
                     <router-link to="/timing" class="router-link-style">Timing</router-link>
                 </v-list-item>
                 <v-list-item
