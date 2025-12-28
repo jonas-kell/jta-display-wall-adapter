@@ -13,11 +13,8 @@ use crate::{
     interface::{ClientState, ClientStateMachine},
 };
 
-const FONT_NUMBER_DEBOUNCER_CAP: usize = 100; // TODO: this is not bad, but caching based on the rightmost chars would be better. -> replace ring buffer with something like that possibly
-                                              // that also would take into account the number of timing decimal places (as with this 100 range, only 2 decimal places really work properly)
-
 pub struct RenderCache {
-    main_number_display_debouncer_street_race: FontWidthDebouncer,
+    main_number_display_width_debouncer_street_race: FontWidthDebouncer,
     main_number_display_width_debouncer_a: FontWidthDebouncer,
     main_number_display_size_debouncer_a: FontSizeDebouncer,
     font_size_cache_freetext: FontSizeChooserCache,
@@ -27,13 +24,9 @@ impl RenderCache {
     pub fn new() -> Self {
         Self {
             // relevant to avoid jittering
-            main_number_display_debouncer_street_race: FontWidthDebouncer::new(
-                FONT_NUMBER_DEBOUNCER_CAP,
-            ),
-            main_number_display_width_debouncer_a: FontWidthDebouncer::new(
-                FONT_NUMBER_DEBOUNCER_CAP,
-            ),
-            main_number_display_size_debouncer_a: FontSizeDebouncer::new(FONT_NUMBER_DEBOUNCER_CAP),
+            main_number_display_width_debouncer_street_race: FontWidthDebouncer::new(),
+            main_number_display_width_debouncer_a: FontWidthDebouncer::new(),
+            main_number_display_size_debouncer_a: FontSizeDebouncer::new(),
             // only caching for performance
             font_size_cache_freetext: FontSizeChooserCache::new(),
             font_size_cache_time_main_number_a: FontSizeChooserCache::new(),
@@ -171,6 +164,25 @@ pub fn render_client_frame(
             }
         }
         ClientState::Timing(timing_state_machine) => {
+            let to_set = match timing_state_machine.settings.max_decimal_places_after_comma {
+                -1 => 0u8,
+                0 => 0,
+                1 => 1,
+                2 => 2,
+                3 => 4,
+                4 => 4,
+                _ => 4,
+            };
+            cache
+                .main_number_display_width_debouncer_street_race
+                .set_debounce_number_chars(to_set);
+            cache
+                .main_number_display_width_debouncer_a
+                .set_debounce_number_chars(to_set);
+            cache
+                .main_number_display_size_debouncer_a
+                .set_debounce_number_chars(to_set);
+
             fill_with_color(JTA_COLOR, meta);
 
             // Title
@@ -206,7 +218,7 @@ pub fn render_client_frame(
                                 330.0,
                                 -5.0,
                                 60.0,
-                                Some(&mut cache.main_number_display_debouncer_street_race),
+                                Some(&mut cache.main_number_display_width_debouncer_street_race),
                                 meta,
                             );
                             draw_text("#1 Max Mustermann", 10.0, 60.0, 18.0, meta);

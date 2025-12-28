@@ -7,7 +7,6 @@ use fontdue::{
 use image::Rgba;
 use image::{DynamicImage, ImageBuffer};
 use images_core::images::ImageMeta;
-use std::{collections::VecDeque, usize};
 
 const TEXT_SIZE_FINDING_STEP: f32 = 1.0; // think if this should be so small // TODO make argument
 
@@ -495,32 +494,43 @@ pub type FontWidthDebouncer = FontDebouncer<usize>;
 pub type FontSizeDebouncer = FontDebouncer<FontChooserResult>;
 
 pub struct FontDebouncer<T> {
-    data: Ringbuffer<T>,
+    data_min: Option<T>,
+    data_max: Option<T>,
+    debounce_num_chars: u8,
     last_added_text: Option<String>,
 }
 impl<T> FontDebouncer<T>
 where
     T: Clone + PartialOrd + Copy,
 {
-    pub fn new(cap: usize) -> Self {
+    pub fn new() -> Self {
         Self {
-            data: Ringbuffer::new_with_capacity(cap),
+            data_min: None,
+            data_max: None,
+            debounce_num_chars: 0,
             last_added_text: None,
+        }
+    }
+
+    pub fn set_debounce_number_chars(&mut self, num: u8) {
+        if self.debounce_num_chars != num {
+            self.debounce_num_chars = num;
+            self.reset();
         }
     }
 
     fn add_number_and_process_max(&mut self, num: T, text: &str) -> T {
         if let Some(last_added_text) = &self.last_added_text {
             if last_added_text != text {
-                self.data.push(num);
+                self.set_min_max(num);
                 self.last_added_text = Some(String::from(text));
             }
         } else {
-            self.data.push(num);
+            self.set_min_max(num);
             self.last_added_text = Some(String::from(text));
         }
 
-        match self.data.get_max() {
+        match self.data_max {
             Some(a) => a,
             None => num,
         }
@@ -529,64 +539,42 @@ where
     fn add_number_and_process_min(&mut self, num: T, text: &str) -> T {
         if let Some(last_added_text) = &self.last_added_text {
             if last_added_text != text {
-                self.data.push(num);
+                self.set_min_max(num);
                 self.last_added_text = Some(String::from(text));
             }
         } else {
-            self.data.push(num);
+            self.set_min_max(num);
             self.last_added_text = Some(String::from(text));
         }
 
-        match self.data.get_min() {
+        match self.data_min {
             Some(a) => a,
             None => num,
         }
     }
 
+    fn set_min_max(&mut self, num: T) {
+        if let Some(curr_max) = self.data_max {
+            if curr_max <= num {
+                self.data_max = Some(num);
+            }
+        } else {
+            self.data_max = Some(num);
+        }
+
+        if let Some(curr_min) = self.data_min {
+            if curr_min >= num {
+                self.data_min = Some(num);
+            }
+        } else {
+            self.data_min = Some(num);
+        }
+    }
+
     fn reset(&mut self) {
         self.last_added_text = None;
-        self.data.empty();
-    }
-}
-
-struct Ringbuffer<T> {
-    data: VecDeque<T>,
-    capacity: usize,
-}
-impl<T> Ringbuffer<T>
-where
-    T: Clone + PartialOrd,
-{
-    pub fn new_with_capacity(cap: usize) -> Self {
-        Self {
-            capacity: cap,
-            data: VecDeque::with_capacity(cap),
-        }
-    }
-
-    pub fn push(&mut self, elem: T) {
-        self.data.push_front(elem);
-        if self.data.len() > self.capacity {
-            self.data.pop_back();
-        }
-    }
-
-    pub fn get_max(&self) -> Option<T> {
-        self.data
-            .iter()
-            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
-            .cloned()
-    }
-
-    pub fn get_min(&self) -> Option<T> {
-        self.data
-            .iter()
-            .min_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
-            .cloned()
-    }
-
-    pub fn empty(&mut self) {
-        self.data.clear();
+        self.data_max = None;
+        self.data_min = None;
     }
 }
 
