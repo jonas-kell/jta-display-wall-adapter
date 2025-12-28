@@ -661,7 +661,8 @@ pub fn draw_image_at_opacity(
 }
 
 pub type Color = [u8; 3];
-pub const JTA_COLOR: Color = [46, 46, 46];
+pub const JTA_GRAY_COLOR: Color = [46, 46, 46];
+pub const JTA_GREEN_COLOR: Color = [91, 184, 159];
 
 pub fn fill_with_color(color: Color, meta: &mut RasterizerMeta) {
     let [r, g, b] = color;
@@ -669,6 +670,30 @@ pub fn fill_with_color(color: Color, meta: &mut RasterizerMeta) {
     meta.frame
         .chunks_mut(4)
         .for_each(|px| px.copy_from_slice(&pixel));
+}
+
+pub fn fill_box_with_color(
+    x: usize,
+    y: usize,
+    width: usize,
+    height: usize,
+    color: Color,
+    meta: &mut RasterizerMeta,
+) {
+    let [r, g, b] = color;
+    let pixel = [r, g, b, 255u8];
+
+    let x_start = 0usize.max(x).min(meta.texture_width);
+    let x_end = 0usize.max(x + width).min(meta.texture_width);
+    let y_start = 0usize.max(y).min(meta.texture_height);
+    let y_end = 0usize.max(y + height).min(meta.texture_height);
+
+    for x in x_start..x_end {
+        for y in y_start..y_end {
+            let index = (x + y * meta.texture_width) * 4;
+            meta.frame[index..index + 4].copy_from_slice(&pixel);
+        }
+    }
 }
 
 pub fn clear(meta: &mut RasterizerMeta) {

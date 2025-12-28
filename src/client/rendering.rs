@@ -4,8 +4,9 @@ use crate::{
         rasterizing::{
             clear, draw_image, draw_image_at_opacity, draw_text, draw_text_as_big_as_possible,
             draw_text_as_big_as_possible_right_aligned, draw_text_right_aligned,
-            draw_text_scrolling_with_width, fill_with_color, FontSizeChooserCache,
-            FontSizeDebouncer, FontWidthDebouncer, RasterizerMeta, JTA_COLOR,
+            draw_text_scrolling_with_width, fill_box_with_color, fill_with_color,
+            FontSizeChooserCache, FontSizeDebouncer, FontWidthDebouncer, RasterizerMeta,
+            JTA_GRAY_COLOR, JTA_GREEN_COLOR,
         },
         timing::TimingMode,
         FRAME_TIME_NS,
@@ -15,10 +16,19 @@ use crate::{
 
 pub struct RenderCache {
     main_number_display_width_debouncer_street_race: FontWidthDebouncer,
-    main_number_display_width_debouncer_a: FontWidthDebouncer,
-    main_number_display_size_debouncer_a: FontSizeDebouncer,
     font_size_cache_freetext: FontSizeChooserCache,
     font_size_cache_time_main_number_a: FontSizeChooserCache,
+    font_size_cache_time_main_number_b: FontSizeChooserCache,
+    font_size_cache_time_main_number_c: FontSizeChooserCache,
+    font_size_cache_time_main_number_d: FontSizeChooserCache,
+    main_number_display_width_debouncer_a: FontWidthDebouncer,
+    main_number_display_width_debouncer_b: FontWidthDebouncer,
+    main_number_display_width_debouncer_c: FontWidthDebouncer,
+    main_number_display_width_debouncer_d: FontWidthDebouncer,
+    main_number_display_size_debouncer_a: FontSizeDebouncer,
+    main_number_display_size_debouncer_b: FontSizeDebouncer,
+    main_number_display_size_debouncer_c: FontSizeDebouncer,
+    main_number_display_size_debouncer_d: FontSizeDebouncer,
 }
 impl RenderCache {
     pub fn new() -> Self {
@@ -26,10 +36,19 @@ impl RenderCache {
             // relevant to avoid jittering
             main_number_display_width_debouncer_street_race: FontWidthDebouncer::new(),
             main_number_display_width_debouncer_a: FontWidthDebouncer::new(),
+            main_number_display_width_debouncer_b: FontWidthDebouncer::new(),
+            main_number_display_width_debouncer_c: FontWidthDebouncer::new(),
+            main_number_display_width_debouncer_d: FontWidthDebouncer::new(),
             main_number_display_size_debouncer_a: FontSizeDebouncer::new(),
+            main_number_display_size_debouncer_b: FontSizeDebouncer::new(),
+            main_number_display_size_debouncer_c: FontSizeDebouncer::new(),
+            main_number_display_size_debouncer_d: FontSizeDebouncer::new(),
             // only caching for performance
             font_size_cache_freetext: FontSizeChooserCache::new(),
             font_size_cache_time_main_number_a: FontSizeChooserCache::new(),
+            font_size_cache_time_main_number_b: FontSizeChooserCache::new(),
+            font_size_cache_time_main_number_c: FontSizeChooserCache::new(),
+            font_size_cache_time_main_number_d: FontSizeChooserCache::new(),
         }
     }
 }
@@ -44,7 +63,7 @@ pub fn render_client_frame(
             clear(meta);
         }
         ClientState::Idle => {
-            fill_with_color(JTA_COLOR, meta);
+            fill_with_color(JTA_GRAY_COLOR, meta);
 
             let logo = &state.permanent_images_storage.jta_logo;
 
@@ -183,27 +202,52 @@ pub fn render_client_frame(
                 .main_number_display_size_debouncer_a
                 .set_debounce_number_chars(to_set);
 
-            fill_with_color(JTA_COLOR, meta);
+            fill_with_color(JTA_GRAY_COLOR, meta);
+
+            fn has_title(mode: &TimingTimeDisplayMode) -> bool {
+                match mode {
+                    TimingTimeDisplayMode::StreetRun => false,
+                    TimingTimeDisplayMode::TimeBigAndHold => false,
+                    TimingTimeDisplayMode::TimeBigAndHoldTop => false,
+                    TimingTimeDisplayMode::TimeBigAndHoldTopWithRunName => true,
+                    TimingTimeDisplayMode::TimeBigAndHoldWithRunName => true,
+                }
+            }
+
+            let window_width: f32 = meta.texture_width as f32;
+            let window_height: f32 = meta.texture_height as f32;
+            let title_height = meta.texture_height / 5;
+            let text_height = meta.texture_height / 6;
+            let border = window_width / 36.0;
 
             // Title
-            if let Some(tsm) = &timing_state_machine.meta {
-                draw_text_scrolling_with_width(
-                    &tsm.title,
-                    10.0,
-                    10.0,
-                    20.0,
-                    (meta.texture_width - 30) as f32,
-                    state.frame_counter,
+            if !(timing_state_machine.timing_mode == TimingMode::Timing
+                && !has_title(&timing_state_machine.settings.mode))
+            {
+                fill_box_with_color(
+                    0,
+                    0,
+                    meta.texture_width,
+                    title_height,
+                    JTA_GREEN_COLOR,
                     meta,
                 );
+
+                if let Some(tsm) = &timing_state_machine.meta {
+                    draw_text_scrolling_with_width(
+                        &tsm.title,
+                        border,
+                        0.0,
+                        text_height as f32,
+                        meta.texture_width as f32 - 2.0 * border,
+                        state.frame_counter,
+                        meta,
+                    );
+                }
             }
 
             match &timing_state_machine.timing_mode {
                 TimingMode::Timing => {
-                    let window_width: f32 = meta.texture_width as f32;
-                    let window_height: f32 = meta.texture_height as f32;
-                    let border = window_width / 36.0;
-
                     match timing_state_machine.settings.mode {
                         TimingTimeDisplayMode::StreetRun => {
                             draw_text_right_aligned(
@@ -246,38 +290,56 @@ pub fn render_client_frame(
                             );
                         }
                         TimingTimeDisplayMode::TimeBigAndHoldTop => {
-                            if timing_state_machine.race_finished() {
-                                draw_text("Finished", 150.0, 30.0, 20.0, meta);
-                            }
-                            if let Some(hts) = timing_state_machine.get_held_display_race_time() {
-                                draw_text(
-                                    &hts.held_at_time
-                                        .optimize_representation_for_display(Some(
-                                            timing_state_machine
-                                                .settings
-                                                .max_decimal_places_after_comma,
-                                        ))
-                                        .to_string(),
-                                    10.0,
-                                    50.0,
-                                    20.0,
-                                    meta,
-                                );
-                                if let Some(held_distance) = hts.held_at_m {
-                                    draw_text(
-                                        &format!("{}m", held_distance),
-                                        150.0,
-                                        50.0,
-                                        20.0,
-                                        meta,
-                                    );
-                                }
-                            }
-                        }
-                        TimingTimeDisplayMode::TimeBigAndHoldTopWithRunName => {
                             draw_text("Not implemented", 10.0, 10.0, 20.0, meta);
+                            // if timing_state_machine.race_finished() {
+                            //     draw_text("Finished", 150.0, 30.0, 20.0, meta);
+                            // }
+                            // if let Some(hts) = timing_state_machine.get_held_display_race_time() {
+                            //     draw_text(
+                            //         &hts.held_at_time
+                            //             .optimize_representation_for_display(Some(
+                            //                 timing_state_machine
+                            //                     .settings
+                            //                     .max_decimal_places_after_comma,
+                            //             ))
+                            //             .to_string(),
+                            //         10.0,
+                            //         50.0,
+                            //         20.0,
+                            //         meta,
+                            //     );
+                            //     if let Some(held_distance) = hts.held_at_m {
+                            //         draw_text(
+                            //             &format!("{}m", held_distance),
+                            //             150.0,
+                            //             50.0,
+                            //             20.0,
+                            //             meta,
+                            //         );
+                            //     }
+                            // }
                         }
                         TimingTimeDisplayMode::TimeBigAndHoldWithRunName => {
+                            draw_text_as_big_as_possible_right_aligned(
+                                &timing_state_machine
+                                    .get_main_display_race_time()
+                                    .optimize_representation_for_display(Some(
+                                        timing_state_machine
+                                            .settings
+                                            .max_decimal_places_after_comma,
+                                    ))
+                                    .to_string(),
+                                window_width - border,
+                                title_height as f32,
+                                (window_width - 2.0 * border) as usize,
+                                window_height as usize - title_height,
+                                &mut cache.font_size_cache_time_main_number_c,
+                                Some(&mut cache.main_number_display_width_debouncer_c),
+                                Some(&mut cache.main_number_display_size_debouncer_c),
+                                meta,
+                            );
+                        }
+                        TimingTimeDisplayMode::TimeBigAndHoldTopWithRunName => {
                             draw_text("Not implemented", 10.0, 10.0, 20.0, meta);
                         }
                     }
@@ -304,7 +366,7 @@ pub fn render_client_frame(
             }
         }
         ClientState::Clock(clock_state) => {
-            fill_with_color(JTA_COLOR, meta);
+            fill_with_color(JTA_GRAY_COLOR, meta);
 
             draw_text("Clock:", 10.0, 10.0, 20.0, meta);
             draw_text(
