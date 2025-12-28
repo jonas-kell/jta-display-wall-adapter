@@ -7,6 +7,7 @@ use fontdue::{
 use image::Rgba;
 use image::{DynamicImage, ImageBuffer};
 use images_core::images::ImageMeta;
+use std::collections::HashMap;
 
 const TEXT_SIZE_FINDING_STEP: f32 = 1.0; // think if this should be so small // TODO make argument
 
@@ -267,7 +268,7 @@ impl FontSizeChooserCache {
                         result_height = debounced_size.2;
                     } else {
                         // reset debouncer, as the value just jumped bigtime
-                        debouncer.reset();
+                        debouncer.reset_for_len(text);
                     }
                 }
             }
@@ -383,7 +384,7 @@ fn draw_text_scrolling_with_width_internal(
                     compare_from_debouncer as isize
                 } else {
                     // reset debouncer, as the value just jumped bigtime
-                    debouncer.reset();
+                    debouncer.reset_for_len(text);
                     text_width as isize
                 }
             }
@@ -494,8 +495,7 @@ pub type FontWidthDebouncer = FontDebouncer<usize>;
 pub type FontSizeDebouncer = FontDebouncer<FontChooserResult>;
 
 pub struct FontDebouncer<T> {
-    data_min: Option<T>,
-    data_max: Option<T>,
+    data_min_max: HashMap<usize, (T, T)>,
     debounce_num_chars: u8,
     last_added_text: Option<String>,
 }
@@ -505,8 +505,7 @@ where
 {
     pub fn new() -> Self {
         Self {
-            data_min: None,
-            data_max: None,
+            data_min_max: HashMap::new(),
             debounce_num_chars: 0,
             last_added_text: None,
         }
@@ -520,61 +519,67 @@ where
     }
 
     fn add_number_and_process_max(&mut self, num: T, text: &str) -> T {
+        let len = text.len();
+
         if let Some(last_added_text) = &self.last_added_text {
             if last_added_text != text {
-                self.set_min_max(num);
+                self.set_min_max(num, len);
                 self.last_added_text = Some(String::from(text));
             }
         } else {
-            self.set_min_max(num);
+            self.set_min_max(num, len);
             self.last_added_text = Some(String::from(text));
         }
 
-        match self.data_max {
-            Some(a) => a,
+        match self.data_min_max.get(&len) {
+            Some(a) => a.1,
             None => num,
         }
     }
 
     fn add_number_and_process_min(&mut self, num: T, text: &str) -> T {
+        let len = text.len();
+
         if let Some(last_added_text) = &self.last_added_text {
             if last_added_text != text {
-                self.set_min_max(num);
+                self.set_min_max(num, len);
                 self.last_added_text = Some(String::from(text));
             }
         } else {
-            self.set_min_max(num);
+            self.set_min_max(num, len);
             self.last_added_text = Some(String::from(text));
         }
 
-        match self.data_min {
-            Some(a) => a,
+        match self.data_min_max.get(&len) {
+            Some(a) => a.0,
             None => num,
         }
     }
 
-    fn set_min_max(&mut self, num: T) {
-        if let Some(curr_max) = self.data_max {
-            if curr_max <= num {
-                self.data_max = Some(num);
+    fn set_min_max(&mut self, num: T, str_len: usize) {
+        if let Some((curr_min, curr_max)) = self.data_min_max.get(&str_len) {
+            if *curr_min >= num && *curr_max <= num {
+                self.data_min_max.insert(str_len, (num, num));
+            } else if *curr_min >= num && *curr_max > num {
+                self.data_min_max.insert(str_len, (num, *curr_max));
+            } else if *curr_min < num && *curr_max <= num {
+                self.data_min_max.insert(str_len, (*curr_min, num));
+            } else {
+                // already the current one correct
             }
         } else {
-            self.data_max = Some(num);
-        }
-
-        if let Some(curr_min) = self.data_min {
-            if curr_min >= num {
-                self.data_min = Some(num);
-            }
-        } else {
-            self.data_min = Some(num);
+            self.data_min_max.insert(str_len, (num, num));
         }
     }
 
     fn reset(&mut self) {
         self.last_added_text = None;
-        self.data_max = None;
-        self.data_min = None;
+        self.data_min_max.clear();
+    }
+
+    fn reset_for_len(&mut self, text: &str) {
+        self.last_added_text = None;
+        self.data_min_max.remove(&text.len());
     }
 }
 
