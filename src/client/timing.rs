@@ -13,6 +13,15 @@ use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum TimingTimeDisplayMode {
+    TimeBigAndHold,
+    TimeBigAndHoldTop,
+    TimeBigAndHoldWithRunName,
+    TimeBigAndHoldTopWithRunName,
+    StreetRun,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TimingSettings {
     pub fireworks_on_intermediate: bool,
     pub fireworks_on_finish: bool,
@@ -26,6 +35,7 @@ pub struct TimingSettings {
     pub switch_to_start_list_automatically: bool,
     pub switch_to_timing_automatically: bool,
     pub switch_to_results_automatically: bool,
+    pub mode: TimingTimeDisplayMode,
 }
 impl TimingSettings {
     pub fn new(args: &Args) -> Self {
@@ -42,6 +52,7 @@ impl TimingSettings {
             switch_to_start_list_automatically: true,
             switch_to_timing_automatically: true,
             switch_to_results_automatically: false,
+            mode: TimingTimeDisplayMode::TimeBigAndHoldWithRunName,
         }
     }
 }

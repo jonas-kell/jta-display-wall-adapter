@@ -1,9 +1,11 @@
+use super::timing::TimingTimeDisplayMode;
 use crate::{
     client::{
         rasterizing::{
             clear, draw_image, draw_image_at_opacity, draw_text, draw_text_as_big_as_possible,
-            draw_text_right_aligned, draw_text_scrolling_with_width, fill_with_color,
-            FontPositionDebouncer, FontSizeChooserCache, RasterizerMeta, JTA_COLOR,
+            draw_text_as_big_as_possible_right_aligned, draw_text_right_aligned,
+            draw_text_scrolling_with_width, fill_with_color, FontSizeChooserCache,
+            FontSizeDebouncer, FontWidthDebouncer, RasterizerMeta, JTA_COLOR,
         },
         timing::TimingMode,
         FRAME_TIME_NS,
@@ -11,15 +13,30 @@ use crate::{
     interface::{ClientState, ClientStateMachine},
 };
 
+const FONT_NUMBER_DEBOUNCER_CAP: usize = 100; // TODO: this is not bad, but caching based on the rightmost chars would be better. -> replace ring buffer with something like that possibly
+                                              // that also would take into account the number of timing decimal places (as with this 100 range, only 2 decimal places really work properly)
+
 pub struct RenderCache {
-    main_number_display_debouncer: FontPositionDebouncer,
-    font_size_cache: FontSizeChooserCache,
+    main_number_display_debouncer_street_race: FontWidthDebouncer,
+    main_number_display_width_debouncer_a: FontWidthDebouncer,
+    main_number_display_size_debouncer_a: FontSizeDebouncer,
+    font_size_cache_freetext: FontSizeChooserCache,
+    font_size_cache_time_main_number_a: FontSizeChooserCache,
 }
 impl RenderCache {
     pub fn new() -> Self {
         Self {
-            main_number_display_debouncer: FontPositionDebouncer::new_for_number_debouncing(),
-            font_size_cache: FontSizeChooserCache::new(),
+            // relevant to avoid jittering
+            main_number_display_debouncer_street_race: FontWidthDebouncer::new(
+                FONT_NUMBER_DEBOUNCER_CAP,
+            ),
+            main_number_display_width_debouncer_a: FontWidthDebouncer::new(
+                FONT_NUMBER_DEBOUNCER_CAP,
+            ),
+            main_number_display_size_debouncer_a: FontSizeDebouncer::new(FONT_NUMBER_DEBOUNCER_CAP),
+            // only caching for performance
+            font_size_cache_freetext: FontSizeChooserCache::new(),
+            font_size_cache_time_main_number_a: FontSizeChooserCache::new(),
         }
     }
 }
@@ -74,7 +91,7 @@ pub fn render_client_frame(
                 0.0,
                 meta.texture_width.saturating_sub(10),
                 meta.texture_height,
-                &mut cache.font_size_cache,
+                &mut cache.font_size_cache_freetext,
                 meta,
             );
         }
@@ -171,38 +188,85 @@ pub fn render_client_frame(
 
             match &timing_state_machine.timing_mode {
                 TimingMode::Timing => {
-                    // line 1
-                    draw_text_right_aligned(
-                        &timing_state_machine
-                            .get_main_display_race_time()
-                            .optimize_representation_for_display(Some(
-                                timing_state_machine.settings.max_decimal_places_after_comma,
-                            ))
-                            .to_string(),
-                        130.0,
-                        30.0,
-                        20.0,
-                        Some(&mut cache.main_number_display_debouncer),
-                        meta,
-                    );
-                    if timing_state_machine.race_finished() {
-                        draw_text("Finished", 150.0, 30.0, 20.0, meta);
-                    }
-                    // line 2
-                    if let Some(hts) = timing_state_machine.get_held_display_race_time() {
-                        draw_text(
-                            &hts.held_at_time
-                                .optimize_representation_for_display(Some(
-                                    timing_state_machine.settings.max_decimal_places_after_comma,
-                                ))
-                                .to_string(),
-                            10.0,
-                            50.0,
-                            20.0,
-                            meta,
-                        );
-                        if let Some(held_distance) = hts.held_at_m {
-                            draw_text(&format!("{}m", held_distance), 150.0, 50.0, 20.0, meta);
+                    let window_width: f32 = meta.texture_width as f32;
+                    let window_height: f32 = meta.texture_height as f32;
+                    let border = window_width / 36.0;
+
+                    match timing_state_machine.settings.mode {
+                        TimingTimeDisplayMode::StreetRun => {
+                            draw_text_right_aligned(
+                                &timing_state_machine
+                                    .get_main_display_race_time()
+                                    .optimize_representation_for_display(Some(
+                                        timing_state_machine
+                                            .settings
+                                            .max_decimal_places_after_comma,
+                                    ))
+                                    .to_string(),
+                                330.0,
+                                -5.0,
+                                60.0,
+                                Some(&mut cache.main_number_display_debouncer_street_race),
+                                meta,
+                            );
+                            draw_text("#1 Max Mustermann", 10.0, 60.0, 18.0, meta);
+                            draw_text("#2 John Doe", 10.0, 80.0, 18.0, meta);
+                            draw_text("#3 Miriam Musterfrau (Runde 1/4)", 10.0, 100.0, 18.0, meta);
+                        }
+                        TimingTimeDisplayMode::TimeBigAndHold => {
+                            draw_text_as_big_as_possible_right_aligned(
+                                &timing_state_machine
+                                    .get_main_display_race_time()
+                                    .optimize_representation_for_display(Some(
+                                        timing_state_machine
+                                            .settings
+                                            .max_decimal_places_after_comma,
+                                    ))
+                                    .to_string(),
+                                window_width - border,
+                                0.0,
+                                (window_width - 2.0 * border) as usize,
+                                window_height as usize,
+                                &mut cache.font_size_cache_time_main_number_a,
+                                Some(&mut cache.main_number_display_width_debouncer_a),
+                                Some(&mut cache.main_number_display_size_debouncer_a),
+                                meta,
+                            );
+                        }
+                        TimingTimeDisplayMode::TimeBigAndHoldTop => {
+                            if timing_state_machine.race_finished() {
+                                draw_text("Finished", 150.0, 30.0, 20.0, meta);
+                            }
+                            if let Some(hts) = timing_state_machine.get_held_display_race_time() {
+                                draw_text(
+                                    &hts.held_at_time
+                                        .optimize_representation_for_display(Some(
+                                            timing_state_machine
+                                                .settings
+                                                .max_decimal_places_after_comma,
+                                        ))
+                                        .to_string(),
+                                    10.0,
+                                    50.0,
+                                    20.0,
+                                    meta,
+                                );
+                                if let Some(held_distance) = hts.held_at_m {
+                                    draw_text(
+                                        &format!("{}m", held_distance),
+                                        150.0,
+                                        50.0,
+                                        20.0,
+                                        meta,
+                                    );
+                                }
+                            }
+                        }
+                        TimingTimeDisplayMode::TimeBigAndHoldTopWithRunName => {
+                            draw_text("Not implemented", 10.0, 10.0, 20.0, meta);
+                        }
+                        TimingTimeDisplayMode::TimeBigAndHoldWithRunName => {
+                            draw_text("Not implemented", 10.0, 10.0, 20.0, meta);
                         }
                     }
 

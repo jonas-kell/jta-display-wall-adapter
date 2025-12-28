@@ -19,6 +19,14 @@
                 <h3 class="mt-4">Settings</h3>
                 <template v-if="mainStore.timingSettings">
                     <div>
+                        <v-select
+                            density="compact"
+                            :items="Object.values(TimingTimeDisplayMode)"
+                            width="250"
+                            hide-details
+                            class="mt-1"
+                            v-model="mainStore.timingSettings.mode"
+                        ></v-select>
                         <v-text-field
                             density="compact"
                             type="number"
@@ -144,6 +152,7 @@
 </template>
 
 <script setup lang="ts">
+    import { TimingTimeDisplayMode } from "../functions/interfaceShared";
     import useMainStore from "../stores/main";
     import TimingButtons from "./TimingButtons.vue";
 

@@ -1,5 +1,13 @@
 export type Uuid = string;
 
+export enum TimingTimeDisplayMode {
+    TimeBigAndHold = "TimeBigAndHold",
+    TimeBigAndHoldTop = "TimeBigAndHoldTop",
+    TimeBigAndHoldWithRunName = "TimeBigAndHoldWithRunName",
+    TimeBigAndHoldTopWithRunName = "TimeBigAndHoldTopWithRunName",
+    StreetRun = "StreetRun",
+}
+
 export type TimingSettings = {
     fireworks_on_intermediate: boolean;
     fireworks_on_finish: boolean;
@@ -13,6 +21,7 @@ export type TimingSettings = {
     switch_to_start_list_automatically: boolean;
     switch_to_timing_automatically: boolean;
     switch_to_results_automatically: boolean;
+    mode: TimingTimeDisplayMode;
 };
 
 export enum ApplicationMode {

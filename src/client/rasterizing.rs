@@ -7,7 +7,9 @@ use fontdue::{
 use image::Rgba;
 use image::{DynamicImage, ImageBuffer};
 use images_core::images::ImageMeta;
-use std::collections::VecDeque;
+use std::{collections::VecDeque, usize};
+
+const TEXT_SIZE_FINDING_STEP: f32 = 1.0; // think if this should be so small // TODO make argument
 
 pub struct RasterizerMeta<'a> {
     pub font: &'a Font,
@@ -53,43 +55,17 @@ pub fn draw_text_as_big_as_possible(
     meta: &mut RasterizerMeta,
 ) {
     // relatively expensive process -> cache
-    let (result_text_size, result_width, result_height) =
-        if let Some(font_size_cached) = font_size_cache.check_cache(text, max_width, max_height) {
-            font_size_cached
-        } else {
-            const TEXT_SIZE_FINDING_STEP: f32 = 1.0; // think if this should be so small
-            const MAX_STEPS: usize = 400;
-
-            let mut current_text_size = 0f32;
-            let mut step = 0;
-            let mut result_width = 0;
-            let mut result_height = 0;
-            loop {
-                layout_text(
-                    text,
-                    Some(0f32),
-                    None,
-                    current_text_size + TEXT_SIZE_FINDING_STEP,
-                    meta,
-                );
-                let (_, text_width, text_height) = text_meta_data(0f32, &meta.font_layout);
-
-                if text_width > max_width || text_height > max_height {
-                    break;
-                } else {
-                    result_width = text_width;
-                    result_height = text_height;
-                    current_text_size += TEXT_SIZE_FINDING_STEP; // now it is set, to what it was tested on before.
-                }
-
-                step += 1;
-                if step > MAX_STEPS {
-                    break;
-                }
-            }
-
-            (current_text_size, result_width, result_height)
-        };
+    let (result_text_size, result_width, result_height) = font_size_cache
+        .cached_or_computed(
+            text,
+            max_width,
+            max_height,
+            TEXT_SIZE_FINDING_STEP,
+            (meta.texture_height as f32 / TEXT_SIZE_FINDING_STEP) as usize,
+            None,
+            meta,
+        )
+        .values();
 
     let x_space = max_width.saturating_sub(result_width) / 2;
     let y_space = max_height.saturating_sub(result_height) / 2;
@@ -101,14 +77,85 @@ pub fn draw_text_as_big_as_possible(
         result_text_size,
         meta,
     );
-    font_size_cache.update_cache(
+}
+
+pub fn draw_text_as_big_as_possible_right_aligned(
+    text: &str,
+    pos_x: f32,
+    pos_y: f32,
+    max_width: usize,
+    max_height: usize,
+    font_size_cache: &mut FontSizeChooserCache,
+    debouncer_width: Option<&mut FontWidthDebouncer>,
+    debouncer_size: Option<&mut FontSizeDebouncer>,
+    meta: &mut RasterizerMeta,
+) {
+    // relatively expensive process -> cache
+    let (result_text_size, _, result_height) = font_size_cache
+        .cached_or_computed(
+            text,
+            max_width,
+            max_height,
+            TEXT_SIZE_FINDING_STEP,
+            (meta.texture_height as f32 / TEXT_SIZE_FINDING_STEP) as usize,
+            debouncer_size,
+            meta,
+        )
+        .values();
+
+    let y_space = max_height.saturating_sub(result_height) / 2;
+
+    // if the box is as wide as possible, there will be no scrolling
+    // no animation necessary for static text, therefore frame = 0
+    draw_text_scrolling_with_width_internal(
         text,
-        max_width,
-        max_height,
+        pos_x,
+        pos_y + y_space as f32,
         result_text_size,
-        result_width,
-        result_height,
+        f32::MAX,
+        0,
+        false,
+        debouncer_width,
+        meta,
     );
+}
+
+#[derive(Copy, Clone)]
+pub struct FontChooserResult(f32, usize, usize);
+impl FontChooserResult {
+    pub fn values(&self) -> (f32, usize, usize) {
+        return (self.0, self.1, self.2);
+    }
+}
+impl PartialEq for FontChooserResult {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.eq(&other.0)
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        self.0.ne(&other.0)
+    }
+}
+impl PartialOrd for FontChooserResult {
+    fn ge(&self, other: &Self) -> bool {
+        self.0.ge(&other.0)
+    }
+
+    fn gt(&self, other: &Self) -> bool {
+        self.0.gt(&other.0)
+    }
+
+    fn le(&self, other: &Self) -> bool {
+        self.0.le(&other.0)
+    }
+
+    fn lt(&self, other: &Self) -> bool {
+        self.0.lt(&other.0)
+    }
+
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
 }
 
 pub struct FontSizeChooserCache {
@@ -146,17 +193,96 @@ impl FontSizeChooserCache {
         &self,
         text: &str,
         max_width: usize,
-        max_heigh: usize,
-    ) -> Option<(f32, usize, usize)> {
+        max_height: usize,
+    ) -> Option<FontChooserResult> {
         match &self.key {
             Some((key_txt, key_width, key_height)) => {
-                if key_txt == text && max_width == *key_width && max_heigh == *key_height {
-                    Some((self.size, self.width, self.height))
+                if key_txt == text && max_width == *key_width && max_height == *key_height {
+                    Some(FontChooserResult(self.size, self.width, self.height))
                 } else {
                     None
                 }
             }
             None => None,
+        }
+    }
+
+    fn cached_or_computed(
+        &mut self,
+        text: &str,
+        max_width: usize,
+        max_height: usize,
+        text_size_finding_step: f32,
+        max_steps: usize,
+        debouncer: Option<&mut FontSizeDebouncer>,
+        meta: &mut RasterizerMeta,
+    ) -> FontChooserResult {
+        if let Some(font_size_cached) = self.check_cache(text, max_width, max_height) {
+            font_size_cached
+        } else {
+            let mut current_text_size = 0f32; // TODO start with a cache value and go down from there, possibly to make it more efficient
+            let mut step = 0;
+            let mut result_width = 0;
+            let mut result_height = 0;
+            let mut glyphs: Option<&Vec<GlyphPosition>>;
+
+            loop {
+                layout_text(
+                    text,
+                    Some(0f32),
+                    None,
+                    current_text_size + text_size_finding_step,
+                    meta,
+                );
+                let (gly, text_width, text_height) = text_meta_data(0f32, &meta.font_layout);
+                glyphs = Some(gly);
+
+                if text_width > max_width || text_height > max_height {
+                    break;
+                } else {
+                    result_width = text_width;
+                    result_height = text_height;
+                    current_text_size += text_size_finding_step; // now it is set, to what it was tested on before.
+                }
+
+                step += 1;
+                if step > max_steps {
+                    break;
+                }
+            }
+
+            if let Some(debouncer) = debouncer {
+                if let Some(glyphs) = glyphs {
+                    let glyh_width = widest_glyph(glyphs);
+                    let debounced_size = debouncer.add_number_and_process_min(
+                        FontChooserResult(current_text_size, result_width, result_height),
+                        text,
+                    );
+
+                    if debounced_size.1 <= result_width
+                        && result_width - glyh_width / 2 < debounced_size.1
+                    {
+                        // take debounced value
+                        current_text_size = debounced_size.0;
+                        result_width = debounced_size.1;
+                        result_height = debounced_size.2;
+                    } else {
+                        // reset debouncer, as the value just jumped bigtime
+                        debouncer.reset();
+                    }
+                }
+            }
+
+            self.update_cache(
+                text,
+                max_width,
+                max_height,
+                current_text_size,
+                result_width,
+                result_height,
+            );
+
+            FontChooserResult(current_text_size, result_width, result_height)
         }
     }
 }
@@ -191,7 +317,7 @@ fn draw_text_scrolling_with_width_internal(
     box_w: f32,
     global_frame: u64,
     left_align: bool, // this must be set to true for scrolling (alignment does not make sense anyway with scrolling)
-    debouncer: Option<&mut FontPositionDebouncer>,
+    debouncer: Option<&mut FontWidthDebouncer>,
     meta: &mut RasterizerMeta,
 ) {
     // calculate bounding box for moving text
@@ -249,7 +375,7 @@ fn draw_text_scrolling_with_width_internal(
 
         match debouncer {
             Some(debouncer) => {
-                let compare_from_debouncer = debouncer.add_width_and_process(text_width, text);
+                let compare_from_debouncer = debouncer.add_number_and_process_max(text_width, text);
 
                 if compare_from_debouncer >= text_width
                     && text_width + glyh_width / 2 > compare_from_debouncer
@@ -347,7 +473,7 @@ pub fn draw_text_right_aligned(
     x: f32,
     y: f32,
     script_size: f32,
-    debouncer: Option<&mut FontPositionDebouncer>,
+    debouncer: Option<&mut FontWidthDebouncer>,
     meta: &mut RasterizerMeta,
 ) {
     // if the box is as wide as possible, there will be no scrolling
@@ -365,32 +491,55 @@ pub fn draw_text_right_aligned(
     );
 }
 
-pub struct FontPositionDebouncer {
-    data: Ringbuffer<usize>,
+pub type FontWidthDebouncer = FontDebouncer<usize>;
+pub type FontSizeDebouncer = FontDebouncer<FontChooserResult>;
+
+pub struct FontDebouncer<T> {
+    data: Ringbuffer<T>,
     last_added_text: Option<String>,
 }
-impl FontPositionDebouncer {
-    pub fn new_for_number_debouncing() -> Self {
+impl<T> FontDebouncer<T>
+where
+    T: Clone + PartialOrd + Copy,
+{
+    pub fn new(cap: usize) -> Self {
         Self {
-            data: Ringbuffer::new_with_capacity(10),
+            data: Ringbuffer::new_with_capacity(cap),
             last_added_text: None,
         }
     }
 
-    fn add_width_and_process(&mut self, width: usize, text: &str) -> usize {
+    fn add_number_and_process_max(&mut self, num: T, text: &str) -> T {
         if let Some(last_added_text) = &self.last_added_text {
             if last_added_text != text {
-                self.data.push(width);
+                self.data.push(num);
                 self.last_added_text = Some(String::from(text));
             }
         } else {
-            self.data.push(width);
+            self.data.push(num);
             self.last_added_text = Some(String::from(text));
         }
 
         match self.data.get_max() {
             Some(a) => a,
-            None => width,
+            None => num,
+        }
+    }
+
+    fn add_number_and_process_min(&mut self, num: T, text: &str) -> T {
+        if let Some(last_added_text) = &self.last_added_text {
+            if last_added_text != text {
+                self.data.push(num);
+                self.last_added_text = Some(String::from(text));
+            }
+        } else {
+            self.data.push(num);
+            self.last_added_text = Some(String::from(text));
+        }
+
+        match self.data.get_min() {
+            Some(a) => a,
+            None => num,
         }
     }
 
@@ -406,7 +555,7 @@ struct Ringbuffer<T> {
 }
 impl<T> Ringbuffer<T>
 where
-    T: Clone + Ord,
+    T: Clone + PartialOrd,
 {
     pub fn new_with_capacity(cap: usize) -> Self {
         Self {
@@ -423,7 +572,17 @@ where
     }
 
     pub fn get_max(&self) -> Option<T> {
-        self.data.iter().max().cloned()
+        self.data
+            .iter()
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+            .cloned()
+    }
+
+    pub fn get_min(&self) -> Option<T> {
+        self.data
+            .iter()
+            .min_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+            .cloned()
     }
 
     pub fn empty(&mut self) {
