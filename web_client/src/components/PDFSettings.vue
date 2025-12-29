@@ -10,7 +10,31 @@
             >
             <br />
             <br />
-            <v-btn @click="generatePDFcomponent" class="mr-2">Generate test</v-btn>
+
+            <h3>Bib</h3>
+            <v-btn
+                @click="
+                    {
+                        generatingCurrently = PDFSettingFor.Bib;
+                        generatePDFcomponent();
+                    }
+                "
+                class="mr-2"
+                >Generate Bib</v-btn
+            >
+            <PDFSettingsTable class="mt-3" :settings="settingsBib" :for="PDFSettingFor.Bib"></PDFSettingsTable>
+            <h3>Certificate</h3>
+            <v-btn
+                @click="
+                    {
+                        generatingCurrently = PDFSettingFor.Certificate;
+                        generatePDFcomponent();
+                    }
+                "
+                class="mr-2"
+                >Generate Certificate</v-btn
+            >
+            <PDFSettingsTable class="mt-3" :settings="settingsCertificate" :for="PDFSettingFor.Certificate"></PDFSettingsTable>
         </div>
 
         <div class="d-flex flex-grow-1 justify-end mx-2">
@@ -28,10 +52,12 @@
 </template>
 
 <script setup lang="ts">
-    import { ref, watch } from "vue";
+    import { computed, ref, watch } from "vue";
     import useMainStore from "../stores/main";
     import PDFViewer from "./PDFViewer.vue";
+    import PDFSettingsTable from "./PDFSettingsTable.vue";
     import { generatePDF } from "../functions/pdf";
+    import { PDFSettingFor } from "../functions/interfaceShared";
 
     const viewer = ref<InstanceType<typeof PDFViewer>>();
     const mainStore = useMainStore();
@@ -77,14 +103,45 @@
     const processedBackgroundImage = ref(null as null | string);
     const processedBackgroundImageLandscape = ref(false);
 
+    const generatingCurrently = ref(null as null | PDFSettingFor);
+
+    const settingsBib = computed(() => {
+        return mainStore.pdfConfigurationSettings.filter((setting) => {
+            return setting.for == PDFSettingFor.Bib;
+        });
+    });
+    const settingsCertificate = computed(() => {
+        return mainStore.pdfConfigurationSettings.filter((setting) => {
+            return setting.for == PDFSettingFor.Certificate;
+        });
+    });
+
     function generatePDFcomponent() {
-        viewer.value?.setPDFtoRender(generatePDF(processedBackgroundImage.value));
+        if (generatingCurrently.value) {
+            switch (generatingCurrently.value) {
+                case PDFSettingFor.Bib:
+                    viewer.value?.setPDFtoRender(generatePDF(true, processedBackgroundImage.value, settingsBib.value));
+                    break;
+                case PDFSettingFor.Certificate:
+                    viewer.value?.setPDFtoRender(generatePDF(false, processedBackgroundImage.value, settingsCertificate.value));
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
-    // USE
-    // mainStore.sendUpsertPDBSettingCommand;
-    mainStore.sendDeletePDFSettingCommand;
-    mainStore.pdfConfigurationSettings;
+    watch(
+        () => mainStore.pdfConfigurationSettings,
+        () => {
+            console.log("Re-rendering PDF");
+            generatePDFcomponent();
+        },
+        {
+            deep: true,
+            immediate: true,
+        }
+    );
 </script>
 
 <style scoped></style>
