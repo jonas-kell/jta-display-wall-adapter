@@ -9,7 +9,7 @@ use crate::{
             JTA_GRAY_COLOR, JTA_GREEN_COLOR,
         },
         timing::TimingMode,
-        FRAME_TIME_NS,
+        TimingStateMachine, FRAME_TIME_NS,
     },
     interface::{ClientState, ClientStateMachine},
 };
@@ -246,6 +246,8 @@ pub fn render_client_frame(
                 }
             }
 
+            // TODO display WIND
+
             match &timing_state_machine.timing_mode {
                 TimingMode::Timing => {
                     match timing_state_machine.settings.mode {
@@ -290,34 +292,44 @@ pub fn render_client_frame(
                             );
                         }
                         TimingTimeDisplayMode::TimeBigAndHoldTop => {
-                            draw_text("Not implemented", 10.0, 10.0, 20.0, meta);
-                            // if timing_state_machine.race_finished() {
-                            //     draw_text("Finished", 150.0, 30.0, 20.0, meta);
-                            // }
-                            // if let Some(hts) = timing_state_machine.get_held_display_race_time() {
-                            //     draw_text(
-                            //         &hts.held_at_time
-                            //             .optimize_representation_for_display(Some(
-                            //                 timing_state_machine
-                            //                     .settings
-                            //                     .max_decimal_places_after_comma,
-                            //             ))
-                            //             .to_string(),
-                            //         10.0,
-                            //         50.0,
-                            //         20.0,
-                            //         meta,
-                            //     );
-                            //     if let Some(held_distance) = hts.held_at_m {
-                            //         draw_text(
-                            //             &format!("{}m", held_distance),
-                            //             150.0,
-                            //             50.0,
-                            //             20.0,
-                            //             meta,
-                            //         );
-                            //     }
-                            // }
+                            if timing_state_machine.race_finished() {
+                                draw_text(
+                                    "Finished",
+                                    border,
+                                    border as f32 / 2.0,
+                                    text_height as f32 * 1.3,
+                                    meta,
+                                );
+                                // TODO prettier symbol
+                            }
+                            if let Some(top_text) = get_holding_top_text(timing_state_machine) {
+                                draw_text_right_aligned(
+                                    &top_text,
+                                    window_width - border,
+                                    border as f32 / 2.0,
+                                    text_height as f32 * 1.3,
+                                    None,
+                                    meta,
+                                );
+                            }
+                            draw_text_as_big_as_possible_right_aligned(
+                                &timing_state_machine
+                                    .get_main_display_race_time()
+                                    .optimize_representation_for_display(Some(
+                                        timing_state_machine
+                                            .settings
+                                            .max_decimal_places_after_comma,
+                                    ))
+                                    .to_string(),
+                                window_width - border,
+                                title_height as f32,
+                                (window_width - 2.0 * border) as usize,
+                                window_height as usize - title_height,
+                                &mut cache.font_size_cache_time_main_number_b,
+                                Some(&mut cache.main_number_display_width_debouncer_b),
+                                Some(&mut cache.main_number_display_size_debouncer_b),
+                                meta,
+                            );
                         }
                         TimingTimeDisplayMode::TimeBigAndHoldWithRunName => {
                             draw_text_as_big_as_possible_right_aligned(
@@ -340,7 +352,34 @@ pub fn render_client_frame(
                             );
                         }
                         TimingTimeDisplayMode::TimeBigAndHoldTopWithRunName => {
-                            draw_text("Not implemented", 10.0, 10.0, 20.0, meta);
+                            if let Some(top_text) = get_holding_top_text(timing_state_machine) {
+                                draw_text_right_aligned(
+                                    &top_text,
+                                    window_width - border,
+                                    title_height as f32 * 1.2,
+                                    text_height as f32,
+                                    None,
+                                    meta,
+                                );
+                            }
+                            draw_text_as_big_as_possible_right_aligned(
+                                &timing_state_machine
+                                    .get_main_display_race_time()
+                                    .optimize_representation_for_display(Some(
+                                        timing_state_machine
+                                            .settings
+                                            .max_decimal_places_after_comma,
+                                    ))
+                                    .to_string(),
+                                window_width - border,
+                                title_height as f32 * 1.5, // takes somewhat more space, push main time down a little
+                                (window_width - 2.0 * border) as usize,
+                                window_height as usize - title_height,
+                                &mut cache.font_size_cache_time_main_number_d,
+                                Some(&mut cache.main_number_display_width_debouncer_d),
+                                Some(&mut cache.main_number_display_size_debouncer_d),
+                                meta,
+                            );
                         }
                     }
 
@@ -378,4 +417,23 @@ pub fn render_client_frame(
             );
         }
     }
+}
+
+fn get_holding_top_text(timing_state_machine: &TimingStateMachine) -> Option<String> {
+    if let Some(hts) = timing_state_machine.get_held_display_race_time() {
+        let time_string = hts
+            .held_at_time
+            .optimize_representation_for_display(Some(
+                timing_state_machine.settings.max_decimal_places_after_comma,
+            ))
+            .to_string();
+
+        if let Some(held_distance) = hts.held_at_m {
+            return Some(format!("{}m: {}", held_distance, time_string));
+        } else {
+            return Some(time_string);
+        }
+    }
+
+    return None;
 }

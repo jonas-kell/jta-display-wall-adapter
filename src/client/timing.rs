@@ -52,7 +52,7 @@ impl TimingSettings {
             switch_to_start_list_automatically: true,
             switch_to_timing_automatically: true,
             switch_to_results_automatically: false,
-            mode: TimingTimeDisplayMode::TimeBigAndHoldWithRunName,
+            mode: TimingTimeDisplayMode::TimeBigAndHoldTopWithRunName,
         }
     }
 }
@@ -476,13 +476,15 @@ impl TimingStateMachine {
     }
 
     fn hold_time(&mut self, race_time: RaceTime) {
+        debug!("Time holding triggered");
+
         self.timing_state = TimingState::Held;
         self.time_held_counter += 1;
 
-        let mut held_at_m = None;
+        let mut held_at_m = None; // TODO make possibility to re-set this and overwrite the split times etc.
         if let Some(meta) = &self.meta {
             if let Some(split_distances) = meta.distance.get_split_distances() {
-                if self.time_held_counter as usize >= split_distances.len() {
+                if self.time_held_counter as usize >= split_distances.len() + 1 {
                     held_at_m = Some(meta.distance.get_distance_as_number())
                 } else {
                     if let Some(split_distance) =
