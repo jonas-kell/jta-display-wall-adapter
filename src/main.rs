@@ -19,6 +19,7 @@ mod helpers;
 mod hex;
 mod instructions;
 mod interface;
+mod json;
 mod server;
 mod times;
 mod webserver;
