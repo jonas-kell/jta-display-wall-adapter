@@ -1,6 +1,6 @@
 [package]
 name = "jta-display-wall-adapter"
-version = "0.1.0"
+version = "0.2.0"
 description = "Software used for running custom display walls"
 authors = ["jonas-kell"]
 repository = "https://github.com/jonas-kell/jta-display-wall-adapter"
