@@ -13,6 +13,7 @@ export type TimingSettings = {
     fireworks_on_finish: boolean;
     max_decimal_places_after_comma: number;
     hold_time_ms: number;
+    display_time_ms: number;
     play_sound_on_start: boolean;
     play_sound_on_intermediate: boolean;
     play_sound_on_finish: boolean;
@@ -87,4 +88,11 @@ export type PDFConfigurationContentText = {
 export type PDFConfigurationContentReference = {
     type: "PDFConfigurationContentReference";
     reference: string;
+};
+
+export type DisplayEntry = {
+    bib: number;
+    name: string;
+    round: number;
+    max_rounds: number;
 };

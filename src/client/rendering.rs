@@ -252,6 +252,12 @@ pub fn render_client_frame(
                 TimingMode::Timing => {
                     match timing_state_machine.settings.mode {
                         TimingTimeDisplayMode::StreetRun => {
+                            let street_run_line_height = window_height / 6.0;
+                            let street_run_font_size = window_height / 6.6666666;
+                            let line_1_y = window_height / 2.0;
+                            let line_2_y = window_height / 2.0 + street_run_line_height;
+                            let line_3_y = window_height / 2.0 + 2.0 * street_run_line_height;
+
                             draw_text_right_aligned(
                                 &timing_state_machine
                                     .get_main_display_race_time()
@@ -267,9 +273,45 @@ pub fn render_client_frame(
                                 Some(&mut cache.main_number_display_width_debouncer_street_race),
                                 meta,
                             );
-                            draw_text("#1 Max Mustermann", 10.0, 60.0, 18.0, meta);
-                            draw_text("#2 John Doe", 10.0, 80.0, 18.0, meta);
-                            draw_text("#3 Miriam Musterfrau (Runde 1/4)", 10.0, 100.0, 18.0, meta);
+
+                            let entries = timing_state_machine
+                                .get_display_entries_at_lines_and_advance_frame_countdown();
+                            for (y_pos, entry_opt) in [
+                                (line_1_y, entries.0),
+                                (line_2_y, entries.1),
+                                (line_3_y, entries.2),
+                            ] {
+                                if let Some(entry) = entry_opt {
+                                    draw_text(
+                                        &format!("{} {}", entry.bib, entry.name),
+                                        border,
+                                        y_pos,
+                                        street_run_font_size,
+                                        meta,
+                                    );
+                                    draw_image(
+                                        (window_width - window_width / 9.0 - window_width / 12.0)
+                                            as u32,
+                                        y_pos as u32,
+                                        &state
+                                            .permanent_icons_storage
+                                            .cached_rescaler
+                                            .scale_cached(
+                                                &state.permanent_icons_storage.round_icon,
+                                                (window_width / 12.0) as u32,
+                                                (window_height / 6.0) as u32,
+                                            ),
+                                        meta,
+                                    );
+                                    draw_text(
+                                        &format!("{}/{}", entry.round, entry.max_rounds),
+                                        window_width - window_width / 9.0,
+                                        y_pos,
+                                        street_run_font_size,
+                                        meta,
+                                    );
+                                }
+                            }
                         }
                         TimingTimeDisplayMode::TimeBigAndHold => {
                             draw_text_as_big_as_possible_right_aligned(

@@ -1,10 +1,14 @@
 use crate::{
     args::Args,
+    client::FRAME_TIME_NS,
     interface::{
         ClientInternalMessageFromServerToClient::EmitTimingSettingsUpdate,
         MessageFromServerToClient,
     },
-    server::camera_program_types::{HeatResult, HeatStartList},
+    server::{
+        bib_detection::DisplayEntry,
+        camera_program_types::{HeatResult, HeatStartList},
+    },
     times::{DayTime, RaceTime},
 };
 use async_channel::{Sender, TrySendError};
@@ -27,6 +31,7 @@ pub struct TimingSettings {
     pub fireworks_on_finish: bool,
     pub max_decimal_places_after_comma: i8,
     pub hold_time_ms: u32,
+    pub display_time_ms: u32,
     pub play_sound_on_start: bool,
     pub play_sound_on_intermediate: bool,
     pub play_sound_on_finish: bool,
@@ -44,6 +49,7 @@ impl TimingSettings {
             fireworks_on_finish: args.fireworks_on_finish,
             max_decimal_places_after_comma: args.max_decimal_place_after_comma,
             hold_time_ms: args.hold_time_ms,
+            display_time_ms: args.display_time_ms,
             play_sound_on_start: args.play_sound_on_start,
             play_sound_on_intermediate: args.play_sound_on_intermediate,
             play_sound_on_finish: args.play_sound_on_finish,
@@ -299,6 +305,7 @@ pub struct TimingStateMachine {
     reference_computation_time: Instant,
     client_state_machine_sender: Sender<MessageFromServerToClient>,
     race_finished: bool,
+    run_display_entries: Vec<(i64, DisplayEntry)>,
 }
 impl TimingStateMachine {
     pub fn new(
@@ -318,6 +325,7 @@ impl TimingStateMachine {
             client_state_machine_sender,
             race_finished: false,
             timing_mode: TimingMode::StartList,
+            run_display_entries: Vec::new(),
         }
     }
 
@@ -568,6 +576,43 @@ impl TimingStateMachine {
 
     pub fn overwrite_settings(&mut self, settings: &TimingSettings) {
         self.settings = settings.clone()
+    }
+
+    pub fn insert_new_display_entry(&mut self, entry: &DisplayEntry) {
+        self.run_display_entries.push((
+            self.settings.hold_time_ms as i64 * 1000000 / FRAME_TIME_NS as i64,
+            entry.clone(),
+        ));
+    }
+
+    pub fn get_display_entries_at_lines_and_advance_frame_countdown(
+        &mut self,
+    ) -> (
+        Option<DisplayEntry>,
+        Option<DisplayEntry>,
+        Option<DisplayEntry>,
+    ) {
+        for i in [0usize, 1, 2] {
+            if let Some(entry) = self.run_display_entries.get_mut(i) {
+                entry.0 -= 1;
+            }
+        }
+
+        // TODO prettier withnot shifting upwards?
+        let res = (
+            self.run_display_entries.get(0).map(|a| a.1.clone()),
+            self.run_display_entries.get(1).map(|a| a.1.clone()),
+            self.run_display_entries.get(2).map(|a| a.1.clone()),
+        );
+
+        self.run_display_entries = self
+            .run_display_entries
+            .clone() // TOOD I think that could be done cleaner
+            .into_iter()
+            .filter(|(frames, _)| *frames >= 0)
+            .collect();
+
+        res
     }
 }
 

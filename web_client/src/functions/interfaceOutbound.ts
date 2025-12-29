@@ -1,5 +1,13 @@
 import { DayTime } from "./interfaceInbound";
-import { Athlete, DatabaseStaticState, HeatAssignment, PDFConfigurationSetting, TimingSettings, Uuid } from "./interfaceShared";
+import {
+    Athlete,
+    DatabaseStaticState,
+    DisplayEntry,
+    HeatAssignment,
+    PDFConfigurationSetting,
+    TimingSettings,
+    Uuid,
+} from "./interfaceShared";
 
 export type Idle = {
     type: "Idle";
@@ -130,4 +138,9 @@ export type RequestPDFConfigurationSettings = {
 export type DeleteCompetitorEvaluated = {
     type: "DeleteCompetitorEvaluated";
     data: DayTime;
+};
+
+export type SendDebugDisplayCommand = {
+    type: "SendDebugDisplayCommand";
+    data: DisplayEntry;
 };

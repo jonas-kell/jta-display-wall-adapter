@@ -5,6 +5,7 @@ use crate::database::{
 };
 use crate::open_webcontrol;
 use crate::server::audio_types::{AudioPlayer, Sound};
+use crate::server::bib_detection::DisplayEntry;
 use crate::server::comm_channel::InstructionCommunicationChannel;
 use crate::server::export_functions::{generate_meet_data, write_to_xml_output_file};
 use crate::webserver::PDFConfigurationSetting;
@@ -31,7 +32,7 @@ use crate::{
 use async_channel::Sender;
 use chrono::Local;
 use clap::crate_version;
-use images_core::images::{ImageMeta, ImagesStorage};
+use images_core::images::{IconsStorage, ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
 use std::{path::Path, sync::Arc};
 use tokio::sync::Mutex;
@@ -77,6 +78,7 @@ pub enum MessageFromServerToClient {
     RequestTimingSettings,
     Clock(DayTime),
     ClientInternal(ClientInternalMessageFromServerToClient),
+    PushDisplayEntry(DisplayEntry),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -769,6 +771,9 @@ impl ServerStateMachine {
                         ),
                     }
                 }
+                MessageFromWebControl::SendDebugDisplayCommand(entry) => {
+                    self.send_message_to_client(MessageFromServerToClient::PushDisplayEntry(entry));
+                }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {
                 Measured(wind_measurement) => {
@@ -888,6 +893,7 @@ pub enum ClientState {
 }
 
 static STORAGE_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/image_storage.bin"));
+static STORAGE_BYTES_ICONS: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/icon_storage.bin"));
 
 pub struct ClientStateMachine {
     pub state: ClientState,
@@ -895,6 +901,7 @@ pub struct ClientStateMachine {
     pub frame_counter: u64,
     pub window_state_needs_update: Option<(u32, u32, u32, u32)>,
     pub permanent_images_storage: ImagesStorage,
+    pub permanent_icons_storage: IconsStorage,
     pub current_frame_dimensions: Option<(u32, u32)>,
     pub server_imposed_settings: ServerImposedSettings,
     timing_state_machine_storage: Option<TimingStateMachine>,
@@ -906,6 +913,7 @@ impl ClientStateMachine {
     pub fn new(args: &Args, sender: Sender<MessageFromServerToClient>) -> Self {
         debug!("Start loading Images storage");
         let images_storage = ImagesStorage::from_bytes(STORAGE_BYTES);
+        let icons_storage = IconsStorage::from_bytes(STORAGE_BYTES_ICONS);
         debug!("DONE loading Images storage");
 
         Self {
@@ -914,6 +922,7 @@ impl ClientStateMachine {
             frame_counter: 0,
             window_state_needs_update: None,
             permanent_images_storage: images_storage,
+            permanent_icons_storage: icons_storage,
             current_frame_dimensions: None,
             server_imposed_settings: ServerImposedSettings::new(args),
             timing_state_machine_storage: None,
@@ -1059,6 +1068,18 @@ impl ClientStateMachine {
                 self.switch_mode_with_stashing_timing_state(ClientState::Clock(ClockState::new(
                     &dt,
                 )));
+            }
+            MessageFromServerToClient::PushDisplayEntry(entry) => {
+                // force the new entry into possibly existing Timing state machines:
+                if let Some(tsm) = &mut self.timing_state_machine_storage {
+                    tsm.insert_new_display_entry(&entry);
+                }
+                match &mut self.state {
+                    ClientState::Timing(tsm) => {
+                        tsm.insert_new_display_entry(&entry);
+                    }
+                    _ => {}
+                };
             }
             MessageFromServerToClient::ClientInternal(client_internal_message) => {
                 match client_internal_message {

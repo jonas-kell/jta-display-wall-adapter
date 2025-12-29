@@ -25,6 +25,7 @@ import {
     RequestWindValues,
     ResultList,
     SelectHeat,
+    SendDebugDisplayCommand,
     StartList,
     StorePDFConfigurationSetting,
     SwitchMode,
@@ -47,6 +48,7 @@ import { CircularBuffer } from "../functions/circularBuffer";
 import {
     Athlete,
     DatabaseStaticState,
+    DisplayEntry,
     HeatAssignment,
     PDFConfigurationSetting,
     TimingSettings,
@@ -424,6 +426,13 @@ export default defineStore("main", () => {
         };
         sendWSCommand(JSON.stringify(packet));
     }
+    function sendDebugDisplayCommand(entry: DisplayEntry) {
+        const packet: SendDebugDisplayCommand = {
+            type: "SendDebugDisplayCommand",
+            data: entry,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
     function sendGetHeatsCommand() {
         const packet: GetHeats = {
             type: "GetHeats",
@@ -554,6 +563,7 @@ export default defineStore("main", () => {
         sendDeletePDFSettingCommand,
         sendGetMainHeatCommand,
         sendDeleteCompetitorEvaluatedCommand,
+        sendDebugDisplayCommand,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,

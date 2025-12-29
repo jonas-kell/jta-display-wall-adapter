@@ -51,6 +51,18 @@
                             width="250"
                             hide-details
                         />
+                        <v-text-field
+                            class="mt-1"
+                            density="compact"
+                            type="number"
+                            min="0"
+                            max="15000"
+                            v-model.number="mainStore.timingSettings.display_time_ms"
+                            step="100"
+                            label="Display time ms"
+                            width="250"
+                            hide-details
+                        />
                         <v-switch
                             class="ml-2"
                             color="primary"

@@ -494,3 +494,54 @@ impl ImagesStorage {
         };
     }
 }
+
+#[derive(Serialize, Deserialize)]
+struct IconsStorageSerealizer<'a> {
+    #[serde(borrow)]
+    pub round_icon: &'a [u8],
+    #[serde(borrow)]
+    pub cached_rescaler: &'a [u8],
+}
+
+pub struct IconsStorage {
+    pub round_icon: ImageMeta,
+    pub cached_rescaler: CachedImageScaler,
+}
+impl IconsStorage {
+    pub fn new_with_compile_data(precache_for_sizes: &[(u32, u32)]) -> IconsStorage {
+        // include static files
+        let round_icon =
+            ImageMeta::from_image_bytes(include_bytes!("./../../assets/Round-Icon.png")).unwrap();
+
+        let mut scaler = CachedImageScaler::new();
+        for (w, h) in precache_for_sizes {
+            scaler.scale_cached(&round_icon, *w, *h);
+        }
+
+        return IconsStorage {
+            round_icon,
+            cached_rescaler: scaler,
+        };
+    }
+
+    /// Can fail, as it is used as a compile-time only method
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let ser = IconsStorageSerealizer {
+            round_icon: &self.round_icon.to_bytes(),
+            cached_rescaler: &self.cached_rescaler.to_bytes(),
+        };
+        let bytes = encode_to_vec(&ser, CONFIG).unwrap();
+        return bytes;
+    }
+
+    /// Can fail, as it is used as a compile-time only method
+    pub fn from_bytes<'a>(data: &'a [u8]) -> Self {
+        let (dec, _) =
+            borrow_decode_from_slice::<'a, IconsStorageSerealizer<'a>, _>(data, CONFIG).unwrap();
+
+        return Self {
+            round_icon: ImageMeta::from_bytes(dec.round_icon),
+            cached_rescaler: CachedImageScaler::from_bytes(dec.cached_rescaler),
+        };
+    }
+}

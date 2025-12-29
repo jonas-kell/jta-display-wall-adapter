@@ -1,3 +1,4 @@
+pub mod bib_detection;
 mod camera_program_datatypes;
 pub mod comm_channel;
 mod nrbf;

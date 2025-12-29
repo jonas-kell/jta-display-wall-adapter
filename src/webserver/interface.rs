@@ -1,8 +1,9 @@
 use crate::{
     client::TimingSettings,
     database::{DatabaseStaticState, PermanentlyStoredDataset},
-    server::camera_program_types::{
-        Athlete, AthleteWithMetadata, HeatAssignment, HeatData, HeatMeta,
+    server::{
+        bib_detection::DisplayEntry,
+        camera_program_types::{Athlete, AthleteWithMetadata, HeatAssignment, HeatData, HeatMeta},
     },
     times::DayTime,
     wind::format::WindMeasurement,
@@ -42,6 +43,7 @@ pub enum MessageFromWebControl {
     DeletePDFConfigurationSetting(Uuid),
     RequestPDFConfigurationSettings,
     DeleteCompetitorEvaluated(DayTime), // to target the correct HeatCompetitorResult, as here are no ids
+    SendDebugDisplayCommand(DisplayEntry),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -15,7 +15,7 @@
 
     const viewer = ref<InstanceType<typeof PDFViewer>>();
 
-    const currentPDF = ref(generatePDF(null));
+    const currentPDF = ref(generatePDF(true, null, []));
 
     watch([viewer, currentPDF], () => {
         // viewer.value?.setPDFtoRender(currentPDF.value);
