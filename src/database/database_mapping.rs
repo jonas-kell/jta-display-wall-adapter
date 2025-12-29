@@ -794,3 +794,33 @@ pub fn delete_pdf_setting(id: Uuid, manager: &DatabaseManager) -> Result<(), Dat
 
     Ok(())
 }
+
+pub fn delete_evaluation(
+    finish_time: DayTime,
+    manager: &DatabaseManager,
+) -> Result<(), DatabaseError> {
+    let mut conn = manager.get_connection()?;
+    let data = heat_evaluations::table::table().load::<HeatEvaluationDatabase>(&mut conn)?;
+    let evaluated = match data
+        .into_iter()
+        .map(|h| {
+            let db_id = h.id.clone();
+            CompetitorEvaluated::try_from(h).map(|e| (db_id, e))
+        })
+        .collect::<Result<Vec<(String, CompetitorEvaluated)>, DatabaseError>>()
+    {
+        Ok(a) => a,
+        Err(e) => return Err(e),
+    };
+
+    for (db_id, eval) in evaluated {
+        if eval.competitor_result.finish_time == finish_time {
+            diesel::delete(
+                heat_evaluations::table::table().filter(heat_evaluations::id.eq(db_id.to_string())),
+            )
+            .execute(&mut conn)?;
+        }
+    }
+
+    Ok(())
+}

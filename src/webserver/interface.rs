@@ -41,6 +41,7 @@ pub enum MessageFromWebControl {
     StorePDFConfigurationSetting(PDFConfigurationSetting),
     DeletePDFConfigurationSetting(Uuid),
     RequestPDFConfigurationSettings,
+    DeleteCompetitorEvaluated(DayTime), // to target the correct HeatCompetitorResult, as here are no ids
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

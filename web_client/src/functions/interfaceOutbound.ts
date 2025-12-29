@@ -126,3 +126,8 @@ export type DeletePDFConfigurationSetting = {
 export type RequestPDFConfigurationSettings = {
     type: "RequestPDFConfigurationSettings";
 };
+
+export type DeleteCompetitorEvaluated = {
+    type: "DeleteCompetitorEvaluated";
+    data: DayTime;
+};

@@ -82,7 +82,15 @@
                     <th style="width: 2cm">
                         <input class="pl-2" type="number" v-model="roundsRef" min="1" step="1" style="width: 100%" />
                     </th>
-                    <th v-for="_i in maxRoundsDisplay"></th>
+                    <th style="text-align: center" v-for="i in maxRoundsDisplay">
+                        <v-btn
+                            icon="mdi-delete"
+                            density="compact"
+                            @click="deleteEvaluation(i - 1)"
+                            :disabled="!canDeleteEvaluation(i - 1)"
+                            v-if="athleteBeingEdited"
+                        ></v-btn>
+                    </th>
                 </template>
                 <!--from here sprinterkönig data -->
                 <template v-if="modeIsSPK">
@@ -196,7 +204,7 @@
 
     <!--from here street run data -->
     <template v-if="modeIsStreetRun">
-        {{ evaluations }}
+        <!-- space to do things -->
     </template>
     <!--from here sprinterkönig data -->
     <template v-if="modeIsSPK">
@@ -462,6 +470,43 @@
         }
 
         return "";
+    }
+    function deleteEvaluation(roundIndex: number) {
+        const athleteId = idRef.value;
+        if (!athleteId) {
+            return;
+        }
+
+        const athlete = evaluations.value[athleteId];
+        const evaluation = evaluations.value[athleteId].evaluations[roundIndex];
+
+        if (
+            window.confirm(
+                `Do you want to delete the evaluation for ${athlete.athlete.first_name} ${
+                    athlete.athlete.last_name
+                }: ${raceTimeStringRepr(evaluation.runtime_full_precision, true, true, 4)}?`
+            )
+        ) {
+            mainStore.sendDeleteCompetitorEvaluatedCommand(evaluation.finish_time);
+        }
+    }
+    function canDeleteEvaluation(roundIndex: number): boolean {
+        const athleteId = idRef.value;
+        if (!athleteId) {
+            return false;
+        }
+
+        const dat = evaluations.value[athleteId];
+
+        if (dat) {
+            if (dat.evaluations.length > roundIndex) {
+                if (roundRan(athleteId, roundIndex)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     // Sprinterkönig logic

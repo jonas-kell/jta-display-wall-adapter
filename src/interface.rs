@@ -1,6 +1,6 @@
 use crate::database::{
-    create_heat_assignment, delete_athlete, delete_heat_assignment, delete_pdf_setting,
-    get_all_athletes_meta_data, get_database_static_state, get_main_heat,
+    create_heat_assignment, delete_athlete, delete_evaluation, delete_heat_assignment,
+    delete_pdf_setting, get_all_athletes_meta_data, get_database_static_state, get_main_heat,
     init_database_static_state, DatabaseStaticState,
 };
 use crate::open_webcontrol;
@@ -756,6 +756,18 @@ impl ServerStateMachine {
                 }
                 MessageFromWebControl::GetMainHeat => {
                     self.send_out_main_heat_to_webclient();
+                }
+                MessageFromWebControl::DeleteCompetitorEvaluated(ft) => {
+                    match delete_evaluation(ft, &self.database_manager) {
+                        Ok(_) => {
+                            debug!("Deleted evaluation manually");
+                            self.send_out_main_heat_to_webclient();
+                        }
+                        Err(e) => error!(
+                            "Encountered error, while deleting an evaluation: {}",
+                            e.to_string()
+                        ),
+                    }
                 }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {

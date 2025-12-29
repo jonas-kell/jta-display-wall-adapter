@@ -297,7 +297,7 @@ impl From<Duration> for RaceTime {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct DayTime {
     pub hours: u16,
     pub minutes: u16,

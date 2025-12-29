@@ -7,6 +7,7 @@ import {
     CreateAthlete,
     CreateHeatAssignment,
     DeleteAthlete,
+    DeleteCompetitorEvaluated,
     DeleteHeatAssignment,
     DeletePDFConfigurationSetting,
     ExportDataToFile,
@@ -379,6 +380,13 @@ export default defineStore("main", () => {
         };
         sendWSCommand(JSON.stringify(packet));
     }
+    function sendDeleteCompetitorEvaluatedCommand(dt: DayTime) {
+        const packet: DeleteCompetitorEvaluated = {
+            type: "DeleteCompetitorEvaluated",
+            data: dt,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
     function sendUpsertPDFSettingCommand(setting: PDFConfigurationSetting) {
         const packet: StorePDFConfigurationSetting = {
             type: "StorePDFConfigurationSetting",
@@ -545,6 +553,7 @@ export default defineStore("main", () => {
         sendUpsertPDFSettingCommand,
         sendDeletePDFSettingCommand,
         sendGetMainHeatCommand,
+        sendDeleteCompetitorEvaluatedCommand,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,
