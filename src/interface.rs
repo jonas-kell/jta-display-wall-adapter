@@ -1,7 +1,7 @@
 use crate::database::{
     create_heat_assignment, delete_athlete, delete_heat_assignment, delete_pdf_setting,
-    get_all_athletes_meta_data, get_database_static_state, init_database_static_state,
-    DatabaseStaticState,
+    get_all_athletes_meta_data, get_database_static_state, get_main_heat,
+    init_database_static_state, DatabaseStaticState,
 };
 use crate::open_webcontrol;
 use crate::server::audio_types::{AudioPlayer, Sound};
@@ -429,6 +429,8 @@ impl ServerStateMachine {
                             error!("Error when purging heat data: {}", e);
                         }
                     }
+
+                    self.send_out_main_heat_to_webclient();
                 }
                 InstructionFromCameraProgram::HeatIntermediate(intermediate) => {
                     if self.timing_settings_template.play_sound_on_intermediate {
@@ -452,6 +454,9 @@ impl ServerStateMachine {
                     store_to_database!(evaluated, self);
                     // we can assume, that the "always emit result list on change" setting is active in the camera program
                     // for this reason, we ignore singular evaluation emits
+
+                    // street races work with evaluations. So this now is their time to shine
+                    self.send_out_main_heat_to_webclient();
                 }
                 InstructionFromCameraProgram::HeatResult(result) => {
                     store_to_database!(result.clone(), self);
@@ -749,6 +754,9 @@ impl ServerStateMachine {
                 MessageFromWebControl::RequestPDFConfigurationSettings => {
                     self.send_out_all_database_settings_to_webclient();
                 }
+                MessageFromWebControl::GetMainHeat => {
+                    self.send_out_main_heat_to_webclient();
+                }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {
                 Measured(wind_measurement) => {
@@ -769,7 +777,20 @@ impl ServerStateMachine {
                 );
             }
             Err(e) => {
-                error!("Database log loading error for pdf settings: {}", e);
+                error!("Database loading error for pdf settings: {}", e);
+            }
+        }
+    }
+
+    fn send_out_main_heat_to_webclient(&mut self) {
+        match get_main_heat(&self.database_manager) {
+            Ok(data) => {
+                if let Some(main_heat) = data {
+                    self.send_message_to_web_control(MessageToWebControl::MainHeat(main_heat));
+                }
+            }
+            Err(e) => {
+                error!("Database loading error for main heat: {}", e);
             }
         }
     }

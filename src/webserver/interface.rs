@@ -20,6 +20,7 @@ pub enum MessageFromWebControl {
     RequestDisplayClientState,
     SwitchMode,
     GetHeats,
+    GetMainHeat,
     GetLogs(u32),
     SelectHeat(String),
     Timing,
@@ -94,4 +95,5 @@ pub enum MessageToWebControl {
     CurrentDisplayFrame(Vec<u8>), // gets handled extra and sent as binary data
     AthletesData(Vec<AthleteWithMetadata>),
     PDFConfigurationSettingsData(Vec<PDFConfigurationSetting>),
+    MainHeat(HeatData),
 }

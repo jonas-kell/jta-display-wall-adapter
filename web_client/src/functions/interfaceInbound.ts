@@ -160,7 +160,7 @@ export type WindMeasurement = {
 export type AthleteWithMetadata = {
     athlete: Athlete;
     heat_assignments: HeatAssignment[];
-    heats: [HeatCompetitorResult | null, HeatAssignment, HeatData][];
+    heats_from_assignments: [HeatCompetitorResult | null, HeatAssignment, HeatData][];
 };
 
 // message formats
@@ -227,6 +227,11 @@ export type PDFConfigurationSettingsData = {
     data: PDFConfigurationSetting[];
 };
 
+export type MainHeat = {
+    type: "MainHeat";
+    data: HeatData;
+};
+
 export type Unknown = {
     type: "Unknown";
     data: unknown;
@@ -244,6 +249,7 @@ export enum InboundMessageType {
     DatabaseStaticState = "DatabaseStaticState",
     AthletesData = "AthletesData",
     PDFConfigurationSettingsData = "PDFConfigurationSettingsData",
+    MainHeat = "MainHeat",
 }
 
 export type InboundMessage =
@@ -257,6 +263,7 @@ export type InboundMessage =
     | CurrentDisplayFrame
     | AthletesData
     | PDFConfigurationSettingsData
+    | MainHeat
     | Unknown;
 
 export function parseMessage(json: unknown): InboundMessage {
@@ -287,6 +294,8 @@ export function parseMessage(json: unknown): InboundMessage {
             return { type: "AthletesData", data: obj.data } as AthletesData;
         case InboundMessageType.PDFConfigurationSettingsData:
             return { type: "PDFConfigurationSettingsData", data: obj.data } as PDFConfigurationSettingsData;
+        case InboundMessageType.MainHeat:
+            return { type: "MainHeat", data: obj.data } as MainHeat;
 
         default:
             return { type: "Unknown", data: json } as Unknown;

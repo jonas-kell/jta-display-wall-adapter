@@ -26,6 +26,10 @@ export type GetHeats = {
     type: "GetHeats";
 };
 
+export type GetMainHeat = {
+    type: "GetMainHeat";
+};
+
 export type GetLogs = {
     type: "GetLogs";
     data: number;

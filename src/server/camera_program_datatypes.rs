@@ -230,13 +230,14 @@ pub struct Athlete {
     pub last_name: String,
     pub nation: String,
     pub spk_guess: Option<f32>,
+    pub street_run_rounds: Option<u16>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AthleteWithMetadata {
     pub athlete: Athlete,
     pub heat_assignments: Vec<HeatAssignment>,
-    pub heats: Vec<(Option<HeatCompetitorResult>, HeatAssignment, HeatData)>,
+    pub heats_from_assignments: Vec<(Option<HeatCompetitorResult>, HeatAssignment, HeatData)>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

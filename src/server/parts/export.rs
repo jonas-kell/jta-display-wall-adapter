@@ -2,7 +2,7 @@ use crate::{
     args::Args,
     database::{
         get_all_athletes_meta_data, get_all_heat_assignments, ApplicationMode, DatabaseManager,
-        DatabaseStaticState,
+        DatabaseSerializable, DatabaseStaticState,
     },
     file::{create_file_if_not_there_and_write, make_sure_folder_exists},
     helpers::uuids_from_seed,
@@ -15,7 +15,6 @@ use crate::{
 use chrono::Datelike;
 use chrono::NaiveDate;
 use std::{path::Path, time::Duration};
-use uuid::Uuid;
 
 pub fn write_to_xml_output_file(args: &Args, file_name: &str, data: Meet) {
     let path_string = match &args.export_folder_path {
@@ -117,30 +116,42 @@ fn generate_heats_spk(
     heats
 }
 
-fn generate_heats_street_race(event_key: String, distance: u32) -> Vec<Heat> {
+pub const MAIN_HEAT_KEY: &str = "THIS_IS_THE_MAIN_HEAT";
+
+fn generate_heats_street_race(
+    event_key: String,
+    distance: u32,
+    mut athletes: Vec<Athlete>,
+) -> Vec<Heat> {
     let ids = uuids_from_seed(&format!("{}_heat", event_key), 1);
     let id = ids[0];
+
+    athletes.sort_by(|a, b| a.bib.cmp(&b.bib));
+
+    let competitors: Vec<HeatCompetitor> = athletes
+        .into_iter()
+        .enumerate()
+        .map(|(lane, athlete)| HeatCompetitor {
+            lane: (lane + 1) as u32,
+            bib: athlete.bib.clone(),
+            class: athlete.gender.to_string(),
+            gender: athlete.gender.to_string(),
+            club: athlete.club.clone(),
+            first_name: athlete.first_name.clone(),
+            last_name: athlete.last_name.clone(),
+            id: athlete.id.to_string(),
+            nation: athlete.nation.clone(),
+            disqualified: None,
+        })
+        .collect();
 
     [Heat {
         id,
         distance,
         distance_type: DistanceType::Normal,
-        name: "Main Heat".into(),
-        scheduled_start_time: DayTime::from_hms_opt(10, 10, 0).unwrap(),
-        competitors: [HeatCompetitor {
-            // TODO from db
-            bib: 101,
-            class: Gender::Male.to_string(),
-            club: "Testverein".into(),
-            first_name: "Test Name".into(),
-            last_name: "Test Nachname".into(),
-            gender: Gender::Male.to_string(),
-            id: Uuid::new_v4().to_string(),
-            lane: 1,
-            nation: "GER".into(),
-            disqualified: None,
-        }]
-        .into(),
+        name: MAIN_HEAT_KEY.into(),
+        scheduled_start_time: DayTime::from_hms_opt(10, 0, 0).unwrap(),
+        competitors,
     }]
     .into()
 }
@@ -241,13 +252,24 @@ pub fn generate_meet_data(dbss: &DatabaseStaticState, manager: &DatabaseManager)
             let id = ids[0];
             let distance = 1000u32; // TODO dynamically set this
 
+            let athletes = match Athlete::get_all_from_database(manager) {
+                Ok(e) => e,
+                Err(e) => {
+                    error!(
+                        "Error while generating export - could not read from database: {}",
+                        e
+                    );
+                    Vec::new()
+                }
+            };
+
             events.push(Event {
                 distance,
                 distance_type: DistanceType::Normal,
                 id,
                 name: format!("Main Race"),
                 scheduled_start_time: DayTime::from_hms_opt(10, 0, 0).unwrap(),
-                heats: generate_heats_street_race(event_key, distance),
+                heats: generate_heats_street_race(event_key, distance, athletes),
             })
         }
     }

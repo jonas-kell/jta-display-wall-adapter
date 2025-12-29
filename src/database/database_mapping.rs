@@ -15,6 +15,7 @@ use crate::server::camera_program_types::{
     Athlete, AthleteWithMetadata, CompetitorEvaluated, HeatAssignment, HeatData, HeatFalseStart,
     HeatFinish, HeatIntermediate, HeatResult, HeatStart, HeatStartList, HeatWind, HeatWindMissing,
 };
+use crate::server::export_functions::MAIN_HEAT_KEY;
 use crate::times::DayTime;
 use crate::webserver::PDFConfigurationSetting;
 use crate::wind::format::{StartedWindMeasurement, WindMeasurement};
@@ -717,7 +718,7 @@ pub fn get_all_athletes_meta_data(
 
     let mut res: Vec<AthleteWithMetadata> = Vec::new();
     for athlete in athletes {
-        let mut heats = Vec::new();
+        let mut heats_from_assignments = Vec::new();
         let mut heat_assignments_ath = Vec::new();
 
         for heat_assignment in &heat_assignments {
@@ -737,7 +738,7 @@ pub fn get_all_athletes_meta_data(
                             }
                             None => None,
                         };
-                        heats.push((their_result, heat_assignment.clone(), data))
+                        heats_from_assignments.push((their_result, heat_assignment.clone(), data))
                     },
                     Err(e) => warn!("Found a heat assignment, but there is NO heat data yet, OR we are having database trouble...: {}", e.to_string()),
                 }
@@ -746,12 +747,26 @@ pub fn get_all_athletes_meta_data(
 
         res.push(AthleteWithMetadata {
             athlete,
-            heats,
+            heats_from_assignments,
             heat_assignments: heat_assignments_ath,
         });
     }
 
     Ok(res)
+}
+
+pub fn get_main_heat(manager: &DatabaseManager) -> Result<Option<HeatData>, DatabaseError> {
+    let start_lists = HeatStartList::get_all_from_database(manager)?;
+
+    for start_list in start_lists {
+        if start_list.name == MAIN_HEAT_KEY {
+            let heat_data = get_heat_data(start_list.id, manager)?;
+
+            return Ok(Some(heat_data));
+        }
+    }
+
+    Ok(None)
 }
 
 #[derive(Insertable, Queryable, Identifiable, AsChangeset)]

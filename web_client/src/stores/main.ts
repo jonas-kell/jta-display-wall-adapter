@@ -13,6 +13,7 @@ import {
     FreeText,
     GetHeats,
     GetLogs,
+    GetMainHeat,
     Idle,
     InitStaticDatabaseState,
     RequestAthletes,
@@ -101,6 +102,7 @@ export default defineStore("main", () => {
     const requestedWindMeasurements = ref([] as WindMeasurement[]);
     const athletesData = ref([] as AthleteWithMetadata[]);
     const pdfConfigurationSettings = ref([] as PDFConfigurationSetting[]);
+    const mainHeat = ref(null as null | HeatData);
 
     function handleWSMessage(ev: MessageEvent) {
         if (ev.data instanceof Blob) {
@@ -177,6 +179,9 @@ export default defineStore("main", () => {
             case InboundMessageType.PDFConfigurationSettingsData:
                 pdfConfigurationSettings.value = msg.data;
                 return;
+            case InboundMessageType.MainHeat:
+                mainHeat.value = msg.data;
+                return;
             case InboundMessageType.Unknown:
                 console.error("Received unknown message type:", msg.data);
                 return;
@@ -217,6 +222,7 @@ export default defineStore("main", () => {
 
             // this is kind of an init also, as this gets requested on connection establish:
             sendRequestStaticConfigCommand();
+            sendGetMainHeatCommand();
             sendGetHeatsCommand();
             sendRequestTimingSettingsCommand();
             sendRequestAthletesCommand();
@@ -416,6 +422,12 @@ export default defineStore("main", () => {
         };
         sendWSCommand(JSON.stringify(packet));
     }
+    function sendGetMainHeatCommand() {
+        const packet: GetMainHeat = {
+            type: "GetMainHeat",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
     const heatsMetaResult = ref([] as HeatMeta[]);
     function sendRequestTimingSettingsCommand() {
         const packet: RequestTimingSettings = {
@@ -532,11 +544,13 @@ export default defineStore("main", () => {
         sendDeleteHeatAssignmentCommand,
         sendUpsertPDFSettingCommand,
         sendDeletePDFSettingCommand,
+        sendGetMainHeatCommand,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,
         logEntries,
         heatsMetaResult,
+        mainHeat,
         displayConnected,
         displayExternalPassthrough,
         displayCanSwitchMode,

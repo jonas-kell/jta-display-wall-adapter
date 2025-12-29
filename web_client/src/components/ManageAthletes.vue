@@ -39,22 +39,29 @@
                 <th scope="col">Last Name</th>
                 <th scope="col"></th>
                 <th scope="col"></th>
+                <!--from here street run data -->
+                <template v-if="modeIsStreetRun">
+                    <th>Rounds</th>
+                    <th v-for="i in maxRoundsDisplay">Round {{ i }}</th>
+                </template>
                 <!--from here sprinterkönig data -->
-                <th>15-1</th>
-                <th>15-2</th>
-                <th>20-1</th>
-                <th>20-2</th>
-                <th>30-1</th>
-                <th>30-2</th>
-                <th>Guess</th>
-                <th>Time</th>
-                <th>Diff</th>
-                <th>Place</th>
+                <template v-if="modeIsSPK">
+                    <th>15-1</th>
+                    <th>15-2</th>
+                    <th>20-1</th>
+                    <th>20-2</th>
+                    <th>30-1</th>
+                    <th>30-2</th>
+                    <th>Guess</th>
+                    <th>Time</th>
+                    <th>Diff</th>
+                    <th>Place</th>
+                </template>
             </tr>
             <tr>
-                <th scope="col"><input type="number" v-model="bibRef" style="width: 100%" /></th>
-                <th scope="col"><input type="text" v-model="firstNameRef" style="width: 100%" /></th>
-                <th scope="col"><input type="text" v-model="lastNameRef" style="width: 100%" /></th>
+                <th scope="col"><input class="pl-2" type="number" v-model="bibRef" style="width: 100%" /></th>
+                <th scope="col"><input class="pl-2" type="text" v-model="firstNameRef" style="width: 100%" /></th>
+                <th scope="col"><input class="pl-2" type="text" v-model="lastNameRef" style="width: 100%" /></th>
                 <th scope="col">
                     <v-tooltip text="Bib already used!" :disabled="bibAvailableForAdding">
                         <template v-slot:activator="{ props }">
@@ -70,24 +77,35 @@
                     </v-tooltip>
                 </th>
                 <th></th>
+                <!--from here street run data -->
+                <template v-if="modeIsStreetRun">
+                    <th style="width: 2cm">
+                        <input class="pl-2" type="number" v-model="roundsRef" min="1" step="1" style="width: 100%" />
+                    </th>
+                    <th v-for="_i in maxRoundsDisplay"></th>
+                </template>
                 <!--from here sprinterkönig data -->
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th style="width: 2cm"><input type="number" v-model="guessRef" min="0" step="0.01" style="width: 100%" /></th>
-                <th></th>
-                <th></th>
-                <th></th>
+                <template v-if="modeIsSPK">
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th style="width: 2cm">
+                        <input class="pl-2" type="number" v-model="guessRef" min="0" step="0.01" style="width: 100%" />
+                    </th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                </template>
             </tr>
         </thead>
         <tbody>
             <tr v-for="athlete in athletesArraySorted">
-                <td>{{ athlete.athlete.bib }}</td>
-                <td>{{ athlete.athlete.first_name }}</td>
-                <td>{{ athlete.athlete.last_name }}</td>
+                <td class="pl-2">{{ athlete.athlete.bib }}</td>
+                <td class="pl-2">{{ athlete.athlete.first_name }}</td>
+                <td class="pl-2">{{ athlete.athlete.last_name }}</td>
                 <td style="text-align: center">
                     <v-btn
                         icon="mdi-pencil"
@@ -104,117 +122,136 @@
                         :disabled="!canEditAthletes"
                     ></v-btn>
                 </td>
-                <!--from here sprinterkönig data -->
-                <td style="text-align: center">
-                    <SPKStateDot
-                        :done="heatIsFinished(RunPossibilities.Run15_1, athlete)"
-                        :set="heatIsDistributed(RunPossibilities.Run15_1, athlete)"
-                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run15_1])"
-                    ></SPKStateDot>
-                </td>
-                <td style="text-align: center">
-                    <SPKStateDot
-                        :done="heatIsFinished(RunPossibilities.Run15_2, athlete)"
-                        :set="heatIsDistributed(RunPossibilities.Run15_2, athlete)"
-                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run15_2])"
-                    ></SPKStateDot>
-                </td>
-                <td style="text-align: center">
-                    <SPKStateDot
-                        :done="heatIsFinished(RunPossibilities.Run20_1, athlete)"
-                        :set="heatIsDistributed(RunPossibilities.Run20_1, athlete)"
-                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run20_1])"
-                    ></SPKStateDot>
-                </td>
-                <td style="text-align: center">
-                    <SPKStateDot
-                        :done="heatIsFinished(RunPossibilities.Run20_2, athlete)"
-                        :set="heatIsDistributed(RunPossibilities.Run20_2, athlete)"
-                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run20_2])"
-                    ></SPKStateDot>
-                </td>
-                <td style="text-align: center">
-                    <SPKStateDot
-                        :done="heatIsFinished(RunPossibilities.Run30_1, athlete)"
-                        :set="heatIsDistributed(RunPossibilities.Run30_1, athlete)"
-                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run30_1])"
-                    ></SPKStateDot>
-                </td>
-                <td style="text-align: center">
-                    <SPKStateDot
-                        :done="heatIsFinished(RunPossibilities.Run30_2, athlete)"
-                        :set="heatIsDistributed(RunPossibilities.Run30_2, athlete)"
-                        :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run30_2])"
-                    ></SPKStateDot>
-                </td>
-                <template v-if="showSPKData">
-                    <td class="pl-1">{{ athlete.athlete.spk_guess?.toFixed(2) ?? "" }}</td>
-                    <td class="pl-1">{{ (finalTimes[athlete.athlete.id] ?? ["", null])[1]?.toFixed(2) ?? "" }}</td>
-                    <td class="pl-1">{{ (finalTimes[athlete.athlete.id] ?? ["", "", null])[2]?.toFixed(2) ?? "" }}</td>
-                    <td class="pl-1">{{ places[athlete.athlete.id] ?? "" }}</td>
+                <!--from here street run data -->
+                <template v-if="modeIsStreetRun">
+                    <td style="width: 2cm; text-align: center">{{ athlete.athlete.street_run_rounds?.toFixed(0) ?? "" }}</td>
+                    <td style="text-align: center" v-for="i in maxRoundsDisplay">
+                        <StreetRunStateDot
+                            :planned="roundPlanned(athlete.athlete.id, i - 1)"
+                            :ran="roundRan(athlete.athlete.id, i - 1)"
+                            :time="roundTime(athlete.athlete.id, i - 1)"
+                        ></StreetRunStateDot>
+                    </td>
                 </template>
-                <template v-else>
-                    <td class="pl-1">----</td>
-                    <td class="pl-1">----</td>
-                    <td class="pl-1">----</td>
-                    <td class="pl-1">----</td>
+                <!--from here sprinterkönig data -->
+                <template v-if="modeIsSPK">
+                    <td style="text-align: center">
+                        <SPKStateDot
+                            :done="heatIsFinished(RunPossibilities.Run15_1, athlete)"
+                            :set="heatIsDistributed(RunPossibilities.Run15_1, athlete)"
+                            :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run15_1])"
+                        ></SPKStateDot>
+                    </td>
+                    <td style="text-align: center">
+                        <SPKStateDot
+                            :done="heatIsFinished(RunPossibilities.Run15_2, athlete)"
+                            :set="heatIsDistributed(RunPossibilities.Run15_2, athlete)"
+                            :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run15_2])"
+                        ></SPKStateDot>
+                    </td>
+                    <td style="text-align: center">
+                        <SPKStateDot
+                            :done="heatIsFinished(RunPossibilities.Run20_1, athlete)"
+                            :set="heatIsDistributed(RunPossibilities.Run20_1, athlete)"
+                            :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run20_1])"
+                        ></SPKStateDot>
+                    </td>
+                    <td style="text-align: center">
+                        <SPKStateDot
+                            :done="heatIsFinished(RunPossibilities.Run20_2, athlete)"
+                            :set="heatIsDistributed(RunPossibilities.Run20_2, athlete)"
+                            :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run20_2])"
+                        ></SPKStateDot>
+                    </td>
+                    <td style="text-align: center">
+                        <SPKStateDot
+                            :done="heatIsFinished(RunPossibilities.Run30_1, athlete)"
+                            :set="heatIsDistributed(RunPossibilities.Run30_1, athlete)"
+                            :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run30_1])"
+                        ></SPKStateDot>
+                    </td>
+                    <td style="text-align: center">
+                        <SPKStateDot
+                            :done="heatIsFinished(RunPossibilities.Run30_2, athlete)"
+                            :set="heatIsDistributed(RunPossibilities.Run30_2, athlete)"
+                            :time="formatForCircle(finishTimes[athlete.athlete.id][RunPossibilities.Run30_2])"
+                        ></SPKStateDot>
+                    </td>
+                    <template v-if="showSPKData">
+                        <td class="pl-1">{{ athlete.athlete.spk_guess?.toFixed(2) ?? "" }}</td>
+                        <td class="pl-1">{{ (finalTimes[athlete.athlete.id] ?? ["", null])[1]?.toFixed(2) ?? "" }}</td>
+                        <td class="pl-1">{{ (finalTimes[athlete.athlete.id] ?? ["", "", null])[2]?.toFixed(2) ?? "" }}</td>
+                        <td class="pl-1">{{ places[athlete.athlete.id] ?? "" }}</td>
+                    </template>
+                    <template v-else>
+                        <td class="pl-1">----</td>
+                        <td class="pl-1">----</td>
+                        <td class="pl-1">----</td>
+                        <td class="pl-1">----</td>
+                    </template>
                 </template>
             </tr>
         </tbody>
     </table>
 
-    <h3 class="mt-4">Heats</h3>
+    <!--from here street run data -->
+    <template v-if="modeIsStreetRun">
+        {{ evaluations }}
+    </template>
     <!--from here sprinterkönig data -->
-    <v-row class="pt-4 align-center">
-        <v-select
-            :items="runSelectionOptions"
-            v-model="runSelection"
-            density="compact"
-            class="v-col-2"
-            hide-details="auto"
-        ></v-select>
-        <v-combobox
-            :items="selectableRunnersA"
-            item-title="label"
-            item-value="id"
-            density="compact"
-            v-model="selectedRunnerA"
-            class="v-col-3"
-            hide-details="auto"
-            :auto-select-first="true"
-        ></v-combobox>
-        <v-combobox
-            :items="selectableRunnersB"
-            item-title="label"
-            item-value="id"
-            density="compact"
-            v-model="selectedRunnerB"
-            class="v-col-3"
-            hide-details="auto"
-            :auto-select-first="true"
-        ></v-combobox>
-        <v-btn class="v-col-1" :disabled="!heatCanBeAdded" @click="addHeatSPK"> ADD Heat </v-btn>
-    </v-row>
-    <table class="mt-2">
-        <thead>
-            <tr>
-                <th></th>
-                <th scope="col">Runner A</th>
-                <th scope="col">Runner B</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="heat in heats">
-                <td>{{ heat[1].distance }}-{{ heat[1].heat_descriminator }}</td>
-                <td>{{ heat[0][0] }}</td>
-                <td>{{ heat[0][1] }}</td>
-                <td style="text-align: center">
-                    <v-btn icon="mdi-delete" density="compact" @click="deleteHeat(heat[1])"></v-btn>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <template v-if="modeIsSPK">
+        <h3 class="mt-4">Heats</h3>
+        <v-row class="pt-4 align-center">
+            <v-select
+                :items="runSelectionOptions"
+                v-model="runSelection"
+                density="compact"
+                class="v-col-2"
+                hide-details="auto"
+            ></v-select>
+            <v-combobox
+                :items="selectableRunnersA"
+                item-title="label"
+                item-value="id"
+                density="compact"
+                v-model="selectedRunnerA"
+                class="v-col-3"
+                hide-details="auto"
+                :auto-select-first="true"
+            ></v-combobox>
+            <v-combobox
+                :items="selectableRunnersB"
+                item-title="label"
+                item-value="id"
+                density="compact"
+                v-model="selectedRunnerB"
+                class="v-col-3"
+                hide-details="auto"
+                :auto-select-first="true"
+            ></v-combobox>
+            <v-btn class="v-col-1" :disabled="!heatCanBeAdded" @click="addHeatSPK"> ADD Heat </v-btn>
+        </v-row>
+        <table class="mt-2">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th scope="col">Runner A</th>
+                    <th scope="col">Runner B</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="heat in heats">
+                    <td>{{ heat[1].distance }}-{{ heat[1].heat_descriminator }}</td>
+                    <td>{{ heat[0][0] }}</td>
+                    <td>{{ heat[0][1] }}</td>
+                    <td style="text-align: center">
+                        <v-btn icon="mdi-delete" density="compact" @click="deleteHeat(heat[1])"></v-btn>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </template>
 </template>
 
 <script setup lang="ts">
@@ -223,8 +260,9 @@
     import useMainStore from "../stores/main";
     import { ref } from "vue";
     import SPKStateDot from "./SPKStateDot.vue";
-    import { AthleteWithMetadata } from "../functions/interfaceInbound";
-    import { numberFromRaceTime } from "../functions/representation";
+    import StreetRunStateDot from "./StreetRunStateDot.vue";
+    import { AthleteWithMetadata, HeatCompetitorResult } from "../functions/interfaceInbound";
+    import { numberFromRaceTime, raceTimeStringRepr } from "../functions/representation";
     import jsPDF from "jspdf";
     import { uuid } from "../functions/uuid";
 
@@ -235,6 +273,7 @@
     const lastNameRef = ref("");
     const firstNameRef = ref("");
     const guessRef = ref(""); // SPK
+    const roundsRef = ref(""); // StreeRun
 
     const athletesArray = computed(() => {
         return mainStore.athletesData;
@@ -276,6 +315,7 @@
         lastNameRef.value = ath.last_name;
         firstNameRef.value = ath.first_name;
         guessRef.value = String(ath.spk_guess ?? "");
+        roundsRef.value = String(ath.street_run_rounds ?? "");
     }
     const canEditAthletes = computed(() => {
         return idRef.value == null;
@@ -312,6 +352,12 @@
         }
         guessRef.value = "";
 
+        let streetRunRounds = null;
+        if (roundsRef.value) {
+            streetRunRounds = parseFloat(roundsRef.value);
+        }
+        roundsRef.value = "";
+
         const athlete: Athlete = {
             id: id,
             bib: updateBib,
@@ -321,9 +367,101 @@
             first_name: updateFirstName,
             last_name: updateLastName,
             spk_guess: spkGuess,
+            street_run_rounds: streetRunRounds,
         };
 
         mainStore.sendUpsertAthleteCommand(athlete);
+    }
+
+    // Street Run logic
+    const MAIN_HEAT_KEY = "THIS_IS_THE_MAIN_HEAT";
+    const modeIsStreetRun = computed(() => {
+        return (mainStore.staticConfiguration?.mode ?? ApplicationMode.SprinterKing) == ApplicationMode.StreetLongRun;
+    });
+    // TODO do not compute ANY expensive mappings in a mode that does not require them (remove for others)
+    const evaluations = computed(() => {
+        if ((mainStore.staticConfiguration?.mode ?? ApplicationMode.SprinterKing) == ApplicationMode.StreetLongRun) {
+            let res = {} as { [key: string]: { athlete: Athlete; evaluations: HeatCompetitorResult[] } };
+
+            mainStore.athletesData.forEach((a) => {
+                let evals = [] as HeatCompetitorResult[];
+
+                if (mainStore.mainHeat) {
+                    const heatData = mainStore.mainHeat;
+                    if (heatData.meta.name == MAIN_HEAT_KEY) {
+                        heatData.evaluations?.forEach((evaluation) => {
+                            if (evaluation.competitor_result.competitor.bib == a.athlete.bib) {
+                                evals.push(evaluation.competitor_result);
+                            }
+                        });
+                    }
+                }
+
+                evals.sort((a, b) => {
+                    return numberFromRaceTime(a.runtime_full_precision) - numberFromRaceTime(b.runtime_full_precision);
+                });
+
+                res[a.athlete.id] = {
+                    athlete: a.athlete,
+                    evaluations: evals,
+                };
+            });
+
+            return res;
+        } else {
+            return {};
+        }
+    });
+    const maxEvaluations = computed(() => {
+        let max = 0;
+        Object.values(evaluations.value).forEach((evals) => {
+            if (evals.evaluations.length > max) {
+                max = evals.evaluations.length;
+            }
+        });
+        return max;
+    });
+    const maxRounds = computed(() => {
+        let max = 0;
+        Object.values(evaluations.value).forEach((aths) => {
+            if (aths.athlete.street_run_rounds && aths.athlete.street_run_rounds > max) {
+                max = aths.athlete.street_run_rounds;
+            }
+        });
+        return max;
+    });
+    const maxRoundsDisplay = computed(() => {
+        return Math.max(maxEvaluations.value, maxRounds.value);
+    });
+    function roundPlanned(athleteId: string, roundIndex: number): boolean {
+        const dat = evaluations.value[athleteId];
+
+        if (dat) {
+            return (dat.athlete.street_run_rounds ?? 0) > roundIndex;
+        }
+
+        return false;
+    }
+    function roundRan(athleteId: string, roundIndex: number): boolean {
+        const dat = evaluations.value[athleteId];
+
+        if (dat) {
+            return dat.evaluations.length > roundIndex;
+        }
+
+        return false;
+    }
+    function roundTime(athleteId: string, roundIndex: number): string {
+        const dat = evaluations.value[athleteId];
+
+        if (dat) {
+            const run = dat.evaluations[roundIndex];
+            if (run) {
+                return raceTimeStringRepr(run.runtime_full_precision, false, false, 2);
+            }
+        }
+
+        return "";
     }
 
     // Sprinterkönig logic
@@ -476,7 +614,7 @@
                 [RunPossibilities.Run30_2]: null as number | null,
             };
 
-            athlete.heats.forEach((heat) => {
+            athlete.heats_from_assignments.forEach((heat) => {
                 const poss = possibilityFromNumberAndIndex(heat[1].distance, heat[1].heat_descriminator);
 
                 if (poss) {

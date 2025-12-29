@@ -49,3 +49,38 @@ export function numberFromRaceTime(rt: RaceTime): number {
 
     return Math.round(secs * 100) / 100;
 }
+
+export function raceTimeStringRepr(
+    rt: RaceTime,
+    displayHoursIfZero: boolean,
+    displayMinutesIfZero: boolean,
+    fractionDigits: number
+): string {
+    const parts: string[] = [];
+
+    const hours = rt.hours !== null ? rt.hours : displayHoursIfZero ? 0 : null;
+
+    const minutes = rt.minutes !== null ? rt.minutes : displayMinutesIfZero || hours !== null ? 0 : null;
+
+    if (hours !== null) {
+        parts.push(hours.toString());
+        parts.push(minutes!.toString().padStart(2, "0"));
+    } else if (minutes !== null) {
+        parts.push(minutes.toString());
+    }
+
+    parts.push(rt.seconds.toString().padStart(parts.length > 0 ? 2 : 1, "0"));
+
+    if (fractionDigits > 0) {
+        const availableDigits = [rt.tenths, rt.hundrets, rt.thousands, rt.ten_thousands];
+
+        const fraction = availableDigits
+            .slice(0, fractionDigits)
+            .map((d) => (d ?? 0).toString())
+            .join("");
+
+        return `${parts.join(":")}.${fraction}`;
+    }
+
+    return parts.join(":");
+}
