@@ -580,7 +580,7 @@ impl TimingStateMachine {
 
     pub fn insert_new_display_entry(&mut self, entry: &DisplayEntry) {
         self.run_display_entries.push((
-            self.settings.hold_time_ms as i64 * 1000000 / FRAME_TIME_NS as i64,
+            self.settings.display_time_ms as i64 * 1000000 / FRAME_TIME_NS as i64,
             entry.clone(),
         ));
     }

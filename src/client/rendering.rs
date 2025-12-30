@@ -282,17 +282,32 @@ pub fn render_client_frame(
                                 (line_3_y, entries.2),
                             ] {
                                 if let Some(entry) = entry_opt {
-                                    // TODO replace with size limited scrolling
                                     draw_text(
-                                        &format!("{} {}", entry.bib, entry.name),
+                                        &format!("{}", entry.bib),
                                         border,
                                         y_pos,
                                         street_run_font_size,
                                         meta,
                                     );
-                                    // TODO needs to go a little more left
+                                    draw_text_scrolling_with_width(
+                                        &format!("{}", entry.name),
+                                        border + window_width / 9.0 + border / 2.0,
+                                        y_pos,
+                                        street_run_font_size,
+                                        window_width
+                                            - window_width / 9.0
+                                            - window_width / 12.0
+                                            - window_width / 9.0
+                                            - border / 2.0
+                                            - 3.0 * border,
+                                        state.frame_counter,
+                                        meta,
+                                    );
                                     draw_image(
-                                        (window_width - window_width / 9.0 - window_width / 12.0)
+                                        (window_width
+                                            - window_width / 9.0
+                                            - window_width / 12.0
+                                            - border)
                                             as u32,
                                         y_pos as u32,
                                         &state

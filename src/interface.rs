@@ -1,7 +1,7 @@
 use crate::database::{
     create_heat_assignment, delete_athlete, delete_evaluation, delete_heat_assignment,
     delete_pdf_setting, get_all_athletes_meta_data, get_database_static_state, get_main_heat,
-    init_database_static_state, DatabaseStaticState,
+    init_database_static_state, populate_display_from_bib, DatabaseStaticState,
 };
 use crate::open_webcontrol;
 use crate::server::audio_types::{AudioPlayer, Sound};
@@ -259,14 +259,23 @@ impl ServerStateMachine {
         // handle all messages
         match msg {
             IncomingInstruction::FromBibServer(bm) => {
-                self.send_message_to_client(MessageFromServerToClient::PushDisplayEntry({
-                    DisplayEntry {
-                        bib: bm.bib,
-                        name: "TMP".into(), // TODO fix
-                        round: 0,
-                        max_rounds: 0,
+                match populate_display_from_bib(bm.bib, &self.database_manager) {
+                    Ok(data) => match data {
+                        Some(de) => self.send_message_to_client(
+                            MessageFromServerToClient::PushDisplayEntry(de),
+                        ),
+                        None => debug!(
+                            "Received a bib signal, but could not match to athlete: {}",
+                            bm.bib
+                        ),
+                    },
+                    Err(e) => {
+                        error!(
+                            "Could not resolve athlete data for bib {}, because: {}",
+                            bm.bib, e
+                        );
                     }
-                }));
+                }
             }
             IncomingInstruction::FromClient(inst) => match inst {
                 MessageFromClientToServer::ServerInternal(internal) => match internal {

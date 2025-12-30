@@ -11,6 +11,7 @@ use crate::database::schema::{
     permanent_storage,
 };
 use crate::database::DatabaseManager;
+use crate::server::bib_detection::DisplayEntry;
 use crate::server::camera_program_types::{
     Athlete, AthleteWithMetadata, CompetitorEvaluated, HeatAssignment, HeatData, HeatFalseStart,
     HeatFinish, HeatIntermediate, HeatResult, HeatStart, HeatStartList, HeatWind, HeatWindMissing,
@@ -823,4 +824,45 @@ pub fn delete_evaluation(
     }
 
     Ok(())
+}
+
+pub fn populate_display_from_bib(
+    bib: u32,
+    manager: &DatabaseManager,
+) -> Result<Option<DisplayEntry>, DatabaseError> {
+    let athletes = Athlete::get_all_from_database(manager)?;
+
+    for athlete in athletes {
+        if athlete.bib == bib {
+            let mut conn = manager.get_connection()?;
+            let data =
+                heat_evaluations::table::table().load::<HeatEvaluationDatabase>(&mut conn)?;
+            let evaluated: Vec<CompetitorEvaluated> = data
+                .into_iter()
+                .map(|h| {
+                    CompetitorEvaluated::try_from(h).map(|e| {
+                        if e.competitor_result.competitor.bib == bib {
+                            Some(e)
+                        } else {
+                            None
+                        }
+                    })
+                })
+                .collect::<Result<Vec<Option<CompetitorEvaluated>>, DatabaseError>>()?
+                .into_iter()
+                .filter_map(|a| a)
+                .collect();
+
+            let number_evaluations = evaluated.len();
+
+            return Ok(Some(DisplayEntry {
+                bib,
+                name: format!("{} {}", athlete.first_name, athlete.last_name),
+                round: (number_evaluations + 1) as u16,
+                max_rounds: athlete.street_run_rounds.unwrap_or(0) as u16,
+            }));
+        }
+    }
+
+    Ok(None)
 }
