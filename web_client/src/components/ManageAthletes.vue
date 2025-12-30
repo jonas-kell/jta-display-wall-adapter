@@ -270,12 +270,14 @@
     import { ref } from "vue";
     import SPKStateDot from "./SPKStateDot.vue";
     import StreetRunStateDot from "./StreetRunStateDot.vue";
-    import { AthleteWithMetadata, HeatCompetitorResult } from "../functions/interfaceInbound";
-    import { numberFromRaceTime, raceTimeStringRepr } from "../functions/representation";
+    import { AthleteWithMetadata } from "../functions/interfaceInbound";
+    import { raceTimeStringRepr } from "../functions/representation";
     import jsPDF from "jspdf";
     import { uuid } from "../functions/uuid";
+    import { RunPossibilities, sharedAthleteFunctionality } from "../functions/sharedAthleteTypes";
 
     const mainStore = useMainStore();
+    const { athletesArray, finishTimes, evaluations } = sharedAthleteFunctionality();
 
     const idRef = ref(null as null | string);
     const bibRef = ref("");
@@ -284,9 +286,6 @@
     const guessRef = ref(""); // SPK
     const roundsRef = ref(""); // StreeRun
 
-    const athletesArray = computed(() => {
-        return mainStore.athletesData;
-    });
     const athletesByBib = computed(() => {
         return [...athletesArray.value].sort((a, b) => {
             return a.athlete.bib - b.athlete.bib;
@@ -383,7 +382,6 @@
     }
 
     // Street Run logic
-    const MAIN_HEAT_KEY = "THIS_IS_THE_MAIN_HEAT";
     const modeIsStreetRun = computed(() => {
         return (mainStore.staticConfiguration?.mode ?? ApplicationMode.SprinterKing) == ApplicationMode.StreetLongRun;
     });
@@ -415,39 +413,6 @@
         });
     }
     // TODO do not compute ANY expensive mappings in a mode that does not require them (remove for others)
-    const evaluations = computed(() => {
-        if ((mainStore.staticConfiguration?.mode ?? ApplicationMode.SprinterKing) == ApplicationMode.StreetLongRun) {
-            let res = {} as { [key: string]: { athlete: Athlete; evaluations: HeatCompetitorResult[] } };
-
-            mainStore.athletesData.forEach((a) => {
-                let evals = [] as HeatCompetitorResult[];
-
-                if (mainStore.mainHeat) {
-                    const heatData = mainStore.mainHeat;
-                    if (heatData.meta.name == MAIN_HEAT_KEY) {
-                        heatData.evaluations?.forEach((evaluation) => {
-                            if (evaluation.competitor_result.competitor.bib == a.athlete.bib) {
-                                evals.push(evaluation.competitor_result);
-                            }
-                        });
-                    }
-                }
-
-                evals.sort((a, b) => {
-                    return numberFromRaceTime(a.runtime_full_precision) - numberFromRaceTime(b.runtime_full_precision);
-                });
-
-                res[a.athlete.id] = {
-                    athlete: a.athlete,
-                    evaluations: evals,
-                };
-            });
-
-            return res;
-        } else {
-            return {};
-        }
-    });
     const maxEvaluations = computed(() => {
         let max = 0;
         Object.values(evaluations.value).forEach((evals) => {
@@ -542,14 +507,6 @@
         return (mainStore.staticConfiguration?.mode ?? ApplicationMode.StreetLongRun) == ApplicationMode.SprinterKing;
     });
     const showSPKData = ref(true);
-    enum RunPossibilities {
-        Run15_1 = "Run15_1",
-        Run15_2 = "Run15_2",
-        Run20_1 = "Run20_1",
-        Run20_2 = "Run20_2",
-        Run30_1 = "Run30_1",
-        Run30_2 = "Run30_2",
-    }
     function distanceFromPossibilities(d: RunPossibilities): number {
         switch (d) {
             case RunPossibilities.Run15_1:
@@ -581,32 +538,6 @@
             case RunPossibilities.Run30_2:
                 return 2;
         }
-    }
-    function possibilityFromNumberAndIndex(d: number, index: number): RunPossibilities | null {
-        switch (index) {
-            case 1:
-                switch (d) {
-                    case 15:
-                        return RunPossibilities.Run15_1;
-                    case 20:
-                        return RunPossibilities.Run20_1;
-                    case 30:
-                        return RunPossibilities.Run30_1;
-                }
-                break;
-            case 2:
-                switch (d) {
-                    case 15:
-                        return RunPossibilities.Run15_2;
-                    case 20:
-                        return RunPossibilities.Run20_2;
-                    case 30:
-                        return RunPossibilities.Run30_2;
-                }
-                break;
-        }
-
-        return null;
     }
     function formatForCircle(data: number | null): string {
         if (data != null) {
@@ -675,34 +606,6 @@
             return ha.distance == distanceFromPossibilities(d) && ha.heat_descriminator == indexFromPossibilities(d);
         });
     }
-    const finishTimes = computed(() => {
-        let res: { [key: string]: { [key in RunPossibilities]: number | null } } = {};
-        athletesArray.value.forEach((athlete) => {
-            let data = {
-                [RunPossibilities.Run15_1]: null as number | null,
-                [RunPossibilities.Run15_2]: null as number | null,
-                [RunPossibilities.Run20_1]: null as number | null,
-                [RunPossibilities.Run20_2]: null as number | null,
-                [RunPossibilities.Run30_1]: null as number | null,
-                [RunPossibilities.Run30_2]: null as number | null,
-            };
-
-            athlete.heats_from_assignments.forEach((heat) => {
-                const poss = possibilityFromNumberAndIndex(heat[1].distance, heat[1].heat_descriminator);
-
-                if (poss) {
-                    const heatCompetitorResult = heat[0];
-                    if (heatCompetitorResult) {
-                        data[poss] = numberFromRaceTime(heatCompetitorResult.runtime_full_precision);
-                    }
-                }
-            });
-
-            res[athlete.athlete.id] = data;
-        });
-
-        return res;
-    });
     function heatIsFinished(d: RunPossibilities, athlete: AthleteWithMetadata): boolean {
         return finishTimes.value[athlete.athlete.id][d] != null;
     }
@@ -757,6 +660,7 @@
             mainStore.sendDeleteHeatAssignmentCommand(ha.id);
         }
     }
+    // TODO make more general to support n runners
     const selectableRunnersA = computed(() => {
         const currentDistance = distanceFromPossibilities(runSelection.value);
         const currentIndex = indexFromPossibilities(runSelection.value);
