@@ -31,7 +31,17 @@
                         :disabled="!canAddSetting"
                     ></v-btn>
                 </th>
-                <th scope="col"><input class="pl-2" type="text" v-model="contentRef" style="width: 100%" /></th>
+                <th scope="col">
+                    <input class="pl-2" type="text" v-model="contentRef" style="width: 100%" v-if="typeRef == 'Text'" />
+                    <v-select
+                        :items="Object.values(PDFConfigurationContentReferenceReference) as string[] ?? []"
+                        v-model="contentRef"
+                        width="100%"
+                        density="compact"
+                        :hide-details="true"
+                        v-else
+                    ></v-select>
+                </th>
                 <th scope="col">
                     <input class="pl-2" type="text" v-model="content2Ref" style="width: 100%" v-if="typeRef == 'Reference'" />
                 </th>
@@ -71,7 +81,12 @@
 </template>
 
 <script setup lang="ts">
-    import { PDFConfigurationContent, PDFConfigurationSetting, PDFSettingFor } from "../functions/interfaceShared";
+    import {
+        PDFConfigurationContent,
+        PDFConfigurationContentReferenceReference,
+        PDFConfigurationSetting,
+        PDFSettingFor,
+    } from "../functions/interfaceShared";
     import { uuid } from "../functions/uuid";
     import useMainStore from "../stores/main";
     import { computed, ref } from "vue";
@@ -90,7 +105,7 @@
     const italicRef = ref(false);
     const sizeRef = ref("");
     const typeRef = ref("Text" as FieldType);
-    const contentRef = ref("");
+    const contentRef = ref("" as string | PDFConfigurationContentReferenceReference);
     const content2Ref = ref("");
 
     const canAddSetting = computed(() => {

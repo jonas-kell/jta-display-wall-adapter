@@ -282,6 +282,7 @@ pub fn render_client_frame(
                                 (line_3_y, entries.2),
                             ] {
                                 if let Some(entry) = entry_opt {
+                                    // TODO replace with size limited scrolling
                                     draw_text(
                                         &format!("{} {}", entry.bib, entry.name),
                                         border,

@@ -88,6 +88,25 @@ export type PDFConfigurationContentText = {
     text: string;
 };
 
+export enum PDFConfigurationContentReferenceReference {
+    Bib = "Bib",
+    Name = "Name",
+    SpkTime = "SpkTime",
+    SpkGuess = "SpkGuess",
+    HasRound1 = "HasRound1",
+    HasRound2 = "HasRound2",
+    HasRound3 = "HasRound3",
+    HasRound4 = "HasRound4",
+    HasRound5 = "HasRound5",
+    HasRound6 = "HasRound6",
+    TimeRound1 = "TimeRound1",
+    TimeRound2 = "TimeRound2",
+    TimeRound3 = "TimeRound3",
+    TimeRound4 = "TimeRound4",
+    TimeRound5 = "TimeRound5",
+    TimeRound6 = "TimeRound6",
+}
+
 export type PDFConfigurationContentReference = {
     type: "PDFConfigurationContentReference";
     reference: string;
