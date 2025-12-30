@@ -6,6 +6,7 @@ use crate::server::parts::database::create_database_manager;
 use crate::server::parts::intake_commands::intake_commands;
 use crate::server::parts::tcp_client_camera_program::tcp_client_camera_program;
 use crate::server::parts::tcp_forwarder_display_program::tcp_forwarder_display_program;
+use crate::server::parts::tcp_listener_bib_detection::tcp_listener_bib_detection;
 use crate::server::parts::tcp_listener_timing_program::tcp_listener_timing_program;
 use crate::server::parts::tcp_listener_wind_server::tcp_listener_wind_server;
 use crate::webserver::{get_local_ip, webserver, HttpServerStateManager, Server};
@@ -132,6 +133,18 @@ pub async fn run_server(args: &Args) -> () {
         None
     };
 
+    let bib_server_address = if let Some(bib_server_ip) = &args.address_bib_server {
+        let own_addr_bib_server: SocketAddr =
+            format!("{}:{}", bib_server_ip, args.bib_exchange_port)
+                .parse()
+                .expect("Invalid bib server address");
+
+        Some(own_addr_bib_server)
+    } else {
+        info!("Not configured to connect to a bib server");
+        None
+    };
+
     let comm_channel = InstructionCommunicationChannel::new(&args);
     let comm_channel_packets = PacketCommunicationChannel::new(&args);
     let database_manager = match create_database_manager(args.clone()) {
@@ -201,10 +214,18 @@ pub async fn run_server(args: &Args) -> () {
 
     let tcp_client_wind_server_instance = tcp_listener_wind_server(
         args.clone(),
-        server_state_reader,
+        server_state_reader.clone(),
         comm_channel.clone(),
         shutdown_marker.clone(),
         wind_server_address,
+    );
+
+    let tcp_client_bib_server_instance = tcp_listener_bib_detection(
+        args.clone(),
+        server_state_reader,
+        comm_channel.clone(),
+        shutdown_marker.clone(),
+        bib_server_address,
     );
 
     // spawn the async runtimes in parallel
@@ -214,6 +235,7 @@ pub async fn run_server(args: &Args) -> () {
     let tcp_forwarder_display_program_task = tokio::spawn(tcp_forwarder_display_program_instance);
     let tcp_client_camera_program_task = tokio::spawn(tcp_client_camera_program_instance);
     let tcp_client_wind_server_task = tokio::spawn(tcp_client_wind_server_instance);
+    let tcp_client_bib_server_task = tokio::spawn(tcp_client_bib_server_instance);
     let webserver_task = tokio::spawn(http_server);
     let shutdown_task = tokio::spawn(async move {
         // listen for ctrl-c
@@ -233,6 +255,7 @@ pub async fn run_server(args: &Args) -> () {
         tcp_forwarder_display_program_task,
         tcp_client_camera_program_task,
         tcp_client_wind_server_task,
+        tcp_client_bib_server_task,
         webserver_task,
         shutdown_task,
     ) {

@@ -4,6 +4,7 @@ use crate::{
         CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
         HeatStartList, HeatWind, HeatWindMissing,
     },
+    server::BibMessage,
     times::{DayTime, RaceTime},
     webserver::MessageFromWebControl,
     wind::format::WindMessageBroadcast,
@@ -17,6 +18,7 @@ pub enum IncomingInstruction {
     FromCameraProgram(InstructionFromCameraProgram),
     FromWebControl(MessageFromWebControl),
     FromWindServer(WindMessageBroadcast),
+    FromBibServer(BibMessage),
 }
 impl Display for IncomingInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -31,6 +33,7 @@ impl Display for IncomingInstruction {
                     format!("FromCameraProgram: {:?}", cpi),
                 IncomingInstruction::FromWebControl(wci) => format!("FromWebControl: {:?}", wci),
                 IncomingInstruction::FromWindServer(wmb) => format!("FromWindServer: {:?}", wmb),
+                IncomingInstruction::FromBibServer(bm) => format!("FromBibServer: {:?}", bm),
             }
         )
     }

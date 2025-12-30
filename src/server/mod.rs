@@ -9,4 +9,4 @@ pub use parts::server::run_server;
 pub mod camera_program_types {
     pub use super::camera_program_datatypes::*;
 }
-pub use parts::{audio_types, export_functions};
+pub use parts::{audio_types, export_functions, BibMessage};

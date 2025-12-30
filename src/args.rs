@@ -45,6 +45,12 @@ pub struct Args {
     /// Port where the internal communication between wind server and server takes place
     #[arg(long, default_value_t = String::from("7890"))]
     pub wind_exchange_port: String,
+    /// Address of the bib server lives (for the server to talk to) (like "127.0.0.1") - if unset, no connection to bib server will be attempted
+    #[arg(long)]
+    pub address_bib_server: Option<String>,
+    /// Port where the internal communication between bib server and server takes place
+    #[arg(long, default_value_t = String::from("9000"))]
+    pub bib_exchange_port: String,
     /// Address of the wind server lives (for the server to talk to) (like "127.0.0.1") - if unset, no connection to wind server will be attempted
     #[arg(long)]
     pub address_wind_server: Option<String>,

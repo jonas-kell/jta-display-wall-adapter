@@ -88,7 +88,7 @@ pub async fn tcp_listener_wind_server(
                                 Ok(mess_broadcast) => match comm_channel_read.take_in_command_from_wind_server(mess_broadcast) {
                                     Ok(()) => trace!("Message from wind server taken into internal communication"),
                                     Err(e) =>  {
-                                        error!("Wind server could not deopsit message into internal comm channel: {}", e.to_string());
+                                        error!("Wind server could not deposit message into internal comm channel: {}", e.to_string());
                                         // problems with the internal comm channel (technically this is reason to crash on the spot, this is kind of not supported by the err architecture ins this case -> other places will shut down the program if this happens)
                                         return Err(Error::new(ErrorKind::Other, e.to_string()));
                                     }

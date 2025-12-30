@@ -5,6 +5,7 @@ use crate::{
         InstructionToTimingProgram,
     },
     interface::{MessageFromClientToServer, MessageFromServerToClient},
+    server::BibMessage,
     webserver::{MessageFromWebControl, MessageToWebControl},
     wind::format::{MessageToWindServer, WindMessageBroadcast},
 };
@@ -152,6 +153,22 @@ impl InstructionCommunicationChannel {
         match self
             .inbound_sender
             .try_send(IncomingInstruction::FromWindServer(inst))
+        {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
+    }
+
+    pub fn take_in_command_from_bib_server(&self, inst: BibMessage) -> Result<(), String> {
+        match self
+            .inbound_sender
+            .try_send(IncomingInstruction::FromBibServer(inst))
         {
             Ok(_) => Ok(()),
             Err(TrySendError::Closed(_)) => {

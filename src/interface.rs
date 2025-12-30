@@ -258,6 +258,16 @@ impl ServerStateMachine {
 
         // handle all messages
         match msg {
+            IncomingInstruction::FromBibServer(bm) => {
+                self.send_message_to_client(MessageFromServerToClient::PushDisplayEntry({
+                    DisplayEntry {
+                        bib: bm.bib,
+                        name: "TMP".into(), // TODO fix
+                        round: 0,
+                        max_rounds: 0,
+                    }
+                }));
+            }
             IncomingInstruction::FromClient(inst) => match inst {
                 MessageFromClientToServer::ServerInternal(internal) => match internal {
                     ServerInternalMessageFromClientToServer::MakeVersionRequestToAllClients => {
