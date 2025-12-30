@@ -79,6 +79,7 @@ export type PDFConfigurationSetting = {
     size: number;
     bold: boolean;
     italic: boolean;
+    centered: boolean;
     content: PDFConfigurationContent;
 };
 
@@ -92,8 +93,8 @@ export type PDFConfigurationContentText = {
 export enum PDFConfigurationContentReferenceReference {
     Bib = "Bib",
     Name = "Name",
-    SpkTime = "SpkTime",
-    SpkGuess = "SpkGuess",
+    FirstName = "FirstName",
+    LastName = "LastName",
     HasRound1 = "HasRound1",
     HasRound2 = "HasRound2",
     HasRound3 = "HasRound3",
@@ -106,6 +107,15 @@ export enum PDFConfigurationContentReferenceReference {
     TimeRound4 = "TimeRound4",
     TimeRound5 = "TimeRound5",
     TimeRound6 = "TimeRound6",
+    TotalTimeRound1 = "TotalTimeRound1",
+    TotalTimeRound2 = "TotalTimeRound2",
+    TotalTimeRound3 = "TotalTimeRound3",
+    TotalTimeRound4 = "TotalTimeRound4",
+    TotalTimeRound5 = "TotalTimeRound5",
+    TotalTimeRound6 = "TotalTimeRound6",
+    FinalTime = "FinalTime",
+    SpkTime = "SpkTime",
+    SpkGuess = "SpkGuess",
 }
 
 export type PDFConfigurationContentReference = {

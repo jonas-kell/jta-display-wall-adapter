@@ -10,6 +10,15 @@ export enum RunPossibilities {
     Run30_2 = "Run30_2",
 }
 
+export interface AthletePrintData {
+    id: string;
+    bib: number;
+    firstName: string;
+    lastName: string;
+    birthDate: string;
+    roundTimes: RaceTime[];
+}
+
 function possibilityFromNumberAndIndex(d: number, index: number): RunPossibilities | null {
     switch (index) {
         case 1:
@@ -38,7 +47,7 @@ function possibilityFromNumberAndIndex(d: number, index: number): RunPossibiliti
 }
 import useMainStore from "../stores/main";
 import { ApplicationMode, Athlete } from "./interfaceShared";
-import { HeatCompetitorResult } from "./interfaceInbound";
+import { HeatCompetitorResult, RaceTime } from "./interfaceInbound";
 
 const MAIN_HEAT_KEY = "THIS_IS_THE_MAIN_HEAT";
 

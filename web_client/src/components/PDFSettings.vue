@@ -162,11 +162,14 @@
         if (generatingCurrently.value) {
             switch (generatingCurrently.value) {
                 case PDFSettingFor.Bib:
-                    viewer.value?.setPDFtoRender(generatePDF(true, processedBackgroundImageBib.value, settingsBib.value));
+                    viewer.value?.setPDFtoRender(
+                        generatePDF(false, true, processedBackgroundImageBib.value, settingsBib.value, null) ?? ""
+                    );
                     break;
                 case PDFSettingFor.Certificate:
                     viewer.value?.setPDFtoRender(
-                        generatePDF(false, processedBackgroundImageCertificate.value, settingsCertificate.value)
+                        generatePDF(false, false, processedBackgroundImageCertificate.value, settingsCertificate.value, null) ??
+                            ""
                     );
                     break;
                 default:

@@ -4,12 +4,95 @@
     <div class="d-flex justify-space-between">
         <div>
             <h3>Bib</h3>
-            <v-btn @click="generateBib" class="mr-2">Generate</v-btn>
-            <v-btn @click="print" class="mr-2">Print</v-btn>
+            <v-btn @click="generateBib(false)" class="mr-2">Generate</v-btn>
+            <v-btn @click="generateBib(true)" class="mr-2">Download</v-btn>
+            <!--<v-btn @click="print" class="mr-2">Print</v-btn>-->
 
             <h3 class="mt-4">Certificate</h3>
-            <v-btn @click="generateCertificate" class="mr-2">Generate</v-btn>
-            <v-btn @click="print" class="mr-2">Print</v-btn>
+            <v-btn @click="generateCertificate(false)" class="mr-2">Generate</v-btn>
+            <v-btn @click="generateCertificate(true)" class="mr-2">Download</v-btn>
+            <!--<v-btn @click="print" class="mr-2">Print</v-btn>-->
+
+            <p class="mt-5">
+                click on headers to sort <v-btn @click="selectAll" class="mr-2" density="compact">Select all</v-btn> (sorted:
+                {{ sortBy }}, {{ sortDir ? "desc" : "asc" }})
+            </p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col"></th>
+                        <th
+                            scope="col"
+                            @click="
+                                () => {
+                                    sortDir = !sortDir;
+                                    sortBy = 'bib';
+                                }
+                            "
+                        >
+                            Bib
+                        </th>
+                        <th
+                            scope="col"
+                            @click="
+                                {
+                                    sortDir = !sortDir;
+                                    sortBy = 'first';
+                                }
+                            "
+                        >
+                            Firstname
+                        </th>
+                        <th
+                            scope="col"
+                            @click="
+                                {
+                                    sortDir = !sortDir;
+                                    sortBy = 'last';
+                                }
+                            "
+                        >
+                            Lastname
+                        </th>
+                        <th
+                            scope="col"
+                            @click="
+                                {
+                                    sortDir = !sortDir;
+                                    sortBy = 'age';
+                                }
+                            "
+                        >
+                            Bdate
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="athlete in athleteDataSorted">
+                        <td class="unselectable">
+                            <v-checkbox
+                                hide-details="auto"
+                                density="compact"
+                                :value="athlete.id"
+                                v-model="selectedOptionsAthletes"
+                            ></v-checkbox>
+                        </td>
+                        <td scope="col" class="px-1">
+                            {{ athlete.bib }}
+                        </td>
+                        <td scope="col" class="px-1">
+                            {{ athlete.firstName }}
+                        </td>
+                        <td scope="col" class="px-1">
+                            {{ athlete.lastName }}
+                        </td>
+                        <td scope="col" class="px-1">
+                            {{ athlete.birthDate }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
         <PDFViewer ref="viewer"></PDFViewer>
     </div>
@@ -19,16 +102,21 @@
     import useMainStore from "../stores/main";
     import PDFViewer from "./PDFViewer.vue";
     import { generatePDF } from "../functions/pdf";
-    import { ref, watch } from "vue";
+    import { computed, ref, watch } from "vue";
     import { backgroundFileManagement } from "../functions/backgroundFiles";
     import { PDFSettingFor } from "../functions/interfaceShared";
+    import { AthletePrintData, sharedAthleteFunctionality } from "../functions/sharedAthleteTypes";
     const mainStore = useMainStore();
 
     const { processedBackgroundImageBib, processedBackgroundImageCertificate } = backgroundFileManagement();
+    const { evaluations } = sharedAthleteFunctionality();
 
     const viewer = ref<InstanceType<typeof PDFViewer>>();
 
     const currentPDF = ref(null as string | null);
+
+    let sortBy = ref("bib" as "bib" | "first" | "last" | "age");
+    let sortDir = ref(false);
 
     watch([viewer, currentPDF], () => {
         if (currentPDF.value) {
@@ -36,26 +124,129 @@
         }
     });
 
-    function generateBib() {
-        currentPDF.value = generatePDF(
+    function generateBib(download: boolean) {
+        const res = generatePDF(
+            download,
             true,
             processedBackgroundImageBib.value,
-            mainStore.pdfConfigurationSettings.filter((set) => set.for == PDFSettingFor.Bib)
+            mainStore.pdfConfigurationSettings.filter((set) => set.for == PDFSettingFor.Bib),
+            athleteDataSortedFiltered.value
         );
+        if (res) {
+            currentPDF.value = res;
+        }
     }
-    function generateCertificate() {
-        currentPDF.value = generatePDF(
+    function generateCertificate(download: boolean) {
+        const res = generatePDF(
+            download,
             false,
             processedBackgroundImageCertificate.value,
-            mainStore.pdfConfigurationSettings.filter((set) => set.for == PDFSettingFor.Certificate)
+            mainStore.pdfConfigurationSettings.filter((set) => set.for == PDFSettingFor.Certificate),
+            athleteDataSortedFiltered.value
         );
+        if (res) {
+            currentPDF.value = res;
+        }
     }
 
-    function print() {
-        viewer.value?.printCurrentContent();
-        // or
-        // viewer.value?.print(<a value to set>);
+    const selectedOptionsAthletes = ref([] as string[]);
+    function selectAll() {
+        if (selectedOptionsAthletes.value.length > 0) {
+            selectedOptionsAthletes.value = [];
+        } else {
+            selectedOptionsAthletes.value = athleteData.value.map((a) => {
+                return a.id;
+            });
+        }
     }
+
+    const athleteData = computed(() => {
+        let res = [] as AthletePrintData[];
+        Object.values(evaluations.value).forEach((evaluation) => {
+            res.push({
+                id: evaluation.athlete.id,
+                bib: evaluation.athlete.bib,
+                firstName: evaluation.athlete.first_name,
+                lastName: evaluation.athlete.last_name,
+                birthDate: evaluation.athlete.birth_date ?? "1800-01-01",
+                roundTimes: evaluation.evaluations.map((e) => {
+                    return e.runtime_full_precision;
+                }),
+                // roundTimes: [
+                //     {
+                //         hours: null,
+                //         minutes: 12,
+                //         seconds: 2,
+                //         tenths: 1,
+                //         hundrets: 5,
+                //         ten_thousands: null,
+                //         thousands: null,
+                //     },
+                //     {
+                //         hours: null,
+                //         minutes: 14,
+                //         seconds: 3,
+                //         tenths: 1,
+                //         hundrets: 5,
+                //         ten_thousands: null,
+                //         thousands: null,
+                //     },
+                // ],
+            });
+        });
+
+        return res;
+    });
+
+    const athleteDataSorted = computed(() => {
+        let intermediate = [...athleteData.value];
+
+        switch (sortBy.value) {
+            case "age":
+                intermediate = intermediate.sort((a, b) => {
+                    return a.birthDate.localeCompare(b.birthDate);
+                });
+                break;
+            case "bib":
+                intermediate = intermediate.sort((a, b) => {
+                    return a.bib - b.bib;
+                });
+                break;
+            case "first":
+                intermediate = intermediate.sort((a, b) => {
+                    return a.firstName.localeCompare(b.firstName);
+                });
+                break;
+            case "last":
+                intermediate = intermediate.sort((a, b) => {
+                    return a.lastName.localeCompare(b.lastName);
+                });
+                break;
+
+            default:
+                break;
+        }
+
+        if (sortDir.value) {
+            intermediate.reverse();
+        }
+
+        return intermediate;
+    });
+
+    const athleteDataSortedFiltered = computed(() => {
+        return athleteDataSorted.value.filter((a) => {
+            return selectedOptionsAthletes.value.includes(a.id);
+        });
+    });
+
+    // prints double pages. No idea why TODO fix
+    function print() {
+        // viewer.value?.printCurrentContent();
+        // or
+        // viewer.value?.print(generate...());
+    }
+    print;
 </script>
 
 <style scoped></style>

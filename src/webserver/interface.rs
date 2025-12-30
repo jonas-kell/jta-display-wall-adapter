@@ -63,6 +63,7 @@ pub struct PDFConfigurationSetting {
     pub size: f64,
     pub bold: bool,
     pub italic: bool,
+    pub centered: bool,
     pub content: PDFConfigurationContent,
 }
 

@@ -84,3 +84,44 @@ export function raceTimeStringRepr(
 
     return parts.join(":");
 }
+
+function raceTimeFromNumber(value: number): RaceTime {
+    // Round to 4 decimal places to match precision in numberFromRaceTime
+    value = Math.round(value * 10000) / 10000;
+
+    const hours = Math.floor(value / 3600);
+    value -= hours * 3600;
+
+    const minutes = Math.floor(value / 60);
+    value -= minutes * 60;
+
+    const seconds = Math.floor(value);
+    let fraction = value - seconds;
+
+    const tenths = Math.floor(fraction * 10);
+    fraction -= tenths * 0.1;
+
+    const hundrets = Math.floor(fraction * 100);
+    fraction -= hundrets * 0.01;
+
+    const thousands = Math.floor(fraction * 1000);
+    fraction -= thousands * 0.001;
+
+    const ten_thousands = Math.floor(fraction * 10000);
+
+    return {
+        hours: hours,
+        minutes: minutes,
+        seconds,
+        tenths: tenths,
+        hundrets: hundrets,
+        thousands: thousands,
+        ten_thousands: ten_thousands,
+    };
+}
+
+export function subtractRaceTimes(a: RaceTime, b: RaceTime): RaceTime {
+    const time = numberFromRaceTime(a) - numberFromRaceTime(b);
+
+    return raceTimeFromNumber(time);
+}

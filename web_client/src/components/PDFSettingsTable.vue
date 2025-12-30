@@ -7,11 +7,12 @@
                 <th scope="col">Size</th>
                 <th scope="col">Bold</th>
                 <th scope="col">Italic</th>
+                <th scope="col">Centered</th>
                 <th scope="col">Type</th>
-                <th scope="col"></th>
-                <th scope="col"></th>
                 <th scope="col">Content</th>
                 <th scope="col">Extra</th>
+                <th scope="col"></th>
+                <th scope="col"></th>
             </tr>
             <tr>
                 <th scope="col"><input class="pl-2" type="number" v-model="xRef" style="width: 100%" /></th>
@@ -19,17 +20,9 @@
                 <th scope="col"><input class="pl-2" type="number" v-model="sizeRef" style="width: 100%" /></th>
                 <th scope="col"><input class="pl-2" type="checkbox" v-model="boldRef" style="width: 100%" /></th>
                 <th scope="col"><input class="pl-2" type="checkbox" v-model="italicRef" style="width: 100%" /></th>
+                <th scope="col"><input class="pl-2" type="checkbox" v-model="centeredRef" style="width: 100%" /></th>
                 <th scope="col">
                     <v-select :items="types" v-model="typeRef" width="100%" density="compact" :hide-details="true"></v-select>
-                </th>
-                <th></th>
-                <th scope="col">
-                    <v-btn
-                        :icon="settingBeingEdited ? 'mdi-content-save-outline' : 'mdi-plus'"
-                        density="compact"
-                        @click="addSetting"
-                        :disabled="!canAddSetting"
-                    ></v-btn>
                 </th>
                 <th scope="col">
                     <input class="pl-2" type="text" v-model="contentRef" style="width: 100%" v-if="typeRef == 'Text'" />
@@ -45,6 +38,15 @@
                 <th scope="col">
                     <input class="pl-2" type="text" v-model="content2Ref" style="width: 100%" v-if="typeRef == 'Reference'" />
                 </th>
+                <th></th>
+                <th scope="col">
+                    <v-btn
+                        :icon="settingBeingEdited ? 'mdi-content-save-outline' : 'mdi-plus'"
+                        density="compact"
+                        @click="addSetting"
+                        :disabled="!canAddSetting"
+                    ></v-btn>
+                </th>
             </tr>
         </thead>
         <tbody>
@@ -54,7 +56,17 @@
                 <td class="pl-2">{{ setting.size }}</td>
                 <td class="pl-2">{{ setting.bold }}</td>
                 <td class="pl-2">{{ setting.italic }}</td>
+                <td class="pl-2">{{ setting.centered }}</td>
                 <td class="pl-2">{{ setting.content.type == "PDFConfigurationContentText" ? "Text" : "Reference" }}</td>
+                <td class="pl-2" v-if="setting.content.type == 'PDFConfigurationContentText'">{{ setting.content.text }}</td>
+                <td class="pl-2" v-if="setting.content.type == 'PDFConfigurationContentReference'">
+                    {{ setting.content.reference }}
+                </td>
+                <td class="pl-2">
+                    <template v-if="setting.content.type == 'PDFConfigurationContentReference'">
+                        {{ setting.content.reference_content ?? "" }}
+                    </template>
+                </td>
                 <td style="text-align: center">
                     <v-btn icon="mdi-pencil" density="compact" @click="editSetting(setting)" :disabled="!canEditSettings"></v-btn>
                 </td>
@@ -65,15 +77,6 @@
                         @click="deleteSetting(setting)"
                         :disabled="!canEditSettings"
                     ></v-btn>
-                </td>
-                <td class="pl-2" v-if="setting.content.type == 'PDFConfigurationContentText'">{{ setting.content.text }}</td>
-                <td class="pl-2" v-if="setting.content.type == 'PDFConfigurationContentReference'">
-                    {{ setting.content.reference }}
-                </td>
-                <td class="pl-2">
-                    <template v-if="setting.content.type == 'PDFConfigurationContentReference'">
-                        {{ setting.content.reference_content ?? "" }}
-                    </template>
                 </td>
             </tr>
         </tbody>
@@ -103,6 +106,7 @@
     const yRef = ref("");
     const boldRef = ref(false);
     const italicRef = ref(false);
+    const centeredRef = ref(false);
     const sizeRef = ref("");
     const typeRef = ref("Text" as FieldType);
     const contentRef = ref("" as string | PDFConfigurationContentReferenceReference);
@@ -132,6 +136,7 @@
 
         boldRef.value = set.bold;
         italicRef.value = set.italic;
+        centeredRef.value = set.centered;
         sizeRef.value = String(set.size);
         typeRef.value = set.content.type == "PDFConfigurationContentText" ? "Text" : "Reference"; // TODO more dynamic
         contentRef.value = String(set.content.type == "PDFConfigurationContentText" ? set.content.text : set.content.reference);
@@ -178,6 +183,7 @@
                 bold: boldRef.value,
                 italic: italicRef.value,
                 size: updateSize,
+                centered: centeredRef.value,
                 for: props.for,
                 content,
             };
