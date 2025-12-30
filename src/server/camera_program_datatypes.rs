@@ -231,6 +231,7 @@ pub struct Athlete {
     pub nation: String,
     pub spk_guess: Option<f32>,
     pub street_run_rounds: Option<u16>,
+    pub birth_date: Option<NaiveDate>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

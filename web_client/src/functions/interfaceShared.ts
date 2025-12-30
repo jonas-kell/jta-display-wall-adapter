@@ -55,6 +55,7 @@ export type Athlete = {
     nation: string;
     spk_guess: number | null;
     street_run_rounds: number | null;
+    birth_date: string | null;
 };
 
 export type HeatAssignment = {

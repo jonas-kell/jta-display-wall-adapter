@@ -3,6 +3,7 @@
 
     <p>This will re-generate the .meetxml file in the configured folder:</p>
     <v-btn @click="mainStore.sendExportToFileCommand"> Export To File </v-btn>
+    <ImportDialog @finished-parsing="processStreetRunImport" v-if="modeIsStreetRun"></ImportDialog>
 
     <h3 class="mt-4">
         Athletes for
@@ -36,6 +37,7 @@
                 <th scope="col">Bib</th>
                 <th scope="col">First Name</th>
                 <th scope="col">Last Name</th>
+                <th scope="col">Birth Date</th>
                 <th scope="col"></th>
                 <th scope="col"></th>
                 <!--from here street run data -->
@@ -61,6 +63,7 @@
                 <th scope="col"><input class="pl-2" type="number" v-model="bibRef" style="width: 100%" /></th>
                 <th scope="col"><input class="pl-2" type="text" v-model="firstNameRef" style="width: 100%" /></th>
                 <th scope="col"><input class="pl-2" type="text" v-model="lastNameRef" style="width: 100%" /></th>
+                <th scope="col"><input class="pl-2" type="text" v-model="birthDateRef" style="width: 100%" /></th>
                 <th scope="col">
                     <v-tooltip text="Bib already used!" :disabled="bibAvailableForAdding">
                         <template v-slot:activator="{ props }">
@@ -113,6 +116,7 @@
                 <td class="pl-2">{{ athlete.athlete.bib }}</td>
                 <td class="pl-2">{{ athlete.athlete.first_name }}</td>
                 <td class="pl-2">{{ athlete.athlete.last_name }}</td>
+                <td class="pl-2">{{ athlete.athlete.birth_date }}</td>
                 <td style="text-align: center">
                     <v-btn
                         icon="mdi-pencil"
@@ -275,6 +279,8 @@
     import jsPDF from "jspdf";
     import { uuid } from "../functions/uuid";
     import { RunPossibilities, sharedAthleteFunctionality } from "../functions/sharedAthleteTypes";
+    import ImportDialog from "./ImportDialog.vue";
+    import { Person } from "../functions/importInterface";
 
     const mainStore = useMainStore();
     const { athletesArray, finishTimes, evaluations } = sharedAthleteFunctionality();
@@ -283,6 +289,7 @@
     const bibRef = ref("");
     const lastNameRef = ref("");
     const firstNameRef = ref("");
+    const birthDateRef = ref("");
     const guessRef = ref(""); // SPK
     const roundsRef = ref(""); // StreeRun
 
@@ -324,6 +331,7 @@
         firstNameRef.value = ath.first_name;
         guessRef.value = String(ath.spk_guess ?? "");
         roundsRef.value = String(ath.street_run_rounds ?? "");
+        birthDateRef.value = String(ath.birth_date ?? "");
     }
     const canEditAthletes = computed(() => {
         return idRef.value == null;
@@ -366,6 +374,12 @@
         }
         roundsRef.value = "";
 
+        let updateBirthDate = null;
+        if (birthDateRef.value && birthDateRef.value != "") {
+            updateBirthDate = birthDateRef.value;
+        }
+        birthDateRef.value = "";
+
         const athlete: Athlete = {
             id: id,
             bib: updateBib,
@@ -376,6 +390,7 @@
             last_name: updateLastName,
             spk_guess: spkGuess,
             street_run_rounds: streetRunRounds,
+            birth_date: updateBirthDate,
         };
 
         mainStore.sendUpsertAthleteCommand(athlete);
@@ -500,6 +515,22 @@
         }
 
         return false;
+    }
+    function processStreetRunImport(data: Person[]) {
+        data.forEach((person, i) => {
+            mainStore.sendUpsertAthleteCommand({
+                bib: 100 + i,
+                birth_date: person.birthDate,
+                first_name: person.firstName,
+                last_name: person.lastName,
+                id: uuid(),
+                club: "placeholder", // TODO
+                gender: Gender.Mixed, // TODO
+                nation: "GER", // TODO
+                spk_guess: null,
+                street_run_rounds: 4, // TODO dyn
+            });
+        });
     }
 
     // Sprinterkönig logic
