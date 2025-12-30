@@ -290,6 +290,7 @@ pub fn render_client_frame(
                                         street_run_font_size,
                                         meta,
                                     );
+                                    // TODO needs to go a little more left
                                     draw_image(
                                         (window_width - window_width / 9.0 - window_width / 12.0)
                                             as u32,
