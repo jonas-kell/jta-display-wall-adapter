@@ -4,15 +4,24 @@
             <tr>
                 <th scope="col">X</th>
                 <th scope="col">Y</th>
+                <th scope="col">Size</th>
+                <th scope="col">Bold</th>
+                <th scope="col">Italic</th>
                 <th scope="col">Type</th>
                 <th scope="col"></th>
                 <th scope="col"></th>
                 <th scope="col">Content</th>
+                <th scope="col">Extra</th>
             </tr>
             <tr>
                 <th scope="col"><input class="pl-2" type="number" v-model="xRef" style="width: 100%" /></th>
                 <th scope="col"><input class="pl-2" type="number" v-model="yRef" style="width: 100%" /></th>
-                <th scope="col">type</th>
+                <th scope="col"><input class="pl-2" type="number" v-model="sizeRef" style="width: 100%" /></th>
+                <th scope="col"><input class="pl-2" type="checkbox" v-model="boldRef" style="width: 100%" /></th>
+                <th scope="col"><input class="pl-2" type="checkbox" v-model="italicRef" style="width: 100%" /></th>
+                <th scope="col">
+                    <v-select :items="types" v-model="typeRef" width="100%" density="compact" :hide-details="true"></v-select>
+                </th>
                 <th></th>
                 <th scope="col">
                     <v-btn
@@ -23,13 +32,19 @@
                     ></v-btn>
                 </th>
                 <th scope="col"><input class="pl-2" type="text" v-model="contentRef" style="width: 100%" /></th>
+                <th scope="col">
+                    <input class="pl-2" type="text" v-model="content2Ref" style="width: 100%" v-if="typeRef == 'Reference'" />
+                </th>
             </tr>
         </thead>
         <tbody>
             <tr v-for="setting in settings">
                 <td class="pl-2">{{ setting.pos_x }}</td>
                 <td class="pl-2">{{ setting.pos_y }}</td>
-                <td class="pl-2">{{ setting.content.type }}</td>
+                <td class="pl-2">{{ setting.size }}</td>
+                <td class="pl-2">{{ setting.bold }}</td>
+                <td class="pl-2">{{ setting.italic }}</td>
+                <td class="pl-2">{{ setting.content.type == "PDFConfigurationContentText" ? "Text" : "Reference" }}</td>
                 <td style="text-align: center">
                     <v-btn icon="mdi-pencil" density="compact" @click="editSetting(setting)" :disabled="!canEditSettings"></v-btn>
                 </td>
@@ -45,16 +60,24 @@
                 <td class="pl-2" v-if="setting.content.type == 'PDFConfigurationContentReference'">
                     {{ setting.content.reference }}
                 </td>
+                <td class="pl-2">
+                    <template v-if="setting.content.type == 'PDFConfigurationContentReference'">
+                        {{ setting.content.reference_content ?? "" }}
+                    </template>
+                </td>
             </tr>
         </tbody>
     </table>
 </template>
 
 <script setup lang="ts">
-    import { PDFConfigurationSetting, PDFSettingFor } from "../functions/interfaceShared";
+    import { PDFConfigurationContent, PDFConfigurationSetting, PDFSettingFor } from "../functions/interfaceShared";
     import { uuid } from "../functions/uuid";
     import useMainStore from "../stores/main";
     import { computed, ref } from "vue";
+
+    type FieldType = "Text" | "Reference";
+    const types = ["Text", "Reference"] as FieldType[];
 
     const props = defineProps<{ settings: PDFConfigurationSetting[]; for: PDFSettingFor }>();
 
@@ -63,7 +86,12 @@
     const idRef = ref(null as null | string);
     const xRef = ref("");
     const yRef = ref("");
+    const boldRef = ref(false);
+    const italicRef = ref(false);
+    const sizeRef = ref("");
+    const typeRef = ref("Text" as FieldType);
     const contentRef = ref("");
+    const content2Ref = ref("");
 
     const canAddSetting = computed(() => {
         return xRef.value != "" && yRef.value != "";
@@ -86,6 +114,15 @@
 
         xRef.value = String(set.pos_x);
         yRef.value = String(set.pos_y);
+
+        boldRef.value = set.bold;
+        italicRef.value = set.italic;
+        sizeRef.value = String(set.size);
+        typeRef.value = set.content.type == "PDFConfigurationContentText" ? "Text" : "Reference"; // TODO more dynamic
+        contentRef.value = String(set.content.type == "PDFConfigurationContentText" ? set.content.text : set.content.reference);
+        content2Ref.value = String(
+            (set.content.type == "PDFConfigurationContentText" ? null : set.content.reference_content) ?? ""
+        );
     }
 
     // also does upsert
@@ -98,19 +135,40 @@
         yRef.value = "";
         const updateContent = contentRef.value;
         contentRef.value = "";
+        const updateContent2 = content2Ref.value;
+        content2Ref.value = "";
+        const updateSize = parseInt(sizeRef.value);
+        sizeRef.value = "";
 
-        const setting: PDFConfigurationSetting = {
-            id: id,
-            pos_x: updateX,
-            pos_y: updateY,
-            for: props.for,
-            content: {
+        let content = null as null | PDFConfigurationContent;
+        if (typeRef.value == "Text") {
+            content = {
                 type: "PDFConfigurationContentText",
                 text: updateContent,
-            },
-        };
+            };
+        }
+        if (typeRef.value == "Reference") {
+            content = {
+                type: "PDFConfigurationContentReference",
+                reference: updateContent,
+                reference_content: updateContent2 == null || updateContent2 == "" ? null : updateContent2,
+            };
+        }
 
-        mainStore.sendUpsertPDFSettingCommand(setting);
+        if (content) {
+            const setting: PDFConfigurationSetting = {
+                id: id,
+                pos_x: updateX,
+                pos_y: updateY,
+                bold: boldRef.value,
+                italic: italicRef.value,
+                size: updateSize,
+                for: props.for,
+                content,
+            };
+
+            mainStore.sendUpsertPDFSettingCommand(setting);
+        }
     }
 </script>
 

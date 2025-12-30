@@ -75,6 +75,9 @@ export type PDFConfigurationSetting = {
     for: PDFSettingFor;
     pos_x: number;
     pos_y: number;
+    size: number;
+    bold: boolean;
+    italic: boolean;
     content: PDFConfigurationContent;
 };
 
@@ -88,6 +91,7 @@ export type PDFConfigurationContentText = {
 export type PDFConfigurationContentReference = {
     type: "PDFConfigurationContentReference";
     reference: string;
+    reference_content: string | null;
 };
 
 export type DisplayEntry = {

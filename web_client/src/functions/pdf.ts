@@ -23,12 +23,17 @@ export function generatePDF(landscape: boolean, bgImage: string | null, settings
     }
 
     const TEXT_FONT = "times";
-    const TEXT_SIZE = 13;
 
     // header
     settings.forEach((set) => {
         doc.setFont(TEXT_FONT, "normal"); // also bold or italic
-        doc.setFontSize(TEXT_SIZE);
+        if (set.bold) {
+            doc.setFont(TEXT_FONT, "bold");
+        }
+        if (set.italic) {
+            doc.setFont(TEXT_FONT, "italic");
+        }
+        doc.setFontSize(set.size);
         let text = "";
         switch (set.content.type) {
             case "PDFConfigurationContentText":

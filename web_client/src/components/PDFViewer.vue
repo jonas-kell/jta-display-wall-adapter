@@ -101,7 +101,7 @@
     }
 
     const DEFAULT_RENDERER_WIDTH = 400;
-    const BACKGROUND_GENERATION_RENDERER_WIDTH = 1000;
+    const BACKGROUND_GENERATION_RENDERER_WIDTH = 3000; // TODO make dynamic for preview/print
     const rendererWidth = ref(DEFAULT_RENDERER_WIDTH);
     const pdfDataURI = ref(null as null | string);
     const pageSelection = ref(undefined as undefined | number | number[]);

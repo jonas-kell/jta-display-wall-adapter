@@ -60,6 +60,9 @@ pub struct PDFConfigurationSetting {
     pub for_: PDFSettingFor,
     pub pos_x: f64,
     pub pos_y: f64,
+    pub size: f64,
+    pub bold: bool,
+    pub italic: bool,
     pub content: PDFConfigurationContent,
 }
 
@@ -69,7 +72,10 @@ pub enum PDFConfigurationContent {
     #[serde(rename = "PDFConfigurationContentText")]
     Text { text: String },
     #[serde(rename = "PDFConfigurationContentReference")]
-    Time { reference: String },
+    Reference {
+        reference: String,
+        reference_content: Option<String>,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
