@@ -165,7 +165,9 @@ export function generatePDF(
                                 text = timeTextOfOnlyRoundIfRound(6);
                                 break;
                             case PDFConfigurationContentReferenceReference.FinalTime:
-                                text = timeTextOfRoundIfRound(athlete.roundTimes.length);
+                                if (athlete.roundTimes.length > 0) {
+                                    text = timeTextOfRoundIfRound(athlete.roundTimes.length);
+                                }
                                 break;
                             case PDFConfigurationContentReferenceReference.SpkGuess:
                             case PDFConfigurationContentReferenceReference.SpkTime:
