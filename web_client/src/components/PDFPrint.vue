@@ -83,6 +83,28 @@
                         >
                             Bdate
                         </th>
+                        <th
+                            scope="col"
+                            @click="
+                                {
+                                    sortDir = !sortDir;
+                                    sortBy = 'rounds';
+                                }
+                            "
+                        >
+                            # Rounds
+                        </th>
+                        <th
+                            scope="col"
+                            @click="
+                                {
+                                    sortDir = !sortDir;
+                                    sortBy = 'time';
+                                }
+                            "
+                        >
+                            Fin. Time
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -107,6 +129,16 @@
                         <td scope="col" class="px-1">
                             {{ athlete.birthDate }}
                         </td>
+                        <td scope="col" class="px-1">
+                            {{ athlete.roundTimes.length }}
+                        </td>
+                        <td scope="col" class="px-1">
+                            {{
+                                athlete.roundTimes.length > 0
+                                    ? raceTimeStringRepr(athlete.roundTimes[athlete.roundTimes.length - 1], true, true, 2)
+                                    : ""
+                            }}
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -123,6 +155,7 @@
     import { backgroundFileManagement } from "../functions/backgroundFiles";
     import { PDFSettingFor } from "../functions/interfaceShared";
     import { AthletePrintData, EvaluationsType, sharedAthleteFunctionality } from "../functions/sharedAthleteTypes";
+    import { raceTimeStringRepr } from "../functions/representation";
     const mainStore = useMainStore();
 
     const { processedBackgroundImageBib, processedBackgroundImageCertificate } = backgroundFileManagement();
@@ -132,7 +165,7 @@
 
     const currentPDF = ref(null as string | null);
 
-    let sortBy = ref("bib" as "bib" | "first" | "last" | "age");
+    let sortBy = ref("bib" as "bib" | "first" | "last" | "age" | "rounds" | "time");
     let sortDir = ref(false);
 
     watch([viewer, currentPDF], () => {
@@ -185,7 +218,7 @@
                 return evaluation.evaluations.length > 0;
             });
         } else {
-            return Object.values(evaluationsFiltered.value);
+            return Object.values(evaluations.value);
         }
     });
 
@@ -249,6 +282,33 @@
             case "last":
                 intermediate = intermediate.sort((a, b) => {
                     return a.lastName.localeCompare(b.lastName);
+                });
+                break;
+            case "rounds":
+                intermediate = intermediate.sort((a, b) => {
+                    return a.roundTimes.length - b.roundTimes.length;
+                });
+                break;
+            case "time":
+                intermediate = intermediate.sort((a, b) => {
+                    const aTime =
+                        a.roundTimes.length > 0 ? raceTimeStringRepr(a.roundTimes[a.roundTimes.length - 1], true, true, 2) : null;
+                    const bTime =
+                        b.roundTimes.length > 0 ? raceTimeStringRepr(b.roundTimes[b.roundTimes.length - 1], true, true, 2) : null;
+
+                    if (aTime) {
+                        if (bTime) {
+                            return aTime.localeCompare(bTime);
+                        } else {
+                            return 1;
+                        }
+                    } else {
+                        if (bTime) {
+                            return -1;
+                        } else {
+                            return 0;
+                        }
+                    }
                 });
                 break;
 
