@@ -8,7 +8,24 @@
             <v-btn @click="generateBib(true)" class="mr-2">Download</v-btn>
             <!--<v-btn @click="print" class="mr-2">Print</v-btn>-->
 
-            <h3 class="mt-4">Certificate</h3>
+            <h3 class="mt-4">
+                Certificate
+
+                <div class="float-right">
+                    <v-tooltip text="Hide non-finishers" location="bottom center">
+                        <template v-slot:activator="{ props }">
+                            <v-switch
+                                v-bind="props"
+                                class="mr-5"
+                                color="primary"
+                                density="compact"
+                                v-model="hideNonFinishers"
+                                hide-details
+                            ></v-switch>
+                        </template>
+                    </v-tooltip>
+                </div>
+            </h3>
             <v-btn @click="generateCertificate(false)" class="mr-2">Generate</v-btn>
             <v-btn @click="generateCertificate(true)" class="mr-2">Download</v-btn>
             <!--<v-btn @click="print" class="mr-2">Print</v-btn>-->
@@ -105,7 +122,7 @@
     import { computed, ref, watch } from "vue";
     import { backgroundFileManagement } from "../functions/backgroundFiles";
     import { PDFSettingFor } from "../functions/interfaceShared";
-    import { AthletePrintData, sharedAthleteFunctionality } from "../functions/sharedAthleteTypes";
+    import { AthletePrintData, EvaluationsType, sharedAthleteFunctionality } from "../functions/sharedAthleteTypes";
     const mainStore = useMainStore();
 
     const { processedBackgroundImageBib, processedBackgroundImageCertificate } = backgroundFileManagement();
@@ -160,9 +177,21 @@
         }
     }
 
+    const hideNonFinishers = ref(true);
+
+    const evaluationsFiltered = computed((): EvaluationsType[] => {
+        if (hideNonFinishers.value) {
+            return Object.values(evaluations.value).filter((evaluation) => {
+                return evaluation.evaluations.length > 0;
+            });
+        } else {
+            return Object.values(evaluationsFiltered.value);
+        }
+    });
+
     const athleteData = computed(() => {
         let res = [] as AthletePrintData[];
-        Object.values(evaluations.value).forEach((evaluation) => {
+        evaluationsFiltered.value.forEach((evaluation) => {
             res.push({
                 id: evaluation.athlete.id,
                 bib: evaluation.athlete.bib,

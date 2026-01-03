@@ -51,6 +51,8 @@ import { HeatCompetitorResult, RaceTime } from "./interfaceInbound";
 
 const MAIN_HEAT_KEY = "THIS_IS_THE_MAIN_HEAT";
 
+export type EvaluationsType = { athlete: Athlete; evaluations: HeatCompetitorResult[] };
+
 export function sharedAthleteFunctionality() {
     const mainStore = useMainStore();
 
@@ -91,7 +93,7 @@ export function sharedAthleteFunctionality() {
     // Street run stuff
     const evaluations = computed(() => {
         if ((mainStore.staticConfiguration?.mode ?? ApplicationMode.SprinterKing) == ApplicationMode.StreetLongRun) {
-            let res = {} as { [key: string]: { athlete: Athlete; evaluations: HeatCompetitorResult[] } };
+            let res = {} as { [key: string]: EvaluationsType };
 
             mainStore.athletesData.forEach((a) => {
                 let evals = [] as HeatCompetitorResult[];
