@@ -44,6 +44,7 @@
                 <template v-if="modeIsStreetRun">
                     <th>Rounds</th>
                     <th v-for="i in maxRoundsDisplay">Round {{ i }}</th>
+                    <th>Plausibility</th>
                 </template>
                 <!--from here sprinterkönig data -->
                 <template v-if="modeIsSPK">
@@ -93,6 +94,7 @@
                             v-if="athleteBeingEdited"
                         ></v-btn>
                     </th>
+                    <th></th>
                 </template>
                 <!--from here sprinterkönig data -->
                 <template v-if="modeIsSPK">
@@ -142,6 +144,9 @@
                             :ran="roundRan(athlete.athlete.id, i - 1)"
                             :time="roundTime(athlete.athlete.id, i - 1)"
                         ></StreetRunStateDot>
+                    </td>
+                    <td>
+                        {{ calculatePlausibilityForStreetRace(athlete) }}
                     </td>
                 </template>
                 <!--from here sprinterkönig data -->
@@ -274,8 +279,8 @@
     import { ref } from "vue";
     import SPKStateDot from "./SPKStateDot.vue";
     import StreetRunStateDot from "./StreetRunStateDot.vue";
-    import { AthleteWithMetadata } from "../functions/interfaceInbound";
-    import { raceTimeStringRepr } from "../functions/representation";
+    import { AthleteWithMetadata, RaceTime } from "../functions/interfaceInbound";
+    import { numberFromRaceTime, raceTimeStringRepr, subtractRaceTimes } from "../functions/representation";
     import jsPDF from "jspdf";
     import { uuid } from "../functions/uuid";
     import { RunPossibilities, sharedAthleteFunctionality } from "../functions/sharedAthleteTypes";
@@ -531,6 +536,59 @@
                 street_run_rounds: 4, // TODO dyn
             });
         });
+    }
+    function uniformityScore(values: number[]): number {
+        if (values.length < 2) return 100;
+
+        const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+
+        if (mean === 0) return 0;
+
+        const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
+
+        const stdDev = Math.sqrt(variance);
+
+        const cv = stdDev / Math.abs(mean);
+
+        // Map CV to score (tunable sensitivity)
+        const score = Math.exp(-cv * 2) * 100;
+
+        return Math.min(100, Math.round(score));
+    }
+    function calculatePlausibilityForStreetRace(athlete: AthleteWithMetadata): string {
+        const dat = evaluations.value[athlete.athlete.id];
+
+        if (dat) {
+            if (dat.evaluations.length > 0) {
+                const timesAsNumbers = [] as number[];
+                for (let index = 0; index < dat.evaluations.length; index++) {
+                    const hcr = dat.evaluations[index];
+
+                    const relevantRoundTime = hcr.runtime_full_precision;
+                    const previousRoundTime =
+                        index - 1 >= 0
+                            ? dat.evaluations[index - 1].runtime_full_precision
+                            : ({
+                                  hours: null,
+                                  minutes: null,
+                                  seconds: 0,
+                                  hundrets: null,
+                                  ten_thousands: null,
+                                  tenths: null,
+                                  thousands: null,
+                              } as RaceTime);
+
+                    const num = numberFromRaceTime(subtractRaceTimes(relevantRoundTime, previousRoundTime));
+                    timesAsNumbers.push(num);
+                }
+
+                return `${uniformityScore(timesAsNumbers)}%`;
+            } else {
+                return "";
+            }
+        }
+
+        return "N.a.";
     }
 
     // Sprinterkönig logic
