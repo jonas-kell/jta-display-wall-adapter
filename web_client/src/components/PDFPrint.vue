@@ -99,6 +99,17 @@
                             @click="
                                 {
                                     sortDir = !sortDir;
+                                    sortBy = 'gender';
+                                }
+                            "
+                        >
+                            Gender
+                        </th>
+                        <th
+                            scope="col"
+                            @click="
+                                {
+                                    sortDir = !sortDir;
                                     sortBy = 'time';
                                 }
                             "
@@ -133,6 +144,9 @@
                             {{ athlete.roundTimes.length }}
                         </td>
                         <td scope="col" class="px-1">
+                            {{ athlete.gender }}
+                        </td>
+                        <td scope="col" class="px-1">
                             {{
                                 athlete.roundTimes.length > 0
                                     ? raceTimeStringRepr(athlete.roundTimes[athlete.roundTimes.length - 1], true, true, 2)
@@ -153,7 +167,7 @@
     import { generatePDF } from "../functions/pdf";
     import { computed, ref, watch } from "vue";
     import { backgroundFileManagement } from "../functions/backgroundFiles";
-    import { PDFSettingFor } from "../functions/interfaceShared";
+    import { Gender, PDFSettingFor } from "../functions/interfaceShared";
     import { AthletePrintData, EvaluationsType, sharedAthleteFunctionality } from "../functions/sharedAthleteTypes";
     import { raceTimeStringRepr } from "../functions/representation";
     const mainStore = useMainStore();
@@ -165,7 +179,7 @@
 
     const currentPDF = ref(null as string | null);
 
-    let sortBy = ref("bib" as "bib" | "first" | "last" | "age" | "rounds" | "time");
+    let sortBy = ref("bib" as "bib" | "first" | "last" | "age" | "rounds" | "time" | "gender");
     let sortDir = ref(false);
 
     watch([viewer, currentPDF], () => {
@@ -231,6 +245,7 @@
                 firstName: evaluation.athlete.first_name,
                 lastName: evaluation.athlete.last_name,
                 birthDate: evaluation.athlete.birth_date ?? "1800-01-01",
+                gender: evaluation.athlete.gender == Gender.Male ? "M" : evaluation.athlete.gender == Gender.Female ? "W" : "X",
                 roundTimes: evaluation.evaluations.map((e) => {
                     return e.runtime_full_precision;
                 }),
@@ -309,6 +324,11 @@
                             return 0;
                         }
                     }
+                });
+                break;
+            case "gender":
+                intermediate = intermediate.sort((a, b) => {
+                    return a.gender.localeCompare(b.gender);
                 });
                 break;
 

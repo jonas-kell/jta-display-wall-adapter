@@ -42,6 +42,7 @@
                 <th scope="col"></th>
                 <!--from here street run data -->
                 <template v-if="modeIsStreetRun">
+                    <th>Gender</th>
                     <th>Rounds</th>
                     <th v-for="i in maxRoundsDisplay">Round {{ i }}</th>
                     <th>Plausibility</th>
@@ -82,6 +83,15 @@
                 <th></th>
                 <!--from here street run data -->
                 <template v-if="modeIsStreetRun">
+                    <th style="width: 2cm">
+                        <v-select
+                            v-model="genderRef"
+                            :items="Object.values(Gender)"
+                            hide-details="auto"
+                            density="compact"
+                            style="width: 100%"
+                        />
+                    </th>
                     <th style="width: 2cm">
                         <input class="pl-2" type="number" v-model="roundsRef" min="1" step="1" style="width: 100%" />
                     </th>
@@ -137,6 +147,7 @@
                 </td>
                 <!--from here street run data -->
                 <template v-if="modeIsStreetRun">
+                    <td style="text-align: center">{{ athlete.athlete.gender }}</td>
                     <td style="width: 2cm; text-align: center">{{ athlete.athlete.street_run_rounds?.toFixed(0) ?? "" }}</td>
                     <td style="text-align: center" v-for="i in maxRoundsDisplay">
                         <StreetRunStateDot
@@ -297,6 +308,7 @@
     const birthDateRef = ref("");
     const guessRef = ref(""); // SPK
     const roundsRef = ref(""); // StreeRun
+    const genderRef = ref(null as null | Gender); // StreeRun
 
     const athletesByBib = computed(() => {
         return [...athletesArray.value].sort((a, b) => {
@@ -337,6 +349,7 @@
         guessRef.value = String(ath.spk_guess ?? "");
         roundsRef.value = String(ath.street_run_rounds ?? "");
         birthDateRef.value = String(ath.birth_date ?? "");
+        genderRef.value = ath.gender;
     }
     const canEditAthletes = computed(() => {
         return idRef.value == null;
@@ -366,6 +379,8 @@
         firstNameRef.value = "";
         const updateLastName = lastNameRef.value;
         lastNameRef.value = "";
+        const updateGender = genderRef.value ?? Gender.Mixed;
+        genderRef.value = null;
 
         let spkGuess = null;
         if (guessRef.value) {
@@ -389,8 +404,8 @@
             id: id,
             bib: updateBib,
             club: "placeholder", // TODO
-            gender: Gender.Mixed, // TODO
             nation: "GER", // TODO
+            gender: updateGender,
             first_name: updateFirstName,
             last_name: updateLastName,
             spk_guess: spkGuess,

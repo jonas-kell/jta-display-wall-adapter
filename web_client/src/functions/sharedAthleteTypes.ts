@@ -16,6 +16,7 @@ export interface AthletePrintData {
     firstName: string;
     lastName: string;
     birthDate: string;
+    gender: string;
     roundTimes: RaceTime[];
 }
 
