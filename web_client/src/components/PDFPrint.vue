@@ -11,7 +11,19 @@
             <h3 class="mt-4">
                 Certificate
 
-                <div class="float-right">
+                <div class="float-right d-flex">
+                    <v-tooltip text="Display intermediate times" location="bottom center">
+                        <template v-slot:activator="{ props }">
+                            <v-switch
+                                v-bind="props"
+                                class="mr-5"
+                                color="primary"
+                                density="compact"
+                                v-model="displayIntermediateTimes"
+                                hide-details
+                            ></v-switch>
+                        </template>
+                    </v-tooltip>
                     <v-tooltip text="Hide non-finishers" location="bottom center">
                         <template v-slot:activator="{ props }">
                             <v-switch
@@ -38,7 +50,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th scope="col"></th>
+                        <th scope="col">&nbsp;</th>
                         <th
                             scope="col"
                             @click="
@@ -105,6 +117,9 @@
                         >
                             Gender
                         </th>
+                        <template v-if="displayIntermediateTimes">
+                            <th v-for="i in maxRounds">Round {{ i }}</th>
+                        </template>
                         <th
                             scope="col"
                             @click="
@@ -140,12 +155,21 @@
                         <td scope="col" class="px-1">
                             {{ athlete.birthDate }}
                         </td>
-                        <td scope="col" class="px-1">
+                        <td scope="col" class="px-1" style="text-align: center">
                             {{ athlete.roundTimes.length }}
                         </td>
-                        <td scope="col" class="px-1">
+                        <td scope="col" class="px-1" style="text-align: center">
                             {{ athlete.gender }}
                         </td>
+                        <template v-if="displayIntermediateTimes">
+                            <td v-for="i in maxRounds">
+                                {{
+                                    athlete.roundTimes.length > i - 1
+                                        ? raceTimeStringRepr(athlete.roundTimes[i - 1], true, true, 2)
+                                        : ""
+                                }}
+                            </td>
+                        </template>
                         <td scope="col" class="px-1">
                             {{
                                 athlete.roundTimes.length > 0
@@ -225,6 +249,7 @@
     }
 
     const hideNonFinishers = ref(true);
+    const displayIntermediateTimes = ref(false);
 
     const evaluationsFiltered = computed((): EvaluationsType[] => {
         if (hideNonFinishers.value) {
@@ -273,6 +298,13 @@
         });
 
         return res;
+    });
+    const maxRounds = computed(() => {
+        return Math.max(
+            ...athleteData.value.map((d) => {
+                return d.roundTimes.length;
+            })
+        );
     });
 
     const athleteDataSorted = computed(() => {
