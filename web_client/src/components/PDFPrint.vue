@@ -8,8 +8,13 @@
             <v-btn @click="generateBib(true)" class="mr-2">Download</v-btn>
             <!--<v-btn @click="print" class="mr-2">Print</v-btn>-->
 
+            <h3 class="mt-4">Certificate</h3>
+            <v-btn @click="generateCertificate(false)" class="mr-2">Generate</v-btn>
+            <v-btn @click="generateCertificate(true)" class="mr-2">Download</v-btn>
+            <!--<v-btn @click="print" class="mr-2">Print</v-btn>-->
+
             <h3 class="mt-4">
-                Certificate
+                Data (for both above)
 
                 <div class="float-right d-flex">
                     <v-tooltip text="Display intermediate times" location="bottom center">
@@ -38,11 +43,44 @@
                     </v-tooltip>
                 </div>
             </h3>
-            <v-btn @click="generateCertificate(false)" class="mr-2">Generate</v-btn>
-            <v-btn @click="generateCertificate(true)" class="mr-2">Download</v-btn>
-            <!--<v-btn @click="print" class="mr-2">Print</v-btn>-->
 
-            <p class="mt-5">
+            <div class="d-flex mt-2">
+                <v-select
+                    class="mx-1"
+                    density="compact"
+                    hide-details="auto"
+                    width="30"
+                    :items="['All', 'Male', 'Female', 'Mixed']"
+                    v-model="filterGender"
+                >
+                </v-select>
+                <v-text-field
+                    class="mx-1"
+                    density="compact"
+                    hide-details="auto"
+                    v-model="ageFrom"
+                    type="number"
+                    placeholder="Age from"
+                    :max="ageTo"
+                    min="0"
+                    step="1"
+                    width="30"
+                ></v-text-field>
+                <v-text-field
+                    class="mx-1"
+                    density="compact"
+                    hide-details="auto"
+                    v-model="ageTo"
+                    type="number"
+                    placeholder="Age to"
+                    max="150"
+                    :min="ageFrom"
+                    step="1"
+                    width="30"
+                ></v-text-field>
+            </div>
+
+            <p class="mt-3 mb-1">
                 click on headers to sort <v-btn @click="selectAll" class="mr-2" density="compact">Select all</v-btn> (sorted:
                 {{ sortBy }}, {{ sortDir ? "desc" : "asc" }})
             </p>
@@ -162,7 +200,7 @@
                             {{ athlete.gender }}
                         </td>
                         <template v-if="displayIntermediateTimes">
-                            <td v-for="i in maxRounds">
+                            <td v-for="i in maxRounds" class="px-1">
                                 {{
                                     athlete.roundTimes.length > i - 1
                                         ? raceTimeStringRepr(athlete.roundTimes[i - 1], true, true, 2)
@@ -194,6 +232,7 @@
     import { Gender, PDFSettingFor } from "../functions/interfaceShared";
     import { AthletePrintData, EvaluationsType, sharedAthleteFunctionality } from "../functions/sharedAthleteTypes";
     import { raceTimeStringRepr } from "../functions/representation";
+    import { TODAY } from "../functions/date";
     const mainStore = useMainStore();
 
     const { processedBackgroundImageBib, processedBackgroundImageCertificate } = backgroundFileManagement();
@@ -248,16 +287,71 @@
         }
     }
 
+    const ageFrom = ref(0);
+    const ageTo = ref(100);
+    const filterGender = ref("All" as "All" | "Male" | "Female" | "Mixed");
+
     const hideNonFinishers = ref(true);
     const displayIntermediateTimes = ref(false);
 
     const evaluationsFiltered = computed((): EvaluationsType[] => {
+        let evaluationsIntermediate = Object.values(evaluations.value);
+
+        // filter gender
+        switch (filterGender.value) {
+            case "All":
+                break;
+            case "Female":
+                evaluationsIntermediate = evaluationsIntermediate.filter((e) => {
+                    return e.athlete.gender == Gender.Female;
+                });
+                break;
+            case "Male":
+                evaluationsIntermediate = evaluationsIntermediate.filter((e) => {
+                    return e.athlete.gender == Gender.Male;
+                });
+                break;
+            case "Mixed":
+                evaluationsIntermediate = evaluationsIntermediate.filter((e) => {
+                    return e.athlete.gender == Gender.Mixed;
+                });
+                break;
+            default:
+                break;
+        }
+        // filter age
+        evaluationsIntermediate = evaluationsIntermediate.filter((e) => {
+            const birthDateStr: string = e.athlete.birth_date ?? TODAY; // yyyy-mm-dd
+            const eventDayStr: string = mainStore.staticConfiguration?.date ?? TODAY; // yyyy-mm-dd
+
+            const ageFromNum: number | null = ageFrom.value;
+            const ageToNum: number | null = ageTo.value;
+
+            const birthDate = new Date(birthDateStr);
+            const eventDay = new Date(eventDayStr);
+
+            let age = eventDay.getFullYear() - birthDate.getFullYear();
+
+            const hasHadBirthdayThisYear =
+                eventDay.getMonth() > birthDate.getMonth() ||
+                (eventDay.getMonth() === birthDate.getMonth() && eventDay.getDate() >= birthDate.getDate());
+
+            if (!hasHadBirthdayThisYear) {
+                age -= 1;
+            }
+
+            if (ageFromNum !== null && age < ageFromNum) return false;
+            if (ageToNum !== null && age > ageToNum) return false;
+
+            return true;
+        });
+
         if (hideNonFinishers.value) {
-            return Object.values(evaluations.value).filter((evaluation) => {
+            return evaluationsIntermediate.filter((evaluation) => {
                 return evaluation.evaluations.length > 0;
             });
         } else {
-            return Object.values(evaluations.value);
+            return evaluationsIntermediate;
         }
     });
 
