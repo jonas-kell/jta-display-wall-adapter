@@ -911,14 +911,8 @@ pub enum ClientState {
     Clock(ClockState),
 }
 
-static STORAGE_BYTES: &[u8] = include_bytes!(concat!(
-    env!("IMAGES_CACHE_BUILDER_OUT"),
-    "/image_storage.bin"
-));
-static STORAGE_BYTES_ICONS: &[u8] = include_bytes!(concat!(
-    env!("IMAGES_CACHE_BUILDER_OUT"),
-    "/icon_storage.bin"
-));
+static STORAGE_BYTES: &[u8] = include_bytes!(env!("STORAGE_BYTES_LOCATION"));
+static STORAGE_BYTES_ICONS: &[u8] = include_bytes!(env!("STORAGE_BYTES_ICONS_LOCATION"));
 
 pub struct ClientStateMachine {
     pub state: ClientState,

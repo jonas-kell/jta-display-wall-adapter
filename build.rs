@@ -1,15 +1,16 @@
-use images_cache_builder::IMAGES_CACHE_BUILDER_OUT;
+use images_cache_builder::{STORAGE_BYTES_ICONS_LOCATION, STORAGE_BYTES_LOCATION};
 use std::{env, fs, path::PathBuf};
 
 fn main() {
     // rerun only when these change
     println!("cargo:rerun-if-changed=build.rs");
-    // println!("cargo:rerun-if-changed=assets/");
 
-    // folder for main code
-    println!("cargo:rustc-env=IMAGES_CACHE_BUILDER_OUT={IMAGES_CACHE_BUILDER_OUT}");
+    // runtime vars to compile time
+    println!("cargo:rustc-env=STORAGE_BYTES_LOCATION={STORAGE_BYTES_LOCATION}");
+    println!("cargo:rustc-env=STORAGE_BYTES_ICONS_LOCATION={STORAGE_BYTES_ICONS_LOCATION}");
 
     // generate ts interfaces
+    // println!("cargo:rerun-if-changed=..."); // TODO add files that are source for generating the ts exports
     let profile = env::var("PROFILE").unwrap();
     println!("cargo:warning=Build profile is: {profile}");
     if profile == "release" {
