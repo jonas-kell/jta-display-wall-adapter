@@ -10,22 +10,14 @@ struct Test {
 #[derive(TypescriptSerializable)]
 struct Test2 {
     aa: Test,
+    test: Option<String>,
 }
 
 fn main() {
     // TODO restructure ALL code, so that this can be compile time dependency of the main crate
     // For this, you would need to extract ALL types that are serealized into another types crate
 
-    let a = Test2 {
-        aa: Test {
-            a: "asd".into(),
-            b: "test".into(),
-        },
-    };
-
-    let b = a.serialize_to_type();
-
-    println!("{}", b);
+    println!("{}", Test2::serialize_to_type());
 
     // generate ts interfaces
     // let profile = env::var("PROFILE").unwrap();

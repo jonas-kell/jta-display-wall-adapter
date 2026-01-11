@@ -13,7 +13,8 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
         syn::Data::Struct(data) => {
             let identifiers = data.fields.iter().map(|f| {
                 let field = f.ident.as_ref().unwrap();
-                field
+                let ty = &f.ty;
+                (field, ty)
             });
 
             let format_string = format!(
@@ -23,9 +24,9 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
                     .fold(String::new(), |a, b| a + b)
             );
 
-            let calls = identifiers.map(|ident| {
+            let calls = identifiers.map(|(ident, ty)| {
                 let ident_as_string = ident.to_string();
-                quote! { format!("    {}: {};", #ident_as_string, self.#ident.serialize_to_type()) }
+                quote! { format!("    {}: {};", #ident_as_string, <#ty as TypescriptSerializable>::serialize_to_type()) }
             });
             quote! { format!(#format_string, #(#calls),*)  }
         }
@@ -74,7 +75,7 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
 
     let expanded = quote! {
         impl #impl_generics TypescriptSerializable for #name #ty_generics #where_clause {
-            fn serialize_to_type(&self) -> String {
+            fn serialize_to_type() -> String {
                 #body
             }
         }
