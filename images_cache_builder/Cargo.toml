@@ -1,0 +1,8 @@
+[package]
+name = "images_cache_builder"
+authors = ["jonas-kell"]
+repository = "https://github.com/jonas-kell/jta-display-wall-adapter"
+edition = "2021"
+
+[build-dependencies]
+images_core = { path = "./../images_core" }

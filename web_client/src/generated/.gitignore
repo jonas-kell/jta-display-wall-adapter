@@ -1,0 +1,2 @@
+# interface.ts
+# we commit interface.ts, because while it is generated, the typescript needs to compile before the rust is compiled. To avoid multi-recompilation, this is committed

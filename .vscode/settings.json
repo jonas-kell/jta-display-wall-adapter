@@ -1,6 +1,6 @@
 {
-    "rust-analyzer.linkedProjects": ["./Cargo.toml", "./images_core/Cargo.toml"],
+    "rust-analyzer.linkedProjects": ["./Cargo.toml", "./images_core/Cargo.toml", "./images_cache_builder/Cargo.toml"],
     "rust-analyzer.cargo.extraEnv": {
-        "OUT_DIR": "images_core"
+        "OUT_DIR": "images_cache_builder"
     }
 }

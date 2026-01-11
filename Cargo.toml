@@ -48,4 +48,4 @@ sha2 = "0.10"
 images_core = { path = "./images_core" }
 
 [build-dependencies]
-images_core = { path = "./images_core" }
+images_cache_builder = { path = "./images_cache_builder" }
