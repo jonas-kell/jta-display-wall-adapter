@@ -1,5 +1,12 @@
 {
-    "rust-analyzer.linkedProjects": ["./Cargo.toml", "./images_core/Cargo.toml", "./images_cache_builder/Cargo.toml"],
+    "rust-analyzer.linkedProjects": [
+        "./Cargo.toml",
+        "./images_core/Cargo.toml",
+        "./images_cache_builder/Cargo.toml",
+        "./code_generation/Cargo.toml",
+        "./code_generation/rust_to_ts_types/Cargo.toml",
+        "./code_generation/rust_to_ts_types/rust_to_ts_types_derive/Cargo.toml"
+    ],
     "rust-analyzer.cargo.extraEnv": {
         "OUT_DIR": "images_cache_builder"
     }

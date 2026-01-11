@@ -63,6 +63,19 @@ services:
         watchexec --poll 500ms --restart --watch ./container_target/debug/jta-display-wall-adapter -- 'while true; do ./container_target/debug/jta-display-wall-adapter client --display-client-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000 --dp-pos-x=1460 --dp-pos-y=1050   --do-not-set-client-window-always-on-top    ; done'
       "
 
+  code-gen:
+    environment:
+      - CARGO_TARGET_DIR=container_target
+    build:
+      context: ./
+      dockerfile: ./docker/dev/Dockerfile
+    volumes:
+      - rust_build_cache:/usr/local/cargo/registry/
+      - target_dir:/app/container_target
+      - ./:/app/
+    working_dir: /app/code_generation
+    command: cargo watch -x "run"
+
 volumes:
   rust_build_cache:
   target_dir:
