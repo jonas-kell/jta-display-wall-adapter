@@ -9,7 +9,7 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
     let generics = &input.generics;
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-    let body = match &input.data {
+    let (body_serialize, body_all_types) = match &input.data {
         syn::Data::Struct(data) => {
             let identifiers = data.fields.iter().map(|f| {
                 let field = f.ident.as_ref().unwrap();
@@ -24,11 +24,24 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
                     .fold(String::new(), |a, b| a + b)
             );
 
-            let calls = identifiers.map(|(ident, ty)| {
+            let calls = identifiers.clone().map(|(ident, ty)| {
                 let ident_as_string = ident.to_string();
-                quote! { format!("    {}: {};", #ident_as_string, <#ty as TypescriptSerializable>::serialize_to_type()) }
+                quote! { format!("    {}: {};", #ident_as_string, <#ty as TypescriptSerializable>::type_name()) }
             });
-            quote! { format!(#format_string, #(#calls),*)  }
+            let all_types = identifiers.map(|(_, ty)| {
+                quote! { collector.append(&mut <#ty as TypescriptSerializable>::all_types_output()); }
+            });
+            (
+                quote! { format!(#format_string, #(#calls),*)  },
+                quote! {
+                    let mut collector: Vec<String> = Vec::new();
+
+                    #(#all_types)*
+                    collector.push(format!("export type {} = {};\n", <Self as TypescriptSerializable>::type_name(), <Self as TypescriptSerializable>::serialize_to_type()));
+
+                    collector
+                },
+            )
         }
         syn::Data::Enum(data) => {
             let arms = data.variants.iter().map(|v| {
@@ -62,21 +75,38 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
                     }
                 }
             });
-            quote! {
-                match self {
-                    #(#arms),*
-                }
-            }
+            let arms_cloned = arms.clone();
+            (
+                quote! {
+                    match self {
+                        #(#arms),*
+                    }
+                },
+                quote! {
+                    match self {
+                        #(#arms_cloned),*
+                    }
+                },
+            )
         }
         syn::Data::Union(_) => {
             panic!("TypescriptSerializable cannot be derived for unions");
         }
     };
 
+    let name_as_string = name.to_string();
     let expanded = quote! {
         impl #impl_generics TypescriptSerializable for #name #ty_generics #where_clause {
+            fn type_name() -> String {
+                #name_as_string.into()
+            }
+
             fn serialize_to_type() -> String {
-                #body
+                #body_serialize
+            }
+
+            fn all_types_output() -> Vec<String> {
+                #body_all_types
             }
         }
     };
