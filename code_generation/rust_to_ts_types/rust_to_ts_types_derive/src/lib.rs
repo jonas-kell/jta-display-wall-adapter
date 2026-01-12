@@ -46,46 +46,91 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
         syn::Data::Enum(data) => {
             let arms = data.variants.iter().map(|v| {
                 let vname = &v.ident;
+                let vname_as_string = vname.to_string();
                 match &v.fields {
                     syn::Fields::Unnamed(fields) => {
-                        let bindings: Vec<_> = (0..fields.unnamed.len())
-                            .map(|i| syn::Ident::new(&format!("f{i}"), v.ident.span()))
-                            .collect();
-                        quote! {
-                            #name::#vname(#(#bindings),*) => { #(#bindings.serialize_to_type();)* }
-                        }
-                    }
-                    syn::Fields::Named(fields) => {
-                        let bindings: Vec<_> = fields
-                            .named
+                        let unnamed_types: Vec<_> = fields.unnamed
                             .iter()
-                            .map(|f| f.ident.as_ref().unwrap())
+                            .map(|field| &field.ty)
                             .collect();
 
-                        quote! {
-                            #name::#vname { #(#bindings),* } => {
-                                #(#bindings.serialize_to_type();)*
-                            }
-                        }
+                        if unnamed_types.len() != 1 {
+                            panic!("For enum type conversion, only exaclty one unnamed enum entry is allowed!")
+                        } // TODO support these also
+
+                        let unnamed_type = &unnamed_types[0];
+
+                        (
+                            quote! {
+                                format!("{{ type: \"{}\", value: {} }}", #vname_as_string, <#unnamed_type as TypescriptSerializable>::type_name())
+                            },
+                            [unnamed_types[0]].into()
+                        )
+                    }
+                    syn::Fields::Named(fields) => {
+                        let intermediate = fields
+                            .named
+                            .iter()
+                            .map(|f| (f.ident.as_ref().unwrap(), &f.ty));
+                        let lines: Vec<_> = intermediate.clone()
+                            .map(|(i,t)| {
+                                    let i_as_str = i.to_string();
+                                    quote! {
+                                        format!("        {}: {}", #i_as_str, <#t as TypescriptSerializable>::type_name())
+                                    }
+                                }
+                            )
+                            .collect();
+
+                        let format_string = format!(
+                            "{{{{\n{}    }}}}\n",
+                            std::iter::repeat("{};\n")
+                                .take(lines.len())
+                                .fold(String::new(), |a, b| a + b)
+                        );
+
+                        (quote! {
+                            format!("{{ type: \"{}\", value: {} }}", #vname_as_string, format!(#format_string, #(#lines),*))
+                        },
+                        intermediate.map(|(_,t)| t).collect())
+
                     }
                     syn::Fields::Unit => {
-                        quote! {
-                            #name::#vname => {}
-                        }
+                        (
+                            quote! {
+                                format!("{{ type: \"{}\" }}", #vname_as_string)
+                            },
+                            Vec::new()
+                        )
                     }
                 }
             });
-            let arms_cloned = arms.clone();
+
+            let format_string = format!(
+                "{}",
+                std::iter::repeat("\n| {}")
+                    .take(arms.len())
+                    .fold(String::new(), |a, b| a + b)
+            );
+            let arms_values = arms.clone().map(|(a, _)| a);
+            let arms_types = arms.flat_map(|(_, t)| t).map(|ty| {
+                quote! {
+                    collector.append(&mut <#ty as TypescriptSerializable>::all_types_output());
+                }
+            });
+
             (
                 quote! {
-                    match self {
-                        #(#arms),*
-                    }
+                    format!(#format_string, #(#arms_values),*)
                 },
                 quote! {
-                    match self {
-                        #(#arms_cloned),*
-                    }
+                    let mut collector: Vec<String> = Vec::new();
+
+                    #(#arms_types)*
+
+                    collector.push(format!("export type {} = {};\n", <Self as TypescriptSerializable>::type_name(), <Self as TypescriptSerializable>::serialize_to_type()));
+
+                    collector
                 },
             )
         }

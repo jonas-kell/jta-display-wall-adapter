@@ -1,16 +1,26 @@
 use rust_to_ts_types::TypescriptSerializable;
-use std::{env, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 #[derive(TypescriptSerializable)]
-struct Test {
+struct Test1 {
     a: String,
     b: String,
 }
 
 #[derive(TypescriptSerializable)]
 struct Test2 {
-    aa: Test,
+    aa: Test1,
     test: Option<String>,
+}
+
+#[derive(TypescriptSerializable)]
+enum Test3 {
+    A,
+    G,
+    B(String),
+    // C(String, String), // fails, we avoid processing these for now (// TODO)
+    D { a: String },
+    E { b: Test1, d: Test1, fasd: String },
 }
 
 fn main() {
@@ -19,9 +29,12 @@ fn main() {
 
     // generate output string
     println!("Generating ts interface");
-    let out_str = Test2::all_types_output()
-        .into_iter()
-        .fold(String::new(), |a, b| a + &b);
+    let mut collector = Vec::new();
+    collector.append(&mut Test1::all_types_output());
+    collector.append(&mut Test2::all_types_output());
+    collector.append(&mut Test3::all_types_output());
+
+    let out_str = collector.into_iter().fold(String::new(), |a, b| a + &b);
 
     // write output string
     println!("Exporting ts interface");
