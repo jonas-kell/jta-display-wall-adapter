@@ -1,5 +1,5 @@
 use rust_to_ts_types::TypescriptSerializable;
-use std::{fs, path::PathBuf};
+use std::{collections::HashSet, fs, path::PathBuf};
 
 #[derive(TypescriptSerializable)]
 struct Test1 {
@@ -34,7 +34,11 @@ fn main() {
     collector.append(&mut Test2::all_types_output());
     collector.append(&mut Test3::all_types_output());
 
-    let out_str = collector.into_iter().fold(String::new(), |a, b| a + &b);
+    let out_str = collector
+        .into_iter()
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .fold(String::new(), |a, b| a + &b);
 
     // write output string
     println!("Exporting ts interface");
