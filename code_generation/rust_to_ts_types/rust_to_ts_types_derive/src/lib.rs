@@ -62,7 +62,10 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
 
                         (
                             quote! {
-                                format!("{{ type: \"{}\", value: {} }}", #vname_as_string, <#unnamed_type as TypescriptSerializable>::type_name())
+                                format!("{}{}", <Self as TypescriptSerializable>::type_name(), #vname_as_string)
+                            },
+                            quote! {
+                                format!("export type {}{} = {{ type: \"{}\", value: {} }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string, <#unnamed_type as TypescriptSerializable>::type_name())
                             },
                             [unnamed_types[0]].into()
                         )
@@ -89,16 +92,23 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
                                 .fold(String::new(), |a, b| a + b)
                         );
 
-                        (quote! {
-                            format!("{{ type: \"{}\", value: {} }}", #vname_as_string, format!(#format_string, #(#lines),*))
-                        },
-                        intermediate.map(|(_,t)| t).collect())
-
+                        (
+                            quote! {
+                                format!("{}{}", <Self as TypescriptSerializable>::type_name(), #vname_as_string)
+                            },
+                            quote! {
+                                format!("export type {}{} = {{ type: \"{}\", value: {} }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string, format!(#format_string, #(#lines),*))
+                            },
+                            intermediate.map(|(_,t)| t).collect()
+                        )
                     }
                     syn::Fields::Unit => {
                         (
                             quote! {
-                                format!("{{ type: \"{}\" }}", #vname_as_string)
+                                format!("{}{}", <Self as TypescriptSerializable>::type_name(), #vname_as_string)
+                            },
+                            quote! {
+                                format!("export type {}{} = {{ type: \"{}\" }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string)
                             },
                             Vec::new()
                         )
@@ -112,8 +122,13 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
                     .take(arms.len())
                     .fold(String::new(), |a, b| a + b)
             );
-            let arms_values = arms.clone().map(|(a, _)| a);
-            let arms_types = arms.flat_map(|(_, t)| t).map(|ty| {
+            let arms_names = arms.clone().map(|(n, _, _)| n);
+            let arms_values = arms.clone().map(|(_, a, _)| a).map(|a| {
+                quote! {
+                    collector.push(#a);
+                }
+            });
+            let arms_types = arms.flat_map(|(_, _, t)| t).map(|ty| {
                 quote! {
                     collector.append(&mut <#ty as TypescriptSerializable>::all_types_output());
                 }
@@ -121,14 +136,16 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
 
             (
                 quote! {
-                    format!(#format_string, #(#arms_values),*)
+                    format!(#format_string, #(#arms_names),*)
                 },
                 quote! {
                     let mut collector: Vec<String> = Vec::new();
 
-                    #(#arms_types)*
+                    #(#arms_values)*
 
                     collector.push(format!("export type {} = {};\n", <Self as TypescriptSerializable>::type_name(), <Self as TypescriptSerializable>::serialize_to_type()));
+
+                    #(#arms_types)*
 
                     collector
                 },
