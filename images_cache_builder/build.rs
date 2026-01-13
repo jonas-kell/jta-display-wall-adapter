@@ -4,7 +4,8 @@ use std::{fs, path::PathBuf};
 fn main() {
     // rerun only when these change
     println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=../images_core/");
+    println!("cargo:rerun-if-changed=../images_core/src/"); // ! watching the whole ../images_core/ , we observe changes to the target folder there (bad!)
+    println!("cargo:rerun-if-changed=../images_core/Cargo.toml");
     println!("cargo:rerun-if-changed=../assets/");
 
     println!("cargo:warning=Building image cache now!");
