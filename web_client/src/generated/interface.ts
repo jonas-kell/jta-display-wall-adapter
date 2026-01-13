@@ -66,7 +66,9 @@ export type DayTime = {
     seconds: number;
     fractional_part_in_ten_thousands: number | null;
 };
-export type DifferenceToCandidate = DifferenceToCandidateWinner | DifferenceToCandidateDifference;
+export type DifferenceToCandidate =
+    | DifferenceToCandidateWinner
+    | DifferenceToCandidateDifference;
 export type DifferenceToCandidateDifference = { type: "Difference"; value: RaceTime };
 export type DifferenceToCandidateWinner = { type: "Winner" };
 export type DisplayClientState = {
@@ -239,10 +241,7 @@ export type MessageFromWebControlResultList = { type: "ResultList" };
 export type MessageFromWebControlSelectHeat = { type: "SelectHeat"; value: string };
 export type MessageFromWebControlSendDebugDisplayCommand = { type: "SendDebugDisplayCommand"; value: DisplayEntry };
 export type MessageFromWebControlStartList = { type: "StartList" };
-export type MessageFromWebControlStorePDFConfigurationSetting = {
-    type: "StorePDFConfigurationSetting";
-    value: PDFConfigurationSetting;
-};
+export type MessageFromWebControlStorePDFConfigurationSetting = { type: "StorePDFConfigurationSetting"; value: PDFConfigurationSetting };
 export type MessageFromWebControlSwitchMode = { type: "SwitchMode" };
 export type MessageFromWebControlTiming = { type: "Timing" };
 export type MessageFromWebControlUpdateTimingSettings = { type: "UpdateTimingSettings"; value: TimingSettings };
@@ -266,10 +265,7 @@ export type MessageToWebControlHeatDataMessage = { type: "HeatDataMessage"; valu
 export type MessageToWebControlHeatsMeta = { type: "HeatsMeta"; value: HeatMeta[] };
 export type MessageToWebControlLogs = { type: "Logs"; value: PermanentlyStoredDataset[] };
 export type MessageToWebControlMainHeat = { type: "MainHeat"; value: HeatData };
-export type MessageToWebControlPDFConfigurationSettingsData = {
-    type: "PDFConfigurationSettingsData";
-    value: PDFConfigurationSetting[];
-};
+export type MessageToWebControlPDFConfigurationSettingsData = { type: "PDFConfigurationSettingsData"; value: PDFConfigurationSetting[] };
 export type MessageToWebControlTimingSettingsState = { type: "TimingSettingsState"; value: TimingSettings };
 export type MessageToWebControlWindMeasurements = { type: "WindMeasurements"; value: WindMeasurement[] };
 export type NaiveDate = string;
@@ -277,19 +273,15 @@ export type NaiveDateTime = string;
 export type PDFConfigurationContent =
     | PDFConfigurationContentPDFConfigurationContentText
     | PDFConfigurationContentPDFConfigurationContentReference;
-export type PDFConfigurationContentPDFConfigurationContentReference = {
-    type: "PDFConfigurationContentReference";
-    value: {
+export type PDFConfigurationContentPDFConfigurationContentReference = { type: "PDFConfigurationContentReference"; value: {
         reference: string;
         reference_content: string | null;
-    };
-};
-export type PDFConfigurationContentPDFConfigurationContentText = {
-    type: "PDFConfigurationContentText";
-    value: {
+    }
+ };
+export type PDFConfigurationContentPDFConfigurationContentText = { type: "PDFConfigurationContentText"; value: {
         text: string;
-    };
-};
+    }
+ };
 export type PDFConfigurationSetting = {
     id: Uuid;
     setting_for: PDFSettingFor;

@@ -71,7 +71,7 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
                                 format!("{}{}", <Self as TypescriptSerializable>::type_name(), #vname_as_string)
                             },
                             quote! {
-                                format!("export type {}{} = {{ type: \"{}\", value: {} }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string, <#unnamed_type as TypescriptSerializable>::type_name())
+                                format!("export type {}{} = {{ type: \"{}\"; value: {} }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string, <#unnamed_type as TypescriptSerializable>::type_name())
                             },
                             [unnamed_types[0]].into()
                         )
@@ -103,7 +103,7 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
                                 format!("{}{}", <Self as TypescriptSerializable>::type_name(), #vname_as_string)
                             },
                             quote! {
-                                format!("export type {}{} = {{ type: \"{}\", value: {} }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string, format!(#format_string, #(#lines),*))
+                                format!("export type {}{} = {{ type: \"{}\"; value: {} }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string, format!(#format_string, #(#lines),*))
                             },
                             intermediate.map(|(_,t)| t).collect()
                         )
@@ -150,7 +150,7 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
                     quote! {
                         let mut collector: Vec<String> = Vec::new();
 
-                        collector.push(format!("export enum {} {};\n", <Self as TypescriptSerializable>::type_name(), <Self as TypescriptSerializable>::serialize_to_type()));
+                        collector.push(format!("export enum {} {}\n", <Self as TypescriptSerializable>::type_name(), <Self as TypescriptSerializable>::serialize_to_type()));
 
                         collector
                     },
@@ -158,7 +158,7 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
             } else {
                 let format_string = format!(
                     "{}",
-                    std::iter::repeat("\n| {}")
+                    std::iter::repeat("\n    | {}")
                         .take(arms.len())
                         .fold(String::new(), |a, b| a + b)
                 );
@@ -183,7 +183,7 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
 
                         #(#arms_values)*
 
-                        collector.push(format!("export type {} = {};\n", <Self as TypescriptSerializable>::type_name(), <Self as TypescriptSerializable>::serialize_to_type()));
+                        collector.push(format!("export type {} ={};\n", <Self as TypescriptSerializable>::type_name(), <Self as TypescriptSerializable>::serialize_to_type()));
 
                         #(#arms_types)*
 
