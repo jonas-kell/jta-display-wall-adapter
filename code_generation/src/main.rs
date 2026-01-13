@@ -1,27 +1,6 @@
+use jta_display_wall_adapter::{MessageFromWebControl, MessageToWebControl};
 use rust_to_ts_types::TypescriptSerializable;
 use std::{collections::HashSet, fs, path::PathBuf};
-
-#[derive(TypescriptSerializable)]
-struct Test1 {
-    a: String,
-    b: String,
-}
-
-#[derive(TypescriptSerializable)]
-struct Test2 {
-    aa: Test1,
-    test: Option<String>,
-}
-
-#[derive(TypescriptSerializable)]
-enum Test3 {
-    A,
-    G,
-    B(String),
-    // C(String, String), // fails, we avoid processing these for now (// TODO)
-    D { a: String },
-    E { b: Test1, d: Test1, fasd: String },
-}
 
 fn main() {
     // TODO restructure ALL code, so that this can be compile time dependency of the main crate
@@ -30,15 +9,18 @@ fn main() {
     // generate output string
     println!("Generating ts interface");
     let mut collector = Vec::new();
-    collector.append(&mut Test1::all_types_output());
-    collector.append(&mut Test2::all_types_output());
-    collector.append(&mut Test3::all_types_output());
+    collector.append(&mut MessageFromWebControl::all_types_output());
+    collector.append(&mut MessageToWebControl::all_types_output());
 
-    let out_str = collector
+    let mut out_vec = collector
         .into_iter()
         .collect::<HashSet<_>>()
         .into_iter()
-        .fold(String::new(), |a, b| a + &b);
+        .collect::<Vec<_>>();
+
+    out_vec.sort();
+
+    let out_str = out_vec.into_iter().fold(String::new(), |a, b| a + &b);
 
     // write output string
     println!("Exporting ts interface");

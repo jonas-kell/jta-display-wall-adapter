@@ -9,10 +9,11 @@ use crate::{
     wind::format::WindMeasurement,
 };
 use chrono::NaiveDateTime;
+use rust_to_ts_types::TypescriptSerializable;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TypescriptSerializable)]
 #[serde(tag = "type", content = "data")]
 pub enum MessageFromWebControl {
     Idle,
@@ -46,18 +47,17 @@ pub enum MessageFromWebControl {
     SendDebugDisplayCommand(DisplayEntry),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub enum PDFSettingFor {
     Bib,
     Certificate,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 #[serde(tag = "type")]
 pub struct PDFConfigurationSetting {
     pub id: Uuid,
-    #[serde(rename = "for")]
-    pub for_: PDFSettingFor,
+    pub setting_for: PDFSettingFor,
     pub pos_x: f64,
     pub pos_y: f64,
     pub size: f64,
@@ -67,32 +67,32 @@ pub struct PDFConfigurationSetting {
     pub content: PDFConfigurationContent,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 #[serde(tag = "type")]
 pub enum PDFConfigurationContent {
-    #[serde(rename = "PDFConfigurationContentText")]
-    Text { text: String },
-    #[serde(rename = "PDFConfigurationContentReference")]
-    Reference {
+    PDFConfigurationContentText {
+        text: String,
+    },
+    PDFConfigurationContentReference {
         reference: String,
         reference_content: Option<String>,
     },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, TypescriptSerializable)]
 pub struct WindValueRequestDateContainer {
     pub from: NaiveDateTime,
     pub to: NaiveDateTime,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct DisplayClientState {
     pub alive: bool,
     pub external_passthrough_mode: bool,
     pub can_switch_mode: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 #[serde(tag = "type", content = "data")]
 pub enum MessageToWebControl {
     DatabaseStaticState(DatabaseStaticState),

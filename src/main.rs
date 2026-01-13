@@ -1,40 +1,15 @@
 #[macro_use]
 extern crate log;
 
-use std::net::TcpListener;
-
-use crate::{
-    args::{Args, Mode},
-    wind::run_wind_server,
-};
 use clap::Parser;
-use client::run_client;
-use server::run_server;
-
-mod args;
-mod client;
-mod database;
-mod file;
-mod helpers;
-mod hex;
-mod instructions;
-mod interface;
-mod json;
-mod server;
-mod times;
-mod webserver;
-mod wind;
+use jta_display_wall_adapter::{
+    open_webcontrol, run_client, run_server, run_wind_server, Args, Mode,
+};
+use std::net::TcpListener;
 
 fn is_port_in_use(port: &str) -> bool {
     let addr = format!("0.0.0.0:{}", port);
     TcpListener::bind(addr).is_err()
-}
-
-pub fn open_webcontrol(args: &Args) {
-    let _ = open::that(&format!(
-        "http://localhost:{}/",
-        args.internal_webcontrol_port
-    ));
 }
 
 #[tokio::main]

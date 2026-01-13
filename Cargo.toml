@@ -46,6 +46,7 @@ rand_chacha = "0.3"
 sha2 = "0.10"
 
 images_core = { path = "./images_core" }
+rust_to_ts_types = { path = "./code_generation/rust_to_ts_types" }
 
 [build-dependencies]
 images_cache_builder = { path = "./images_cache_builder" }

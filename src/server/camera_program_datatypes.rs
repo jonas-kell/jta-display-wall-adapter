@@ -2,10 +2,11 @@ use std::collections::HashMap;
 
 use crate::times::{DayTime, RaceTime, RaceWind};
 use chrono::{NaiveDate, NaiveDateTime};
+use rust_to_ts_types::TypescriptSerializable;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub enum DisqualificationReason {
     Disqualified,
     DidNotStart,
@@ -14,7 +15,7 @@ pub enum DisqualificationReason {
     Other(String),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct HeatStart {
     pub application: String,
     pub version: String,
@@ -23,7 +24,7 @@ pub struct HeatStart {
     pub time: DayTime,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct HeatFinish {
     pub application: String,
     pub version: String,
@@ -33,7 +34,7 @@ pub struct HeatFinish {
     pub race_time: RaceTime,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct HeatIntermediate {
     pub application: String,
     pub version: String,
@@ -51,7 +52,7 @@ pub struct HeatFalseStart {
     pub id: Uuid,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct HeatStartList {
     pub name: String,
     pub id: Uuid,
@@ -62,7 +63,7 @@ pub struct HeatStartList {
     pub competitors: Vec<HeatCompetitor>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct HeatCompetitor {
     pub id: String, // not used for output to meetxml
     pub lane: u32,
@@ -76,7 +77,7 @@ pub struct HeatCompetitor {
     pub disqualified: Option<DisqualificationReason>, // not used for output to meetxml
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct HeatWind {
     pub application: String,
     pub version: String,
@@ -93,7 +94,7 @@ pub struct HeatWindMissing {
     pub id: Uuid,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct CompetitorEvaluated {
     pub application: String,
     pub version: String,
@@ -102,13 +103,13 @@ pub struct CompetitorEvaluated {
     pub competitor_result: HeatCompetitorResult,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub enum DifferenceToCandidate {
     Winner,
     Difference(RaceTime),
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct HeatCompetitorResult {
     pub competitor: HeatCompetitor,
     pub distance: u32,
@@ -120,7 +121,7 @@ pub struct HeatCompetitorResult {
     pub finish_time: DayTime,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct HeatResult {
     pub id: Uuid,
     // usefull props
@@ -133,7 +134,7 @@ pub struct HeatResult {
     pub competitors_left_to_evaluate: Vec<HeatCompetitor>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct HeatMeta {
     pub id: Uuid,
     pub name: String,
@@ -151,7 +152,7 @@ impl From<HeatStartList> for HeatMeta {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct HeatData {
     pub meta: HeatMeta,
     pub start_list: HeatStartList,
@@ -204,7 +205,7 @@ pub struct Heat {
     pub competitors: Vec<HeatCompetitor>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub enum Gender {
     Male,
     Female,
@@ -220,7 +221,7 @@ impl Gender {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct Athlete {
     pub id: Uuid,
     pub gender: Gender,
@@ -234,14 +235,14 @@ pub struct Athlete {
     pub birth_date: Option<NaiveDate>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct AthleteWithMetadata {
     pub athlete: Athlete,
     pub heat_assignments: Vec<HeatAssignment>,
     pub heats_from_assignments: Vec<(Option<HeatCompetitorResult>, HeatAssignment, HeatData)>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct HeatAssignment {
     pub id: i32,
     pub heat_id: Uuid,

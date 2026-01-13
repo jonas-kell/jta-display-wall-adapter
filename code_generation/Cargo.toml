@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 rust_to_ts_types = { path = "./rust_to_ts_types" }
+jta-display-wall-adapter = { path = "./../" }

@@ -6,4 +6,7 @@ repository = "https://github.com/jonas-kell/jta-display-wall-adapter"
 edition = "2021"
 
 [dependencies]
+uuid = { version = "1.18.1", features = ["serde", "v4"] }
+chrono = { version = "0.4.42", features = ["serde"] }
+
 rust_to_ts_types_derive = { path = "./rust_to_ts_types_derive" }

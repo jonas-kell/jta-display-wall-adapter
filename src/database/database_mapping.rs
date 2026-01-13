@@ -25,6 +25,7 @@ use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime};
 use clap::crate_version;
 use diesel::associations::HasTable;
 use diesel::prelude::*;
+use rust_to_ts_types::TypescriptSerializable;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -362,7 +363,7 @@ struct PermanentStorageDatabase {
     data: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TypescriptSerializable)]
 pub struct PermanentlyStoredDataset {
     name_key: String,
     stored_at: NaiveDateTime,
@@ -505,7 +506,7 @@ impl TryFrom<DatabaseStaticState> for DatabaseStaticStateDatabase {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, TypescriptSerializable)]
 pub enum ApplicationMode {
     TrackCompetition,
     StreetLongRun,
@@ -521,7 +522,7 @@ impl ApplicationMode {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, TypescriptSerializable)]
 pub struct DatabaseStaticState {
     pub mode: ApplicationMode,
     pub date: NaiveDate,

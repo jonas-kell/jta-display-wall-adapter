@@ -13,10 +13,11 @@ use crate::{
 };
 use async_channel::{Sender, TrySendError};
 use images_core::images::{Animation, AnimationPlayer, ImagesStorage};
+use rust_to_ts_types::TypescriptSerializable;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TypescriptSerializable)]
 pub enum TimingTimeDisplayMode {
     TimeBigAndHold,
     TimeBigAndHoldTop,
@@ -25,7 +26,7 @@ pub enum TimingTimeDisplayMode {
     StreetRun,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, TypescriptSerializable)]
 pub struct TimingSettings {
     pub fireworks_on_intermediate: bool,
     pub fireworks_on_finish: bool,

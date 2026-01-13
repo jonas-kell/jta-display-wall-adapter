@@ -1,6 +1,7 @@
+use rust_to_ts_types::TypescriptSerializable;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct DisplayEntry {
     pub bib: u32,
     pub name: String,

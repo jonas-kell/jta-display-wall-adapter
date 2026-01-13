@@ -1,8 +1,9 @@
 use crate::hex::parse_race_time;
+use rust_to_ts_types::TypescriptSerializable;
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, ops::Add, time::Duration};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct RaceTime {
     pub hours: Option<u16>,
     pub minutes: Option<u16>,
@@ -297,7 +298,7 @@ impl From<Duration> for RaceTime {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, TypescriptSerializable)]
 pub struct DayTime {
     pub hours: u16,
     pub minutes: u16,
@@ -394,7 +395,7 @@ impl From<DayTime> for Duration {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 pub struct RaceWind {
     /// - is gegenwind aka head wind, + is rückenwind aka back wind
     pub back_wind: bool,
