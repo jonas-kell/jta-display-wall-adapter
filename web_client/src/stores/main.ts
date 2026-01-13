@@ -2,36 +2,6 @@ import { defineStore } from "pinia";
 import { computed, nextTick, ref, watch } from "vue";
 import { WS_URL } from "../functions/environment";
 import {
-    // Advertisements,
-    // Clock,
-    // CreateAthlete,
-    // CreateHeatAssignment,
-    // DeleteAthlete,
-    // DeleteCompetitorEvaluated,
-    // DeleteHeatAssignment,
-    // DeletePDFConfigurationSetting,
-    // ExportDataToFile,
-    // FreeText,
-    // GetHeats,
-    // GetLogs,
-    // GetMainHeat,
-    // Idle,
-    // InitStaticDatabaseState,
-    // RequestAthletes,
-    // RequestDisplayClientState,
-    // RequestPDFConfigurationSettings,
-    // RequestStaticDatabaseState,
-    // RequestTimingSettings,
-    // RequestWindValues,
-    // ResultList,
-    // SelectHeat,
-    // SendDebugDisplayCommand,
-    // StartList,
-    // StorePDFConfigurationSetting,
-    // SwitchMode,
-    // Timing,
-    // UpdateTimingSettings,
-    // LogEntry,
     WindValueRequestDateContainer,
     AthleteWithMetadata,
     DayTime,
@@ -131,6 +101,7 @@ export default defineStore("main", () => {
     const athletesData = ref([] as AthleteWithMetadata[]);
     const pdfConfigurationSettings = ref([] as PDFConfigurationSetting[]);
     const mainHeat = ref(null as null | HeatData);
+    const versionMismatchTriggered = ref(null as null | string);
 
     function handleWSMessage(ev: MessageEvent) {
         if (ev.data instanceof Blob) {
@@ -209,6 +180,12 @@ export default defineStore("main", () => {
                 return;
             case "MainHeat":
                 mainHeat.value = msg.data;
+                return;
+            case "VersionMismatch":
+                const dbHasVersion = msg.data[0];
+                const programHasVersion = msg.data[1];
+
+                versionMismatchTriggered.value = `The database has the Version: ${dbHasVersion}, while the program currently has the version ${programHasVersion}. Not compatible!!`;
                 return;
             default:
                 console.error("Received unknown message type:", msg);
@@ -607,5 +584,6 @@ export default defineStore("main", () => {
         staticConfiguration,
         athletesData,
         pdfConfigurationSettings,
+        versionMismatchTriggered,
     };
 });

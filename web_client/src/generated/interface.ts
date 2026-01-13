@@ -256,7 +256,8 @@ export type MessageToWebControl =
     | MessageToWebControlCurrentDisplayFrame
     | MessageToWebControlAthletesData
     | MessageToWebControlPDFConfigurationSettingsData
-    | MessageToWebControlMainHeat;
+    | MessageToWebControlMainHeat
+    | MessageToWebControlVersionMismatch;
 export type MessageToWebControlAthletesData = { type: "AthletesData"; data: AthleteWithMetadata[] };
 export type MessageToWebControlCurrentDisplayFrame = { type: "CurrentDisplayFrame"; data: number[] };
 export type MessageToWebControlDatabaseStaticState = { type: "DatabaseStaticState"; data: DatabaseStaticState };
@@ -267,6 +268,7 @@ export type MessageToWebControlLogs = { type: "Logs"; data: PermanentlyStoredDat
 export type MessageToWebControlMainHeat = { type: "MainHeat"; data: HeatData };
 export type MessageToWebControlPDFConfigurationSettingsData = { type: "PDFConfigurationSettingsData"; data: PDFConfigurationSetting[] };
 export type MessageToWebControlTimingSettingsState = { type: "TimingSettingsState"; data: TimingSettings };
+export type MessageToWebControlVersionMismatch = { type: "VersionMismatch"; data: [string, string] };
 export type MessageToWebControlWindMeasurements = { type: "WindMeasurements"; data: WindMeasurement[] };
 export type NaiveDate = string;
 export type NaiveDateTime = string;

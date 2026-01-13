@@ -105,4 +105,5 @@ pub enum MessageToWebControl {
     AthletesData(Vec<AthleteWithMetadata>),
     PDFConfigurationSettingsData(Vec<PDFConfigurationSetting>),
     MainHeat(HeatData),
+    VersionMismatch((String, String)),
 }

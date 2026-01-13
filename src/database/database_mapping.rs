@@ -541,22 +541,24 @@ impl TryFrom<DatabaseStaticStateDatabase> for DatabaseStaticState {
 
 pub fn get_database_static_state(
     manager: &DatabaseManager,
-) -> Result<DatabaseStaticState, DatabaseError> {
-    let mut conn = manager.get_connection()?;
+) -> Result<DatabaseStaticState, (Option<(String, String)>, DatabaseError)> {
+    let mut conn = manager.get_connection().map_err(|e| (None, e))?;
 
     let static_data = database_state::table::table()
         .filter(database_state::id.is(1))
-        .first::<DatabaseStaticStateDatabase>(&mut conn)?;
+        .first::<DatabaseStaticStateDatabase>(&mut conn)
+        .map_err(|e| (None, e.into()))?;
 
     let current_version = String::from(crate_version!());
 
     if static_data.created_with_version != current_version {
-        return Err(DatabaseError::new(format!("Could not read static data, as the database was created for a different program version. DB: {}, Current: {}", static_data.created_with_version, current_version)));
+        return Err((Some((static_data.created_with_version.clone(), current_version.clone())),
+             DatabaseError::new(format!("Could not read static data, as the database was created for a different program version. DB: {}, Current: {}", static_data.created_with_version, current_version))));
     }
 
     return Ok(static_data
         .try_into()
-        .map_err(|e: String| Into::<DatabaseError>::into(e))?);
+        .map_err(|e: String| (None, Into::<DatabaseError>::into(e)))?);
 }
 
 pub fn init_database_static_state(

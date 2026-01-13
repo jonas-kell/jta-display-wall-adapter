@@ -27,7 +27,7 @@
 
 <template>
     <h1>JTA Display Wall Adapter</h1>
-    <div class="ma-5">
+    <div class="ma-5" v-if="mainStore.versionMismatchTriggered == null">
         <p class="mb-5">Server not Configured!!</p>
 
         <v-text-field
@@ -69,8 +69,9 @@
         />
 
         <br />
-        <v-btn @click="configure">Configure!</v-btn>
+        <v-btn @click="configure" :disabled="appCity == '' || appLocation == ''">Configure!</v-btn>
     </div>
+    <p v-else>{{ mainStore.versionMismatchTriggered }}</p>
 </template>
 
 <style scoped></style>

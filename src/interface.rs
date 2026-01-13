@@ -168,6 +168,7 @@ pub struct ServerStateMachine {
     sound_engine: Option<AudioPlayer>,
     timing_settings_template: TimingSettings,
     static_state: Option<DatabaseStaticState>,
+    database_version_mismatch: Option<(String, String)>,
 }
 impl ServerStateMachine {
     pub fn new(
@@ -183,14 +184,21 @@ impl ServerStateMachine {
             Ok(e) => Some(e),
         };
 
+        let mut database_version_mismatch = None;
+
         let static_state = match get_database_static_state(&database_manager) {
-            Err(e) => {
+            Err((version_opt, e)) => {
                 error!("Could not read static state from Database (might be un-initialized), because: {}", e);
                 warn!("Initialize over the web interface, otherwise nothing can work...");
                 if !comm_channel.web_control_there_to_receive() {
                     info!("Optening webcontrol in browser");
                     open_webcontrol(args);
                 }
+
+                if let Some(version_tupel) = version_opt {
+                    database_version_mismatch = Some(version_tupel);
+                }
+
                 None
             }
             Ok(s) => Some(s),
@@ -205,6 +213,7 @@ impl ServerStateMachine {
             sound_engine,
             timing_settings_template: TimingSettings::new(args),
             static_state,
+            database_version_mismatch,
         }
     }
 
@@ -219,6 +228,12 @@ impl ServerStateMachine {
         let dbss = if let Some(dbss) = &self.static_state {
             dbss
         } else {
+            if let Some(version_mismatch) = &self.database_version_mismatch {
+                self.send_message_to_web_control(MessageToWebControl::VersionMismatch(
+                    version_mismatch.clone(),
+                ));
+            }
+
             // static state not initialized
             let updated_successfully = match msg {
                 IncomingInstruction::FromWebControl(w) => match w {
