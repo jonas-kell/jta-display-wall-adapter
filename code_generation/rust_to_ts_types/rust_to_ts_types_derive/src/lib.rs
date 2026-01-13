@@ -44,6 +44,12 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
             )
         }
         syn::Data::Enum(data) => {
+            // TODO use https://doc.rust-lang.org/reference/attributes.html to additionally switch if this happens
+            let all_arms_unit = data.variants.iter().all(|v| match &v.fields {
+                syn::Fields::Unit => true,
+                _ => false,
+            });
+
             let arms = data.variants.iter().map(|v| {
                 let vname = &v.ident;
                 let vname_as_string = vname.to_string();
@@ -103,53 +109,88 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
                         )
                     }
                     syn::Fields::Unit => {
-                        (
-                            quote! {
-                                format!("{}{}", <Self as TypescriptSerializable>::type_name(), #vname_as_string)
-                            },
-                            quote! {
-                                format!("export type {}{} = {{ type: \"{}\" }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string)
-                            },
-                            Vec::new()
-                        )
+                        if all_arms_unit {
+                            (
+                                quote! {
+                                    format!("    {} = \"{}\",\n", #vname_as_string, #vname_as_string)
+                                },
+                                quote! {
+                                    format!("") // ignored in this case not needed
+                                },
+                                Vec::new()
+                            )
+                        } else {
+                            (
+                                quote! {
+                                    format!("{}{}", <Self as TypescriptSerializable>::type_name(), #vname_as_string)
+                                },
+                                quote! {
+                                    format!("export type {}{} = {{ type: \"{}\" }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string)
+                                },
+                                Vec::new()
+                            )
+                        }
                     }
                 }
             });
 
-            let format_string = format!(
-                "{}",
-                std::iter::repeat("\n| {}")
-                    .take(arms.len())
-                    .fold(String::new(), |a, b| a + b)
-            );
-            let arms_names = arms.clone().map(|(n, _, _)| n);
-            let arms_values = arms.clone().map(|(_, a, _)| a).map(|a| {
-                quote! {
-                    collector.push(#a);
-                }
-            });
-            let arms_types = arms.flat_map(|(_, _, t)| t).map(|ty| {
-                quote! {
-                    collector.append(&mut <#ty as TypescriptSerializable>::all_types_output());
-                }
-            });
+            if all_arms_unit {
+                let format_string = format!(
+                    "{{{{\n{}}}}}",
+                    std::iter::repeat("{}")
+                        .take(arms.len())
+                        .fold(String::new(), |a, b| a + b)
+                );
+                let arms_values = arms.map(|(v, _, _)| v);
 
-            (
-                quote! {
-                    format!(#format_string, #(#arms_names),*)
-                },
-                quote! {
-                    let mut collector: Vec<String> = Vec::new();
+                (
+                    quote! {
+                        format!(#format_string, #(#arms_values),*)
+                    },
+                    quote! {
+                        let mut collector: Vec<String> = Vec::new();
 
-                    #(#arms_values)*
+                        collector.push(format!("export enum {} {};\n", <Self as TypescriptSerializable>::type_name(), <Self as TypescriptSerializable>::serialize_to_type()));
 
-                    collector.push(format!("export type {} = {};\n", <Self as TypescriptSerializable>::type_name(), <Self as TypescriptSerializable>::serialize_to_type()));
+                        collector
+                    },
+                )
+            } else {
+                let format_string = format!(
+                    "{}",
+                    std::iter::repeat("\n| {}")
+                        .take(arms.len())
+                        .fold(String::new(), |a, b| a + b)
+                );
+                let arms_names = arms.clone().map(|(n, _, _)| n);
+                let arms_values = arms.clone().map(|(_, a, _)| a).map(|a| {
+                    quote! {
+                        collector.push(#a);
+                    }
+                });
+                let arms_types = arms.flat_map(|(_, _, t)| t).map(|ty| {
+                    quote! {
+                        collector.append(&mut <#ty as TypescriptSerializable>::all_types_output());
+                    }
+                });
 
-                    #(#arms_types)*
+                (
+                    quote! {
+                        format!(#format_string, #(#arms_names),*)
+                    },
+                    quote! {
+                        let mut collector: Vec<String> = Vec::new();
 
-                    collector
-                },
-            )
+                        #(#arms_values)*
+
+                        collector.push(format!("export type {} = {};\n", <Self as TypescriptSerializable>::type_name(), <Self as TypescriptSerializable>::serialize_to_type()));
+
+                        #(#arms_types)*
+
+                        collector
+                    },
+                )
+            }
         }
         syn::Data::Union(_) => {
             panic!("TypescriptSerializable cannot be derived for unions");
