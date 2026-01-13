@@ -1,9 +1,9 @@
 <script setup lang="ts">
     import { ref } from "vue";
     import useMainStore from "./../stores/main";
-    import { ApplicationMode } from "./../functions/interfaceShared";
     import { TODAY } from "../functions/date";
     import { uuid } from "../functions/uuid";
+    import { ApplicationMode } from "../generated/interface";
 
     const mainStore = useMainStore();
 

@@ -30,7 +30,7 @@
                 class="mr-2"
                 >Generate Bib</v-btn
             >
-            <PDFSettingsTable class="mt-3" :settings="settingsBib" :for="PDFSettingFor.Bib"></PDFSettingsTable>
+            <PDFSettingsTable class="mt-3" :settings="settingsBib" :setting_for="PDFSettingFor.Bib"></PDFSettingsTable>
             <h3>Certificate</h3>
             <v-btn
                 @click="
@@ -42,7 +42,11 @@
                 class="mr-2"
                 >Generate Certificate</v-btn
             >
-            <PDFSettingsTable class="mt-3" :settings="settingsCertificate" :for="PDFSettingFor.Certificate"></PDFSettingsTable>
+            <PDFSettingsTable
+                class="mt-3"
+                :settings="settingsCertificate"
+                :setting_for="PDFSettingFor.Certificate"
+            ></PDFSettingsTable>
         </div>
 
         <div class="d-flex flex-grow-1 justify-end mx-2">
@@ -57,7 +61,7 @@
     import PDFViewer from "./PDFViewer.vue";
     import PDFSettingsTable from "./PDFSettingsTable.vue";
     import { generatePDF } from "../functions/pdf";
-    import { PDFSettingFor } from "../functions/interfaceShared";
+    import { PDFSettingFor } from "../generated/interface";
     import { backgroundFileManagement } from "../functions/backgroundFiles";
 
     const viewer = ref<InstanceType<typeof PDFViewer>>();
@@ -149,12 +153,12 @@
 
     const settingsBib = computed(() => {
         return mainStore.pdfConfigurationSettings.filter((setting) => {
-            return setting.for == PDFSettingFor.Bib;
+            return setting.setting_for == PDFSettingFor.Bib;
         });
     });
     const settingsCertificate = computed(() => {
         return mainStore.pdfConfigurationSettings.filter((setting) => {
-            return setting.for == PDFSettingFor.Certificate;
+            return setting.setting_for == PDFSettingFor.Certificate;
         });
     });
 

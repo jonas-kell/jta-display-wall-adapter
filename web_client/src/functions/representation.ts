@@ -1,4 +1,4 @@
-import { DayTime, RaceTime, RaceWind } from "./interfaceInbound";
+import { DayTime, RaceTime, RaceWind } from "./../generated/interface";
 
 function zeroPad(value: number, length: number): string {
     return String(value).padStart(length, "0");

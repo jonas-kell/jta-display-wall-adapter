@@ -164,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-    import { TimingTimeDisplayMode } from "../functions/interfaceShared";
+    import { TimingTimeDisplayMode } from "../generated/interface";
     import useMainStore from "../stores/main";
     import TimingButtons from "./TimingButtons.vue";
 

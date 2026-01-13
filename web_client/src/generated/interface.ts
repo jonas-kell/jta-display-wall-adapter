@@ -69,7 +69,7 @@ export type DayTime = {
 export type DifferenceToCandidate =
     | DifferenceToCandidateWinner
     | DifferenceToCandidateDifference;
-export type DifferenceToCandidateDifference = { type: "Difference"; value: RaceTime };
+export type DifferenceToCandidateDifference = { type: "Difference"; data: RaceTime };
 export type DifferenceToCandidateWinner = { type: "Winner" };
 export type DisplayClientState = {
     alive: boolean;
@@ -92,7 +92,7 @@ export type DisqualificationReasonCanceled = { type: "Canceled" };
 export type DisqualificationReasonDidNotFinish = { type: "DidNotFinish" };
 export type DisqualificationReasonDidNotStart = { type: "DidNotStart" };
 export type DisqualificationReasonDisqualified = { type: "Disqualified" };
-export type DisqualificationReasonOther = { type: "Other"; value: string };
+export type DisqualificationReasonOther = { type: "Other"; data: string };
 export type HeatAssignment = {
     id: number;
     heat_id: Uuid;
@@ -217,34 +217,34 @@ export type MessageFromWebControl =
     | MessageFromWebControlDeleteCompetitorEvaluated
     | MessageFromWebControlSendDebugDisplayCommand;
 export type MessageFromWebControlAdvertisements = { type: "Advertisements" };
-export type MessageFromWebControlClock = { type: "Clock"; value: DayTime };
-export type MessageFromWebControlCreateAthlete = { type: "CreateAthlete"; value: Athlete };
-export type MessageFromWebControlCreateHeatAssignment = { type: "CreateHeatAssignment"; value: HeatAssignment };
-export type MessageFromWebControlDeleteAthlete = { type: "DeleteAthlete"; value: Uuid };
-export type MessageFromWebControlDeleteCompetitorEvaluated = { type: "DeleteCompetitorEvaluated"; value: DayTime };
-export type MessageFromWebControlDeleteHeatAssignment = { type: "DeleteHeatAssignment"; value: number };
-export type MessageFromWebControlDeletePDFConfigurationSetting = { type: "DeletePDFConfigurationSetting"; value: Uuid };
+export type MessageFromWebControlClock = { type: "Clock"; data: DayTime };
+export type MessageFromWebControlCreateAthlete = { type: "CreateAthlete"; data: Athlete };
+export type MessageFromWebControlCreateHeatAssignment = { type: "CreateHeatAssignment"; data: HeatAssignment };
+export type MessageFromWebControlDeleteAthlete = { type: "DeleteAthlete"; data: Uuid };
+export type MessageFromWebControlDeleteCompetitorEvaluated = { type: "DeleteCompetitorEvaluated"; data: DayTime };
+export type MessageFromWebControlDeleteHeatAssignment = { type: "DeleteHeatAssignment"; data: number };
+export type MessageFromWebControlDeletePDFConfigurationSetting = { type: "DeletePDFConfigurationSetting"; data: Uuid };
 export type MessageFromWebControlExportDataToFile = { type: "ExportDataToFile" };
-export type MessageFromWebControlFreeText = { type: "FreeText"; value: string };
+export type MessageFromWebControlFreeText = { type: "FreeText"; data: string };
 export type MessageFromWebControlGetHeats = { type: "GetHeats" };
-export type MessageFromWebControlGetLogs = { type: "GetLogs"; value: number };
+export type MessageFromWebControlGetLogs = { type: "GetLogs"; data: number };
 export type MessageFromWebControlGetMainHeat = { type: "GetMainHeat" };
 export type MessageFromWebControlIdle = { type: "Idle" };
-export type MessageFromWebControlInitStaticDatabaseState = { type: "InitStaticDatabaseState"; value: DatabaseStaticState };
+export type MessageFromWebControlInitStaticDatabaseState = { type: "InitStaticDatabaseState"; data: DatabaseStaticState };
 export type MessageFromWebControlRequestAthletes = { type: "RequestAthletes" };
 export type MessageFromWebControlRequestDisplayClientState = { type: "RequestDisplayClientState" };
 export type MessageFromWebControlRequestPDFConfigurationSettings = { type: "RequestPDFConfigurationSettings" };
 export type MessageFromWebControlRequestStaticDatabaseState = { type: "RequestStaticDatabaseState" };
 export type MessageFromWebControlRequestTimingSettings = { type: "RequestTimingSettings" };
-export type MessageFromWebControlRequestWindValues = { type: "RequestWindValues"; value: WindValueRequestDateContainer };
+export type MessageFromWebControlRequestWindValues = { type: "RequestWindValues"; data: WindValueRequestDateContainer };
 export type MessageFromWebControlResultList = { type: "ResultList" };
-export type MessageFromWebControlSelectHeat = { type: "SelectHeat"; value: string };
-export type MessageFromWebControlSendDebugDisplayCommand = { type: "SendDebugDisplayCommand"; value: DisplayEntry };
+export type MessageFromWebControlSelectHeat = { type: "SelectHeat"; data: string };
+export type MessageFromWebControlSendDebugDisplayCommand = { type: "SendDebugDisplayCommand"; data: DisplayEntry };
 export type MessageFromWebControlStartList = { type: "StartList" };
-export type MessageFromWebControlStorePDFConfigurationSetting = { type: "StorePDFConfigurationSetting"; value: PDFConfigurationSetting };
+export type MessageFromWebControlStorePDFConfigurationSetting = { type: "StorePDFConfigurationSetting"; data: PDFConfigurationSetting };
 export type MessageFromWebControlSwitchMode = { type: "SwitchMode" };
 export type MessageFromWebControlTiming = { type: "Timing" };
-export type MessageFromWebControlUpdateTimingSettings = { type: "UpdateTimingSettings"; value: TimingSettings };
+export type MessageFromWebControlUpdateTimingSettings = { type: "UpdateTimingSettings"; data: TimingSettings };
 export type MessageToWebControl =
     | MessageToWebControlDatabaseStaticState
     | MessageToWebControlDisplayClientState
@@ -257,28 +257,28 @@ export type MessageToWebControl =
     | MessageToWebControlAthletesData
     | MessageToWebControlPDFConfigurationSettingsData
     | MessageToWebControlMainHeat;
-export type MessageToWebControlAthletesData = { type: "AthletesData"; value: AthleteWithMetadata[] };
-export type MessageToWebControlCurrentDisplayFrame = { type: "CurrentDisplayFrame"; value: number[] };
-export type MessageToWebControlDatabaseStaticState = { type: "DatabaseStaticState"; value: DatabaseStaticState };
-export type MessageToWebControlDisplayClientState = { type: "DisplayClientState"; value: DisplayClientState };
-export type MessageToWebControlHeatDataMessage = { type: "HeatDataMessage"; value: HeatData };
-export type MessageToWebControlHeatsMeta = { type: "HeatsMeta"; value: HeatMeta[] };
-export type MessageToWebControlLogs = { type: "Logs"; value: PermanentlyStoredDataset[] };
-export type MessageToWebControlMainHeat = { type: "MainHeat"; value: HeatData };
-export type MessageToWebControlPDFConfigurationSettingsData = { type: "PDFConfigurationSettingsData"; value: PDFConfigurationSetting[] };
-export type MessageToWebControlTimingSettingsState = { type: "TimingSettingsState"; value: TimingSettings };
-export type MessageToWebControlWindMeasurements = { type: "WindMeasurements"; value: WindMeasurement[] };
+export type MessageToWebControlAthletesData = { type: "AthletesData"; data: AthleteWithMetadata[] };
+export type MessageToWebControlCurrentDisplayFrame = { type: "CurrentDisplayFrame"; data: number[] };
+export type MessageToWebControlDatabaseStaticState = { type: "DatabaseStaticState"; data: DatabaseStaticState };
+export type MessageToWebControlDisplayClientState = { type: "DisplayClientState"; data: DisplayClientState };
+export type MessageToWebControlHeatDataMessage = { type: "HeatDataMessage"; data: HeatData };
+export type MessageToWebControlHeatsMeta = { type: "HeatsMeta"; data: HeatMeta[] };
+export type MessageToWebControlLogs = { type: "Logs"; data: PermanentlyStoredDataset[] };
+export type MessageToWebControlMainHeat = { type: "MainHeat"; data: HeatData };
+export type MessageToWebControlPDFConfigurationSettingsData = { type: "PDFConfigurationSettingsData"; data: PDFConfigurationSetting[] };
+export type MessageToWebControlTimingSettingsState = { type: "TimingSettingsState"; data: TimingSettings };
+export type MessageToWebControlWindMeasurements = { type: "WindMeasurements"; data: WindMeasurement[] };
 export type NaiveDate = string;
 export type NaiveDateTime = string;
 export type PDFConfigurationContent =
     | PDFConfigurationContentPDFConfigurationContentText
     | PDFConfigurationContentPDFConfigurationContentReference;
-export type PDFConfigurationContentPDFConfigurationContentReference = { type: "PDFConfigurationContentReference"; value: {
+export type PDFConfigurationContentPDFConfigurationContentReference = { type: "PDFConfigurationContentReference"; data: {
         reference: string;
         reference_content: string | null;
     }
  };
-export type PDFConfigurationContentPDFConfigurationContentText = { type: "PDFConfigurationContentText"; value: {
+export type PDFConfigurationContentPDFConfigurationContentText = { type: "PDFConfigurationContentText"; data: {
         text: string;
     }
  };

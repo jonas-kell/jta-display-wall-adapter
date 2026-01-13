@@ -285,12 +285,11 @@
 
 <script setup lang="ts">
     import { computed, watch } from "vue";
-    import { ApplicationMode, Athlete, Gender, HeatAssignment } from "../functions/interfaceShared";
+    import { ApplicationMode, Athlete, Gender, HeatAssignment, AthleteWithMetadata, RaceTime } from "../generated/interface";
     import useMainStore from "../stores/main";
     import { ref } from "vue";
     import SPKStateDot from "./SPKStateDot.vue";
     import StreetRunStateDot from "./StreetRunStateDot.vue";
-    import { AthleteWithMetadata, RaceTime } from "../functions/interfaceInbound";
     import { numberFromRaceTime, raceTimeStringRepr, subtractRaceTimes } from "../functions/representation";
     import jsPDF from "jspdf";
     import { uuid } from "../functions/uuid";

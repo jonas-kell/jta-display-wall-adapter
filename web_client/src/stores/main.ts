@@ -2,50 +2,43 @@ import { defineStore } from "pinia";
 import { computed, nextTick, ref, watch } from "vue";
 import { WS_URL } from "../functions/environment";
 import {
-    Advertisements,
-    Clock,
-    CreateAthlete,
-    CreateHeatAssignment,
-    DeleteAthlete,
-    DeleteCompetitorEvaluated,
-    DeleteHeatAssignment,
-    DeletePDFConfigurationSetting,
-    ExportDataToFile,
-    FreeText,
-    GetHeats,
-    GetLogs,
-    GetMainHeat,
-    Idle,
-    InitStaticDatabaseState,
-    RequestAthletes,
-    RequestDisplayClientState,
-    RequestPDFConfigurationSettings,
-    RequestStaticDatabaseState,
-    RequestTimingSettings,
-    RequestWindValues,
-    ResultList,
-    SelectHeat,
-    SendDebugDisplayCommand,
-    StartList,
-    StorePDFConfigurationSetting,
-    SwitchMode,
-    Timing,
-    UpdateTimingSettings,
+    // Advertisements,
+    // Clock,
+    // CreateAthlete,
+    // CreateHeatAssignment,
+    // DeleteAthlete,
+    // DeleteCompetitorEvaluated,
+    // DeleteHeatAssignment,
+    // DeletePDFConfigurationSetting,
+    // ExportDataToFile,
+    // FreeText,
+    // GetHeats,
+    // GetLogs,
+    // GetMainHeat,
+    // Idle,
+    // InitStaticDatabaseState,
+    // RequestAthletes,
+    // RequestDisplayClientState,
+    // RequestPDFConfigurationSettings,
+    // RequestStaticDatabaseState,
+    // RequestTimingSettings,
+    // RequestWindValues,
+    // ResultList,
+    // SelectHeat,
+    // SendDebugDisplayCommand,
+    // StartList,
+    // StorePDFConfigurationSetting,
+    // SwitchMode,
+    // Timing,
+    // UpdateTimingSettings,
+    // LogEntry,
     WindValueRequestDateContainer,
-} from "../functions/interfaceOutbound";
-import {
     AthleteWithMetadata,
     DayTime,
     HeatData,
     HeatMeta,
-    InboundMessageType,
-    LogEntry,
-    parseMessage,
     RaceWind,
     WindMeasurement,
-} from "../functions/interfaceInbound";
-import { CircularBuffer } from "../functions/circularBuffer";
-import {
     Athlete,
     DatabaseStaticState,
     DisplayEntry,
@@ -53,7 +46,39 @@ import {
     PDFConfigurationSetting,
     TimingSettings,
     Uuid,
-} from "../functions/interfaceShared";
+    MessageToWebControl,
+    PermanentlyStoredDataset,
+    MessageFromWebControlRequestDisplayClientState,
+    MessageFromWebControlAdvertisements,
+    MessageFromWebControlTiming,
+    MessageFromWebControlStartList,
+    MessageFromWebControlExportDataToFile,
+    MessageFromWebControlResultList,
+    MessageFromWebControlIdle,
+    MessageFromWebControlFreeText,
+    MessageFromWebControlSwitchMode,
+    MessageFromWebControlRequestWindValues,
+    MessageFromWebControlClock,
+    MessageFromWebControlRequestStaticDatabaseState,
+    MessageFromWebControlInitStaticDatabaseState,
+    MessageFromWebControlRequestAthletes,
+    MessageFromWebControlCreateAthlete,
+    MessageFromWebControlDeleteAthlete,
+    MessageFromWebControlDeleteCompetitorEvaluated,
+    MessageFromWebControlStorePDFConfigurationSetting,
+    MessageFromWebControlDeletePDFConfigurationSetting,
+    MessageFromWebControlRequestPDFConfigurationSettings,
+    MessageFromWebControlCreateHeatAssignment,
+    MessageFromWebControlDeleteHeatAssignment,
+    MessageFromWebControlSendDebugDisplayCommand,
+    MessageFromWebControlGetHeats,
+    MessageFromWebControlGetMainHeat,
+    MessageFromWebControlRequestTimingSettings,
+    MessageFromWebControlGetLogs,
+    MessageFromWebControlSelectHeat,
+    MessageFromWebControlUpdateTimingSettings,
+} from "../generated/interface";
+import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
 
 function sleep(ms: number) {
@@ -101,7 +126,7 @@ export default defineStore("main", () => {
         }
     });
 
-    const logEntriesRolling = new CircularBuffer<LogEntry>(10);
+    const logEntriesRolling = new CircularBuffer<PermanentlyStoredDataset>(10);
     const requestedWindMeasurements = ref([] as WindMeasurement[]);
     const athletesData = ref([] as AthleteWithMetadata[]);
     const pdfConfigurationSettings = ref([] as PDFConfigurationSetting[]);
@@ -121,21 +146,21 @@ export default defineStore("main", () => {
             return;
         }
 
-        let msg = parseMessage(JSON.parse(ev.data));
+        let msg = JSON.parse(ev.data) as MessageToWebControl;
 
         switch (msg.type) {
-            case InboundMessageType.DisplayClientState:
+            case "DisplayClientState":
                 displayConnected.value = msg.data.alive;
                 displayExternalPassthrough.value = msg.data.external_passthrough_mode;
                 displayCanSwitchModeInternal.value = msg.data.can_switch_mode;
                 return;
-            case InboundMessageType.HeatsMeta:
+            case "HeatsMeta":
                 heatsMetaResult.value = msg.data;
                 heatsMetaResult.value.sort((a, b) => {
                     return a.scheduled_start_time_string.localeCompare(b.scheduled_start_time_string);
                 });
                 return;
-            case InboundMessageType.Logs:
+            case "Logs":
                 const entArr = msg.data;
                 if (entArr.length == 1) {
                     const new_entry = entArr[0];
@@ -153,10 +178,10 @@ export default defineStore("main", () => {
                 sendGetHeatsCommand();
                 sendSelectHeatCommandInternal();
                 return;
-            case InboundMessageType.HeatDataMessage:
+            case "HeatDataMessage":
                 selectedHeat.value = msg.data;
                 return;
-            case InboundMessageType.TimingSettingsState:
+            case "TimingSettingsState":
                 timingSettingsBeingChanged.value = true;
                 nextTick(() => {
                     timingSettings.value = msg.data;
@@ -165,29 +190,30 @@ export default defineStore("main", () => {
                     });
                 });
                 return;
-            case InboundMessageType.WindMeasurements:
+            case "WindMeasurements":
                 requestedWindMeasurements.value = msg.data;
                 return;
-            case InboundMessageType.CurrentDisplayFrame:
+            case "CurrentDisplayFrame":
                 currentClientFrame.value = imageURLfromBMPBytesArray(msg.data);
                 console.error("Binary data should not be sent over JSON channel, but binary channel");
                 return;
-            case InboundMessageType.DatabaseStaticState:
+            case "DatabaseStaticState":
                 console.log("Initialized static database state");
                 staticConfiguration.value = msg.data;
                 return;
-            case InboundMessageType.AthletesData:
+            case "AthletesData":
                 athletesData.value = msg.data;
                 return;
-            case InboundMessageType.PDFConfigurationSettingsData:
+            case "PDFConfigurationSettingsData":
                 pdfConfigurationSettings.value = msg.data;
                 return;
-            case InboundMessageType.MainHeat:
+            case "MainHeat":
                 mainHeat.value = msg.data;
                 return;
-            case InboundMessageType.Unknown:
-                console.error("Received unknown message type:", msg.data);
-                return;
+            default:
+                console.error("Received unknown message type:", msg);
+                const _exhaustive: never = msg;
+                return _exhaustive;
         }
         console.error("Received unhandled message type:", msg);
     }
@@ -245,7 +271,7 @@ export default defineStore("main", () => {
             }
 
             // immediately request client state
-            const packet: RequestDisplayClientState = {
+            const packet: MessageFromWebControlRequestDisplayClientState = {
                 type: "RequestDisplayClientState",
             };
             sendWSCommand(JSON.stringify(packet));
@@ -266,49 +292,49 @@ export default defineStore("main", () => {
     }
 
     function sendAdvertisementsCommand() {
-        const packet: Advertisements = {
+        const packet: MessageFromWebControlAdvertisements = {
             type: "Advertisements",
         };
         sendWSCommand(JSON.stringify(packet));
     }
 
     function sendTimingCommand() {
-        const packet: Timing = {
+        const packet: MessageFromWebControlTiming = {
             type: "Timing",
         };
         sendWSCommand(JSON.stringify(packet));
     }
 
     function sendStartListCommand() {
-        const packet: StartList = {
+        const packet: MessageFromWebControlStartList = {
             type: "StartList",
         };
         sendWSCommand(JSON.stringify(packet));
     }
 
     function sendExportToFileCommand() {
-        const packet: ExportDataToFile = {
+        const packet: MessageFromWebControlExportDataToFile = {
             type: "ExportDataToFile",
         };
         sendWSCommand(JSON.stringify(packet));
     }
 
     function sendResultListCommand() {
-        const packet: ResultList = {
+        const packet: MessageFromWebControlResultList = {
             type: "ResultList",
         };
         sendWSCommand(JSON.stringify(packet));
     }
 
     function sendIdleCommand() {
-        const packet: Idle = {
+        const packet: MessageFromWebControlIdle = {
             type: "Idle",
         };
         sendWSCommand(JSON.stringify(packet));
     }
 
     function sendFreetextCommand(payload: string) {
-        const packet: FreeText = {
+        const packet: MessageFromWebControlFreeText = {
             type: "FreeText",
             data: payload,
         };
@@ -317,14 +343,14 @@ export default defineStore("main", () => {
 
     function sendSwitchModeCommand() {
         displayCanSwitchModeInternal.value = false; // will be reset on updating message
-        const packet: SwitchMode = {
+        const packet: MessageFromWebControlSwitchMode = {
             type: "SwitchMode",
         };
         sendWSCommand(JSON.stringify(packet));
     }
 
     function sendGetWindValuesCommand(data: WindValueRequestDateContainer) {
-        const packet: RequestWindValues = {
+        const packet: MessageFromWebControlRequestWindValues = {
             type: "RequestWindValues",
             data,
         };
@@ -337,7 +363,7 @@ export default defineStore("main", () => {
         const minutes = now.getMinutes();
         const seconds = now.getSeconds();
 
-        const packet: Clock = {
+        const packet: MessageFromWebControlClock = {
             type: "Clock",
             data: {
                 fractional_part_in_ten_thousands: now.getMilliseconds() * 10,
@@ -350,61 +376,61 @@ export default defineStore("main", () => {
     }
 
     function sendRequestStaticConfigCommand() {
-        const packet: RequestStaticDatabaseState = {
+        const packet: MessageFromWebControlRequestStaticDatabaseState = {
             type: "RequestStaticDatabaseState",
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendStaticallyConfigureServerCommand(data: DatabaseStaticState) {
-        const packet: InitStaticDatabaseState = {
+        const packet: MessageFromWebControlInitStaticDatabaseState = {
             type: "InitStaticDatabaseState",
             data: data,
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendRequestAthletesCommand() {
-        const packet: RequestAthletes = {
+        const packet: MessageFromWebControlRequestAthletes = {
             type: "RequestAthletes",
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendUpsertAthleteCommand(athlete: Athlete) {
-        const packet: CreateAthlete = {
+        const packet: MessageFromWebControlCreateAthlete = {
             type: "CreateAthlete",
             data: athlete,
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendDeleteAthleteCommand(id: Uuid) {
-        const packet: DeleteAthlete = {
+        const packet: MessageFromWebControlDeleteAthlete = {
             type: "DeleteAthlete",
             data: id,
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendDeleteCompetitorEvaluatedCommand(dt: DayTime) {
-        const packet: DeleteCompetitorEvaluated = {
+        const packet: MessageFromWebControlDeleteCompetitorEvaluated = {
             type: "DeleteCompetitorEvaluated",
             data: dt,
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendUpsertPDFSettingCommand(setting: PDFConfigurationSetting) {
-        const packet: StorePDFConfigurationSetting = {
+        const packet: MessageFromWebControlStorePDFConfigurationSetting = {
             type: "StorePDFConfigurationSetting",
             data: setting,
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendDeletePDFSettingCommand(id: Uuid) {
-        const packet: DeletePDFConfigurationSetting = {
+        const packet: MessageFromWebControlDeletePDFConfigurationSetting = {
             type: "DeletePDFConfigurationSetting",
             data: id,
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendRequestAllPDFSettingsCommand() {
-        const packet: RequestPDFConfigurationSettings = {
+        const packet: MessageFromWebControlRequestPDFConfigurationSettings = {
             type: "RequestPDFConfigurationSettings",
         };
         sendWSCommand(JSON.stringify(packet));
@@ -413,41 +439,41 @@ export default defineStore("main", () => {
      * @param ha id and heat_id are ignored, as they are set by the server
      */
     function sendCreateHeatAssignmentCommand(ha: HeatAssignment) {
-        const packet: CreateHeatAssignment = {
+        const packet: MessageFromWebControlCreateHeatAssignment = {
             type: "CreateHeatAssignment",
             data: ha,
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendDeleteHeatAssignmentCommand(id: number) {
-        const packet: DeleteHeatAssignment = {
+        const packet: MessageFromWebControlDeleteHeatAssignment = {
             type: "DeleteHeatAssignment",
             data: id,
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendDebugDisplayCommand(entry: DisplayEntry) {
-        const packet: SendDebugDisplayCommand = {
+        const packet: MessageFromWebControlSendDebugDisplayCommand = {
             type: "SendDebugDisplayCommand",
             data: entry,
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendGetHeatsCommand() {
-        const packet: GetHeats = {
+        const packet: MessageFromWebControlGetHeats = {
             type: "GetHeats",
         };
         sendWSCommand(JSON.stringify(packet));
     }
     function sendGetMainHeatCommand() {
-        const packet: GetMainHeat = {
+        const packet: MessageFromWebControlGetMainHeat = {
             type: "GetMainHeat",
         };
         sendWSCommand(JSON.stringify(packet));
     }
     const heatsMetaResult = ref([] as HeatMeta[]);
     function sendRequestTimingSettingsCommand() {
-        const packet: RequestTimingSettings = {
+        const packet: MessageFromWebControlRequestTimingSettings = {
             type: "RequestTimingSettings",
         };
         sendWSCommand(JSON.stringify(packet));
@@ -459,13 +485,13 @@ export default defineStore("main", () => {
         }
         how_many = Math.floor(how_many);
 
-        const packet: GetLogs = {
+        const packet: MessageFromWebControlGetLogs = {
             type: "GetLogs",
             data: how_many,
         };
         sendWSCommand(JSON.stringify(packet));
     }
-    const logEntries = ref([] as LogEntry[]);
+    const logEntries = ref([] as PermanentlyStoredDataset[]);
 
     function sendSelectHeatCommand(id: string) {
         selectHeatId = id;
@@ -473,7 +499,7 @@ export default defineStore("main", () => {
     }
     function sendSelectHeatCommandInternal() {
         if (selectHeatId) {
-            const packet: SelectHeat = {
+            const packet: MessageFromWebControlSelectHeat = {
                 type: "SelectHeat",
                 data: selectHeatId,
             };
@@ -489,7 +515,7 @@ export default defineStore("main", () => {
         timingSettings,
         () => {
             if (timingSettings.value && timingSettingsBeingChanged.value == false) {
-                const packet: UpdateTimingSettings = {
+                const packet: MessageFromWebControlUpdateTimingSettings = {
                     type: "UpdateTimingSettings",
                     data: timingSettings.value,
                 };

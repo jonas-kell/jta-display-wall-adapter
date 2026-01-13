@@ -6,7 +6,7 @@
     import TimingButtons from "./components/TimingButtons.vue";
     import InitDB from "./components/InitDB.vue";
     import { TODAY } from "./functions/date";
-    import { ApplicationMode } from "./functions/interfaceShared";
+    import { ApplicationMode } from "./generated/interface";
     const mainStore = useMainStore();
 
     const connectedOnce = ref(false);

@@ -71,7 +71,7 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
                                 format!("{}{}", <Self as TypescriptSerializable>::type_name(), #vname_as_string)
                             },
                             quote! {
-                                format!("export type {}{} = {{ type: \"{}\"; value: {} }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string, <#unnamed_type as TypescriptSerializable>::type_name())
+                                format!("export type {}{} = {{ type: \"{}\"; data: {} }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string, <#unnamed_type as TypescriptSerializable>::type_name())
                             },
                             [unnamed_types[0]].into()
                         )
@@ -103,7 +103,7 @@ pub fn derive_typescript_serializable(input: TokenStream) -> TokenStream {
                                 format!("{}{}", <Self as TypescriptSerializable>::type_name(), #vname_as_string)
                             },
                             quote! {
-                                format!("export type {}{} = {{ type: \"{}\"; value: {} }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string, format!(#format_string, #(#lines),*))
+                                format!("export type {}{} = {{ type: \"{}\"; data: {} }};\n", <Self as TypescriptSerializable>::type_name(), #vname_as_string, #vname_as_string, format!(#format_string, #(#lines),*))
                             },
                             intermediate.map(|(_,t)| t).collect()
                         )

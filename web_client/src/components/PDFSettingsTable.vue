@@ -58,13 +58,15 @@
                 <td class="pl-2">{{ setting.italic }}</td>
                 <td class="pl-2">{{ setting.centered }}</td>
                 <td class="pl-2">{{ setting.content.type == "PDFConfigurationContentText" ? "Text" : "Reference" }}</td>
-                <td class="pl-2" v-if="setting.content.type == 'PDFConfigurationContentText'">{{ setting.content.text }}</td>
+                <td class="pl-2" v-if="setting.content.type == 'PDFConfigurationContentText'">
+                    {{ setting.content.data.text }}
+                </td>
                 <td class="pl-2" v-if="setting.content.type == 'PDFConfigurationContentReference'">
-                    {{ setting.content.reference }}
+                    {{ setting.content.data.reference }}
                 </td>
                 <td class="pl-2">
                     <template v-if="setting.content.type == 'PDFConfigurationContentReference'">
-                        {{ setting.content.reference_content ?? "" }}
+                        {{ setting.content.data.reference_content ?? "" }}
                     </template>
                 </td>
                 <td style="text-align: center">
@@ -84,20 +86,16 @@
 </template>
 
 <script setup lang="ts">
-    import {
-        PDFConfigurationContent,
-        PDFConfigurationContentReferenceReference,
-        PDFConfigurationSetting,
-        PDFSettingFor,
-    } from "../functions/interfaceShared";
+    import { PDFConfigurationContent, PDFConfigurationSetting, PDFSettingFor } from "../generated/interface";
     import { uuid } from "../functions/uuid";
     import useMainStore from "../stores/main";
     import { computed, ref } from "vue";
+    import { PDFConfigurationContentReferenceReference } from "../functions/pdf";
 
     type FieldType = "Text" | "Reference";
     const types = ["Text", "Reference"] as FieldType[];
 
-    const props = defineProps<{ settings: PDFConfigurationSetting[]; for: PDFSettingFor }>();
+    const props = defineProps<{ settings: PDFConfigurationSetting[]; setting_for: PDFSettingFor }>();
 
     const mainStore = useMainStore();
 
@@ -139,9 +137,11 @@
         centeredRef.value = set.centered;
         sizeRef.value = String(set.size);
         typeRef.value = set.content.type == "PDFConfigurationContentText" ? "Text" : "Reference"; // TODO more dynamic
-        contentRef.value = String(set.content.type == "PDFConfigurationContentText" ? set.content.text : set.content.reference);
+        contentRef.value = String(
+            set.content.type == "PDFConfigurationContentText" ? set.content.data.text : set.content.data.reference
+        );
         content2Ref.value = String(
-            (set.content.type == "PDFConfigurationContentText" ? null : set.content.reference_content) ?? ""
+            (set.content.type == "PDFConfigurationContentText" ? null : set.content.data.reference_content) ?? ""
         );
     }
 
@@ -164,14 +164,18 @@
         if (typeRef.value == "Text") {
             content = {
                 type: "PDFConfigurationContentText",
-                text: updateContent,
+                data: {
+                    text: updateContent,
+                },
             };
         }
         if (typeRef.value == "Reference") {
             content = {
                 type: "PDFConfigurationContentReference",
-                reference: updateContent,
-                reference_content: updateContent2 == null || updateContent2 == "" ? null : updateContent2,
+                data: {
+                    reference: updateContent,
+                    reference_content: updateContent2 == null || updateContent2 == "" ? null : updateContent2,
+                },
             };
         }
 
@@ -184,7 +188,7 @@
                 italic: italicRef.value,
                 size: updateSize,
                 centered: centeredRef.value,
-                for: props.for,
+                setting_for: props.setting_for,
                 content,
             };
 

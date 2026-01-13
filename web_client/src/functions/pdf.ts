@@ -1,8 +1,35 @@
 import { jsPDF } from "jspdf";
-import { PDFConfigurationContentReferenceReference, PDFConfigurationSetting } from "./interfaceShared";
+import { PDFConfigurationSetting, RaceTime } from "./../generated/interface";
 import { AthletePrintData } from "./sharedAthleteTypes";
 import { raceTimeStringRepr, subtractRaceTimes } from "./representation";
-import { RaceTime } from "./interfaceInbound";
+
+export enum PDFConfigurationContentReferenceReference {
+    Bib = "Bib",
+    Name = "Name",
+    FirstName = "FirstName",
+    LastName = "LastName",
+    HasRound1 = "HasRound1",
+    HasRound2 = "HasRound2",
+    HasRound3 = "HasRound3",
+    HasRound4 = "HasRound4",
+    HasRound5 = "HasRound5",
+    HasRound6 = "HasRound6",
+    TimeRound1 = "TimeRound1",
+    TimeRound2 = "TimeRound2",
+    TimeRound3 = "TimeRound3",
+    TimeRound4 = "TimeRound4",
+    TimeRound5 = "TimeRound5",
+    TimeRound6 = "TimeRound6",
+    TotalTimeRound1 = "TotalTimeRound1",
+    TotalTimeRound2 = "TotalTimeRound2",
+    TotalTimeRound3 = "TotalTimeRound3",
+    TotalTimeRound4 = "TotalTimeRound4",
+    TotalTimeRound5 = "TotalTimeRound5",
+    TotalTimeRound6 = "TotalTimeRound6",
+    FinalTime = "FinalTime",
+    SpkTime = "SpkTime",
+    SpkGuess = "SpkGuess",
+}
 
 export function generatePDF(
     download: boolean,
@@ -52,11 +79,11 @@ export function generatePDF(
             let text = "";
             switch (set.content.type) {
                 case "PDFConfigurationContentText":
-                    text = set.content.text;
+                    text = set.content.data.text;
                     break;
                 case "PDFConfigurationContentReference":
                     if (athlete) {
-                        const alt = set.content.reference_content ?? "";
+                        const alt = set.content.data.reference_content ?? "";
                         const altTextIfRound = (i: number) => {
                             if (athlete.roundTimes.length + 1 > i) {
                                 return alt;
@@ -97,7 +124,7 @@ export function generatePDF(
                                 return "";
                             }
                         };
-                        switch (set.content.reference) {
+                        switch (set.content.data.reference) {
                             case PDFConfigurationContentReferenceReference.Bib:
                                 text = String(athlete.bib);
                                 break;

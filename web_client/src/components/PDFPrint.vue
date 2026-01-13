@@ -155,7 +155,7 @@
                         >
                             Gender
                         </th>
-                        <template v-if="displayIntermediateTimes">
+                        <template v-if="displayIntermediateTimes && maxRounds > 0">
                             <th v-for="i in maxRounds">Round {{ i }}</th>
                         </template>
                         <th
@@ -199,7 +199,7 @@
                         <td scope="col" class="px-1" style="text-align: center">
                             {{ athlete.gender }}
                         </td>
-                        <template v-if="displayIntermediateTimes">
+                        <template v-if="displayIntermediateTimes && maxRounds > 0">
                             <td v-for="i in maxRounds" class="px-1">
                                 {{
                                     athlete.roundTimes.length > i - 1
@@ -229,7 +229,7 @@
     import { generatePDF } from "../functions/pdf";
     import { computed, ref, watch } from "vue";
     import { backgroundFileManagement } from "../functions/backgroundFiles";
-    import { Gender, PDFSettingFor } from "../functions/interfaceShared";
+    import { Gender, PDFSettingFor } from "../generated/interface";
     import { AthletePrintData, EvaluationsType, sharedAthleteFunctionality } from "../functions/sharedAthleteTypes";
     import { raceTimeStringRepr } from "../functions/representation";
     import { TODAY } from "../functions/date";
@@ -256,7 +256,7 @@
             download,
             true,
             processedBackgroundImageBib.value,
-            mainStore.pdfConfigurationSettings.filter((set) => set.for == PDFSettingFor.Bib),
+            mainStore.pdfConfigurationSettings.filter((set) => set.setting_for == PDFSettingFor.Bib),
             athleteDataSortedFiltered.value
         );
         if (res) {
@@ -268,7 +268,7 @@
             download,
             false,
             processedBackgroundImageCertificate.value,
-            mainStore.pdfConfigurationSettings.filter((set) => set.for == PDFSettingFor.Certificate),
+            mainStore.pdfConfigurationSettings.filter((set) => set.setting_for == PDFSettingFor.Certificate),
             athleteDataSortedFiltered.value
         );
         if (res) {

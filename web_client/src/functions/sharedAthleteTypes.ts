@@ -47,8 +47,7 @@ function possibilityFromNumberAndIndex(d: number, index: number): RunPossibiliti
     return null;
 }
 import useMainStore from "../stores/main";
-import { ApplicationMode, Athlete } from "./interfaceShared";
-import { HeatCompetitorResult, RaceTime } from "./interfaceInbound";
+import { ApplicationMode, Athlete, HeatCompetitorResult, RaceTime } from "./../generated/interface";
 
 const MAIN_HEAT_KEY = "THIS_IS_THE_MAIN_HEAT";
 

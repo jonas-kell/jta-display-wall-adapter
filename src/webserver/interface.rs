@@ -54,7 +54,6 @@ pub enum PDFSettingFor {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
-#[serde(tag = "type")]
 pub struct PDFConfigurationSetting {
     pub id: Uuid,
     pub setting_for: PDFSettingFor,
@@ -68,7 +67,7 @@ pub struct PDFConfigurationSetting {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
-#[serde(tag = "type")]
+#[serde(tag = "type", content = "data")]
 pub enum PDFConfigurationContent {
     PDFConfigurationContentText {
         text: String,
