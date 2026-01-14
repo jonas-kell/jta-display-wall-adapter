@@ -279,8 +279,6 @@
             </tbody>
         </table>
     </template>
-
-    <v-btn class="mt-5" @click="debugDisplay" v-if="modeIsStreetRun"> Test Display </v-btn>
 </template>
 
 <script setup lang="ts">
@@ -419,33 +417,6 @@
     const modeIsStreetRun = computed(() => {
         return (mainStore.staticConfiguration?.mode ?? ApplicationMode.SprinterKing) == ApplicationMode.StreetLongRun;
     });
-    function debugDisplay() {
-        function generateRandomPerson(): {
-            firstName: string;
-            lastName: string;
-            number: number;
-        } {
-            const firstNames = ["Alice", "Bob", "Charlie", "Diana", "Ethan", "Fiona", "George", "Hannah", "Ivan", "Julia"];
-
-            const lastNames = ["Smith", "Johnson", "Brown", "Taylor", "Anderson", "Clark", "Lewis", "Walker", "Hall", "Young"];
-
-            const random = (max: number) => Math.floor(Math.random() * max);
-
-            return {
-                firstName: firstNames[random(firstNames.length)],
-                lastName: lastNames[random(lastNames.length)],
-                number: Math.floor(Math.random() * 900) + 100,
-            };
-        }
-
-        const person = generateRandomPerson();
-        mainStore.sendDebugDisplayCommand({
-            bib: person.number,
-            max_rounds: 4,
-            name: person.firstName + " " + person.lastName,
-            round: 1,
-        });
-    }
     // TODO do not compute ANY expensive mappings in a mode that does not require them (remove for others)
     const maxEvaluations = computed(() => {
         let max = 0;

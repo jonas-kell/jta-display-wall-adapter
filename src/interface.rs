@@ -6,8 +6,12 @@ use crate::database::{
 use crate::open_webcontrol;
 use crate::server::audio_types::{AudioPlayer, Sound};
 use crate::server::bib_detection::DisplayEntry;
+use crate::server::camera_program_types::{CompetitorEvaluated, HeatResult};
 use crate::server::comm_channel::InstructionCommunicationChannel;
-use crate::server::export_functions::{generate_meet_data, write_to_xml_output_file};
+use crate::server::export_functions::{
+    fake_main_heat_start_list, generate_meet_data, write_to_xml_output_file,
+};
+use crate::times::RaceTime;
 use crate::webserver::PDFConfigurationSetting;
 use crate::{
     args::Args,
@@ -487,31 +491,10 @@ impl ServerStateMachine {
                     store_to_database!(finish, self);
                 }
                 InstructionFromCameraProgram::CompetitorEvaluated(evaluated) => {
-                    store_to_database!(evaluated, self);
-                    // we can assume, that the "always emit result list on change" setting is active in the camera program
-                    // for this reason, we ignore singular evaluation emits
-
-                    // street races work with evaluations. So this now is their time to shine
-                    self.send_out_main_heat_to_webclient();
+                    self.handle_competitor_evaluated(evaluated);
                 }
                 InstructionFromCameraProgram::HeatResult(result) => {
-                    store_to_database!(result.clone(), self);
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::ResultMeta(result),
-                    ));
-
-                    // TODO maybe only send this out on sprinterkönig mode
-                    match get_all_athletes_meta_data(&self.database_manager) {
-                        Ok(d) => {
-                            self.send_message_to_web_control(MessageToWebControl::AthletesData(d))
-                        }
-                        Err(e) => {
-                            error!(
-                                "Encountered error, after heat result possibly changed data: {}",
-                                e
-                            )
-                        }
-                    }
+                    self.handle_heat_result(result);
                 }
                 InstructionFromCameraProgram::ZeroTime => {
                     // TODO think about if we really want to reset (maybe not if meta-change = off)
@@ -815,6 +798,46 @@ impl ServerStateMachine {
                         profile != "release",
                     ));
                 }
+                // Dev mode and debug signals
+                MessageFromWebControl::DevReset => {
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::Reset,
+                    ));
+                }
+                MessageFromWebControl::DevSendStartList(hsl) => {
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::Meta(hsl),
+                    ));
+                }
+                MessageFromWebControl::DevStartRace => {
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::Running(RaceTime::get_zero_time()),
+                    ));
+                }
+                MessageFromWebControl::DevSendFinishSignal(rt) => {
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::End(rt),
+                    ));
+                }
+                MessageFromWebControl::DevSendEvaluated(ce) => {
+                    self.handle_competitor_evaluated(ce);
+                }
+                MessageFromWebControl::DevSendResultList(hr) => {
+                    self.handle_heat_result(hr);
+                }
+                MessageFromWebControl::DevRequestMainHeatStartList => {
+                    let hsl = match fake_main_heat_start_list(dbss, &self.database_manager) {
+                        Ok(hsl) => hsl,
+                        Err(e) => {
+                            error!("Failed to generate fake heat start List: {}", e);
+                            return;
+                        }
+                    };
+
+                    self.send_message_to_web_control(MessageToWebControl::DevMainHeatStartList(
+                        hsl,
+                    ));
+                }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {
                 Measured(wind_measurement) => {
@@ -824,6 +847,33 @@ impl ServerStateMachine {
                     store_to_database!(started_wind_measurement, self);
                 }
             },
+        }
+    }
+
+    fn handle_competitor_evaluated(&mut self, evaluated: CompetitorEvaluated) {
+        store_to_database!(evaluated, self);
+        // we can assume, that the "always emit result list on change" setting is active in the camera program
+        // for this reason, we ignore singular evaluation emits
+
+        // street races work with evaluations. So this now is their time to shine
+        self.send_out_main_heat_to_webclient();
+    }
+
+    fn handle_heat_result(&mut self, result: HeatResult) {
+        store_to_database!(result.clone(), self);
+        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+            TimingUpdate::ResultMeta(result),
+        ));
+
+        // TODO maybe only send this out on sprinterkönig mode
+        match get_all_athletes_meta_data(&self.database_manager) {
+            Ok(d) => self.send_message_to_web_control(MessageToWebControl::AthletesData(d)),
+            Err(e) => {
+                error!(
+                    "Encountered error, after heat result possibly changed data: {}",
+                    e
+                )
+            }
         }
     }
 

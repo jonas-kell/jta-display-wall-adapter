@@ -48,6 +48,8 @@ import {
     MessageFromWebControlSelectHeat,
     MessageFromWebControlUpdateTimingSettings,
     MessageFromWebControlRequestDevMode,
+    MessageFromWebControl,
+    HeatStartList,
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
@@ -103,6 +105,7 @@ export default defineStore("main", () => {
     const pdfConfigurationSettings = ref([] as PDFConfigurationSetting[]);
     const mainHeat = ref(null as null | HeatData);
     const devMode = ref(false);
+    const devMainHeatStartList = ref(null as null | HeatStartList);
     const versionMismatchTriggered = ref(null as null | string);
 
     function handleWSMessage(ev: MessageEvent) {
@@ -191,6 +194,9 @@ export default defineStore("main", () => {
                 return;
             case "DevModeStatus":
                 devMode.value = msg.data;
+                return;
+            case "DevMainHeatStartList":
+                devMainHeatStartList.value = msg.data;
                 return;
             default:
                 console.error("Received unknown message type:", msg);
@@ -517,6 +523,10 @@ export default defineStore("main", () => {
         }
     );
 
+    function sendGenericWSCommand(comm: MessageFromWebControl) {
+        sendWSCommand(JSON.stringify(comm));
+    }
+
     function detectWindPolling(data: string): boolean {
         const parsed = JSON.parse(data);
 
@@ -581,6 +591,7 @@ export default defineStore("main", () => {
         sendDeleteCompetitorEvaluatedCommand,
         sendDebugDisplayCommand,
         sendRequestDevModeStatusCommand,
+        sendGenericWSCommand,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,
@@ -600,5 +611,6 @@ export default defineStore("main", () => {
         pdfConfigurationSettings,
         versionMismatchTriggered,
         devMode,
+        devMainHeatStartList,
     };
 });

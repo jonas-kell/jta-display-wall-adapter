@@ -3,9 +3,12 @@ use crate::{
     database::{DatabaseStaticState, PermanentlyStoredDataset},
     server::{
         bib_detection::DisplayEntry,
-        camera_program_types::{Athlete, AthleteWithMetadata, HeatAssignment, HeatData, HeatMeta},
+        camera_program_types::{
+            Athlete, AthleteWithMetadata, CompetitorEvaluated, HeatAssignment, HeatData, HeatMeta,
+            HeatResult, HeatStartList,
+        },
     },
-    times::DayTime,
+    times::{DayTime, RaceTime},
     wind::format::WindMeasurement,
 };
 use chrono::NaiveDateTime;
@@ -46,6 +49,14 @@ pub enum MessageFromWebControl {
     DeleteCompetitorEvaluated(DayTime), // to target the correct HeatCompetitorResult, as here are no ids
     SendDebugDisplayCommand(DisplayEntry),
     RequestDevMode,
+    // DEV calls
+    DevReset,
+    DevSendStartList(HeatStartList),
+    DevStartRace,
+    DevSendFinishSignal(RaceTime),
+    DevSendEvaluated(CompetitorEvaluated),
+    DevSendResultList(HeatResult),
+    DevRequestMainHeatStartList,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
@@ -108,4 +119,6 @@ pub enum MessageToWebControl {
     MainHeat(HeatData),
     VersionMismatch((String, String)),
     DevModeStatus(bool),
+    // DEV test calls
+    DevMainHeatStartList(HeatStartList),
 }

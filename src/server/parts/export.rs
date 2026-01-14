@@ -8,7 +8,7 @@ use crate::{
     helpers::uuids_from_seed,
     server::camera_program_types::{
         Athlete, AthleteWithMetadata, DistanceType, Event, Gender, Heat, HeatAssignment,
-        HeatCompetitor, Meet, Session,
+        HeatCompetitor, HeatStartList, Meet, Session,
     },
     times::DayTime,
 };
@@ -118,11 +118,7 @@ fn generate_heats_spk(
 
 pub const MAIN_HEAT_KEY: &str = "THIS_IS_THE_MAIN_HEAT";
 
-fn generate_heats_street_race(
-    event_key: String,
-    distance: u32,
-    mut athletes: Vec<Athlete>,
-) -> Vec<Heat> {
+fn generate_heat_street_race(event_key: String, distance: u32, mut athletes: Vec<Athlete>) -> Heat {
     let ids = uuids_from_seed(&format!("{}_heat", event_key), 1);
     let id = ids[0];
 
@@ -145,15 +141,14 @@ fn generate_heats_street_race(
         })
         .collect();
 
-    [Heat {
+    Heat {
         id,
         distance,
         distance_type: DistanceType::Normal,
         name: MAIN_HEAT_KEY.into(),
         scheduled_start_time: DayTime::from_hms_opt(10, 0, 0).unwrap(),
         competitors,
-    }]
-    .into()
+    }
 }
 
 struct CountingOrderedStartTime {
@@ -177,12 +172,16 @@ impl CountingOrderedStartTime {
     }
 }
 
+fn generate_event_key(dbss: &DatabaseStaticState) -> String {
+    format!("{}-{}", dbss.mode.to_string(), dbss.date.to_string())
+}
+
 pub fn generate_meet_data(dbss: &DatabaseStaticState, manager: &DatabaseManager) -> Meet {
     let _ = Gender::Female;
     let _ = Gender::Mixed;
     let _ = Gender::Male;
 
-    let event_key = format!("{}-{}", dbss.mode.to_string(), dbss.date.to_string());
+    let event_key = generate_event_key(dbss);
 
     let mut events: Vec<Event> = Vec::new();
     match dbss.mode {
@@ -248,29 +247,7 @@ pub fn generate_meet_data(dbss: &DatabaseStaticState, manager: &DatabaseManager)
             }
         }
         ApplicationMode::StreetLongRun => {
-            let ids = uuids_from_seed(&format!("{}_long_run", event_key.clone()), 1);
-            let id = ids[0];
-            let distance = 1000u32; // TODO dynamically set this
-
-            let athletes = match Athlete::get_all_from_database(manager) {
-                Ok(e) => e,
-                Err(e) => {
-                    error!(
-                        "Error while generating export - could not read from database: {}",
-                        e
-                    );
-                    Vec::new()
-                }
-            };
-
-            events.push(Event {
-                distance,
-                distance_type: DistanceType::Normal,
-                id,
-                name: format!("Main Race"),
-                scheduled_start_time: DayTime::from_hms_opt(10, 0, 0).unwrap(),
-                heats: generate_heats_street_race(event_key, distance, athletes),
-            })
+            events.push(generate_street_long_run_event(event_key, manager))
         }
     }
 
@@ -295,4 +272,52 @@ pub fn generate_meet_data(dbss: &DatabaseStaticState, manager: &DatabaseManager)
         }]
         .into(),
     }
+}
+
+fn generate_street_long_run_event(event_key: String, manager: &DatabaseManager) -> Event {
+    let athletes = match Athlete::get_all_from_database(manager) {
+        Ok(e) => e,
+        Err(e) => {
+            error!(
+                "Error while generating export - could not read from database: {}",
+                e
+            );
+            Vec::new()
+        }
+    };
+
+    let ids = uuids_from_seed(&format!("{}_long_run", event_key.clone()), 1);
+    let id = ids[0];
+    let distance = 1000u32; // TODO dynamically set this
+
+    Event {
+        distance,
+        distance_type: DistanceType::Normal,
+        id,
+        name: format!("Main Race"),
+        scheduled_start_time: DayTime::from_hms_opt(10, 0, 0).unwrap(),
+        heats: [generate_heat_street_race(event_key, distance, athletes)].into(),
+    }
+}
+
+pub fn fake_main_heat_start_list(
+    dbss: &DatabaseStaticState,
+    manager: &DatabaseManager,
+) -> Result<HeatStartList, String> {
+    let mut event = generate_street_long_run_event(generate_event_key(dbss), manager);
+    // must exist as this function is designed like that
+    let heat = match event.heats.pop() {
+        Some(h) => h,
+        None => return Err("Could not generate a heat like for the export...".into()),
+    };
+
+    return Ok(HeatStartList {
+        name: heat.name,
+        id: heat.id,
+        nr: 1, // I think. This comes from the number in the array
+        session_nr: 1,
+        distance_meters: heat.distance,
+        scheduled_start_time: heat.scheduled_start_time,
+        competitors: heat.competitors,
+    });
 }

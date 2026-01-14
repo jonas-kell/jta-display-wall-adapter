@@ -216,7 +216,14 @@ export type MessageFromWebControl =
     | MessageFromWebControlRequestPDFConfigurationSettings
     | MessageFromWebControlDeleteCompetitorEvaluated
     | MessageFromWebControlSendDebugDisplayCommand
-    | MessageFromWebControlRequestDevMode;
+    | MessageFromWebControlRequestDevMode
+    | MessageFromWebControlDevReset
+    | MessageFromWebControlDevSendStartList
+    | MessageFromWebControlDevStartRace
+    | MessageFromWebControlDevSendFinishSignal
+    | MessageFromWebControlDevSendEvaluated
+    | MessageFromWebControlDevSendResultList
+    | MessageFromWebControlDevRequestMainHeatStartList;
 export type MessageFromWebControlAdvertisements = { type: "Advertisements" };
 export type MessageFromWebControlClock = { type: "Clock"; data: DayTime };
 export type MessageFromWebControlCreateAthlete = { type: "CreateAthlete"; data: Athlete };
@@ -225,6 +232,13 @@ export type MessageFromWebControlDeleteAthlete = { type: "DeleteAthlete"; data: 
 export type MessageFromWebControlDeleteCompetitorEvaluated = { type: "DeleteCompetitorEvaluated"; data: DayTime };
 export type MessageFromWebControlDeleteHeatAssignment = { type: "DeleteHeatAssignment"; data: number };
 export type MessageFromWebControlDeletePDFConfigurationSetting = { type: "DeletePDFConfigurationSetting"; data: Uuid };
+export type MessageFromWebControlDevRequestMainHeatStartList = { type: "DevRequestMainHeatStartList" };
+export type MessageFromWebControlDevReset = { type: "DevReset" };
+export type MessageFromWebControlDevSendEvaluated = { type: "DevSendEvaluated"; data: CompetitorEvaluated };
+export type MessageFromWebControlDevSendFinishSignal = { type: "DevSendFinishSignal"; data: RaceTime };
+export type MessageFromWebControlDevSendResultList = { type: "DevSendResultList"; data: HeatResult };
+export type MessageFromWebControlDevSendStartList = { type: "DevSendStartList"; data: HeatStartList };
+export type MessageFromWebControlDevStartRace = { type: "DevStartRace" };
 export type MessageFromWebControlExportDataToFile = { type: "ExportDataToFile" };
 export type MessageFromWebControlFreeText = { type: "FreeText"; data: string };
 export type MessageFromWebControlGetHeats = { type: "GetHeats" };
@@ -260,10 +274,12 @@ export type MessageToWebControl =
     | MessageToWebControlPDFConfigurationSettingsData
     | MessageToWebControlMainHeat
     | MessageToWebControlVersionMismatch
-    | MessageToWebControlDevModeStatus;
+    | MessageToWebControlDevModeStatus
+    | MessageToWebControlDevMainHeatStartList;
 export type MessageToWebControlAthletesData = { type: "AthletesData"; data: AthleteWithMetadata[] };
 export type MessageToWebControlCurrentDisplayFrame = { type: "CurrentDisplayFrame"; data: number[] };
 export type MessageToWebControlDatabaseStaticState = { type: "DatabaseStaticState"; data: DatabaseStaticState };
+export type MessageToWebControlDevMainHeatStartList = { type: "DevMainHeatStartList"; data: HeatStartList };
 export type MessageToWebControlDevModeStatus = { type: "DevModeStatus"; data: boolean };
 export type MessageToWebControlDisplayClientState = { type: "DisplayClientState"; data: DisplayClientState };
 export type MessageToWebControlHeatDataMessage = { type: "HeatDataMessage"; data: HeatData };

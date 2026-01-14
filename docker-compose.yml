@@ -60,8 +60,10 @@ services:
           sleep 0.5
         done
 
-        watchexec --poll 500ms --restart --watch ./container_target/debug/jta-display-wall-adapter -- 'while true; do ./container_target/debug/jta-display-wall-adapter client --display-client-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000 --dp-pos-x=1460 --dp-pos-y=1050   --do-not-set-client-window-always-on-top    ; done'
+        watchexec --poll 500ms --restart --watch ./container_target/debug/jta-display-wall-adapter -- 'while true; do ./container_target/debug/jta-display-wall-adapter client --display-client-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000 --dp-pos-x=1460 --dp-pos-y=1050    ; done'
       "
+
+      # --do-not-set-client-window-always-on-top
 
   code-gen:
     environment:

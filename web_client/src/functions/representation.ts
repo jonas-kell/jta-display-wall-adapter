@@ -85,7 +85,7 @@ export function raceTimeStringRepr(
     return parts.join(":");
 }
 
-function raceTimeFromNumber(value: number): RaceTime {
+export function raceTimeFromNumber(value: number): RaceTime {
     // Round to 4 decimal places to match precision in numberFromRaceTime
     value = Math.round(value * 10000) / 10000;
 
