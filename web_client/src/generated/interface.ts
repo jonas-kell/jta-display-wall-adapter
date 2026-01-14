@@ -215,7 +215,8 @@ export type MessageFromWebControl =
     | MessageFromWebControlDeletePDFConfigurationSetting
     | MessageFromWebControlRequestPDFConfigurationSettings
     | MessageFromWebControlDeleteCompetitorEvaluated
-    | MessageFromWebControlSendDebugDisplayCommand;
+    | MessageFromWebControlSendDebugDisplayCommand
+    | MessageFromWebControlRequestDevMode;
 export type MessageFromWebControlAdvertisements = { type: "Advertisements" };
 export type MessageFromWebControlClock = { type: "Clock"; data: DayTime };
 export type MessageFromWebControlCreateAthlete = { type: "CreateAthlete"; data: Athlete };
@@ -232,6 +233,7 @@ export type MessageFromWebControlGetMainHeat = { type: "GetMainHeat" };
 export type MessageFromWebControlIdle = { type: "Idle" };
 export type MessageFromWebControlInitStaticDatabaseState = { type: "InitStaticDatabaseState"; data: DatabaseStaticState };
 export type MessageFromWebControlRequestAthletes = { type: "RequestAthletes" };
+export type MessageFromWebControlRequestDevMode = { type: "RequestDevMode" };
 export type MessageFromWebControlRequestDisplayClientState = { type: "RequestDisplayClientState" };
 export type MessageFromWebControlRequestPDFConfigurationSettings = { type: "RequestPDFConfigurationSettings" };
 export type MessageFromWebControlRequestStaticDatabaseState = { type: "RequestStaticDatabaseState" };
@@ -257,10 +259,12 @@ export type MessageToWebControl =
     | MessageToWebControlAthletesData
     | MessageToWebControlPDFConfigurationSettingsData
     | MessageToWebControlMainHeat
-    | MessageToWebControlVersionMismatch;
+    | MessageToWebControlVersionMismatch
+    | MessageToWebControlDevModeStatus;
 export type MessageToWebControlAthletesData = { type: "AthletesData"; data: AthleteWithMetadata[] };
 export type MessageToWebControlCurrentDisplayFrame = { type: "CurrentDisplayFrame"; data: number[] };
 export type MessageToWebControlDatabaseStaticState = { type: "DatabaseStaticState"; data: DatabaseStaticState };
+export type MessageToWebControlDevModeStatus = { type: "DevModeStatus"; data: boolean };
 export type MessageToWebControlDisplayClientState = { type: "DisplayClientState"; data: DisplayClientState };
 export type MessageToWebControlHeatDataMessage = { type: "HeatDataMessage"; data: HeatData };
 export type MessageToWebControlHeatsMeta = { type: "HeatsMeta"; data: HeatMeta[] };

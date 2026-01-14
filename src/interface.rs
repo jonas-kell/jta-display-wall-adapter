@@ -808,6 +808,13 @@ impl ServerStateMachine {
                 MessageFromWebControl::SendDebugDisplayCommand(entry) => {
                     self.send_message_to_client(MessageFromServerToClient::PushDisplayEntry(entry));
                 }
+                MessageFromWebControl::RequestDevMode => {
+                    let profile = env!("PROFILE");
+
+                    self.send_message_to_web_control(MessageToWebControl::DevModeStatus(
+                        profile != "release",
+                    ));
+                }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {
                 Measured(wind_measurement) => {

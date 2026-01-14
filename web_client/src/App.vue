@@ -113,11 +113,14 @@
                 <v-list-item>
                     <router-link to="/wind_request" class="router-link-style">Wind Request</router-link>
                 </v-list-item>
-                <v-list-item>
+                <v-list-item v-if="mainStore.staticConfiguration.mode == ApplicationMode.StreetLongRun">
                     <router-link to="/pdf_settings" class="router-link-style">PDF Settings</router-link>
                 </v-list-item>
-                <v-list-item>
+                <v-list-item v-if="mainStore.staticConfiguration.mode == ApplicationMode.StreetLongRun">
                     <router-link to="/pdf_print" class="router-link-style">PDF Print</router-link>
+                </v-list-item>
+                <v-list-item v-if="mainStore.devMode">
+                    <router-link to="/debug" class="router-link-style">DEBUG</router-link>
                 </v-list-item>
                 <v-divider></v-divider>
                 <div class="ma-2" v-if="mainStore.displayConnected">

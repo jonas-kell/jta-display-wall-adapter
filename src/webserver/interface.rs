@@ -45,6 +45,7 @@ pub enum MessageFromWebControl {
     RequestPDFConfigurationSettings,
     DeleteCompetitorEvaluated(DayTime), // to target the correct HeatCompetitorResult, as here are no ids
     SendDebugDisplayCommand(DisplayEntry),
+    RequestDevMode,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
@@ -106,4 +107,5 @@ pub enum MessageToWebControl {
     PDFConfigurationSettingsData(Vec<PDFConfigurationSetting>),
     MainHeat(HeatData),
     VersionMismatch((String, String)),
+    DevModeStatus(bool),
 }

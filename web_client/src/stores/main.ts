@@ -47,6 +47,7 @@ import {
     MessageFromWebControlGetLogs,
     MessageFromWebControlSelectHeat,
     MessageFromWebControlUpdateTimingSettings,
+    MessageFromWebControlRequestDevMode,
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
@@ -101,6 +102,7 @@ export default defineStore("main", () => {
     const athletesData = ref([] as AthleteWithMetadata[]);
     const pdfConfigurationSettings = ref([] as PDFConfigurationSetting[]);
     const mainHeat = ref(null as null | HeatData);
+    const devMode = ref(false);
     const versionMismatchTriggered = ref(null as null | string);
 
     function handleWSMessage(ev: MessageEvent) {
@@ -187,6 +189,9 @@ export default defineStore("main", () => {
 
                 versionMismatchTriggered.value = `The database has the Version: ${dbHasVersion}, while the program currently has the version ${programHasVersion}. Not compatible!!`;
                 return;
+            case "DevModeStatus":
+                devMode.value = msg.data;
+                return;
             default:
                 console.error("Received unknown message type:", msg);
                 const _exhaustive: never = msg;
@@ -233,6 +238,8 @@ export default defineStore("main", () => {
             sendRequestTimingSettingsCommand();
             sendRequestAthletesCommand();
             sendRequestAllPDFSettingsCommand();
+            sendRequestAllPDFSettingsCommand();
+            sendRequestDevModeStatusCommand();
 
             // only assign the handlers if actually open
             if (ws) {
@@ -412,6 +419,12 @@ export default defineStore("main", () => {
         };
         sendWSCommand(JSON.stringify(packet));
     }
+    function sendRequestDevModeStatusCommand() {
+        const packet: MessageFromWebControlRequestDevMode = {
+            type: "RequestDevMode",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
     /**
      * @param ha id and heat_id are ignored, as they are set by the server
      */
@@ -567,6 +580,7 @@ export default defineStore("main", () => {
         sendGetMainHeatCommand,
         sendDeleteCompetitorEvaluatedCommand,
         sendDebugDisplayCommand,
+        sendRequestDevModeStatusCommand,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,
@@ -585,5 +599,6 @@ export default defineStore("main", () => {
         athletesData,
         pdfConfigurationSettings,
         versionMismatchTriggered,
+        devMode,
     };
 });
