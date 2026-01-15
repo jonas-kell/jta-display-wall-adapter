@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, nextTick, ref, watch } from "vue";
-import { WS_URL } from "../functions/environment";
+import { wsURL } from "../functions/environment";
 import {
     WindValueRequestDateContainer,
     AthleteWithMetadata,
@@ -211,6 +211,24 @@ export default defineStore("main", () => {
         console.error("Received unhandled message type:", msg);
     }
 
+    function getNonLocalDomainOrIp(): string | null {
+        const name = window.location.hostname;
+
+        if (name == "localhost") {
+            return null;
+        }
+
+        if (name == "127.0.0.1") {
+            return null;
+        }
+
+        if (name == "0.0.0.0") {
+            return null;
+        }
+
+        return name;
+    }
+
     async function initWS() {
         if (reconnecting) {
             // prevent multiple runs
@@ -228,7 +246,7 @@ export default defineStore("main", () => {
             await sleep(500);
         }
 
-        ws = new WebSocket(WS_URL);
+        ws = new WebSocket(wsURL(getNonLocalDomainOrIp()));
         ws.onerror = async () => {
             connected.value = false;
             reconnecting = false;

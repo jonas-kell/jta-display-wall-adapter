@@ -7,7 +7,8 @@ export default defineConfig((props) => {
     console.log(props.mode);
 
     let env: Record<string, string | boolean> = {};
-    env.VITE_SERVER_WS_URL = String(JSON.stringify(process.env.VITE_WS_URL ?? "ws://localhost:6789/ws/"));
+    env.VITE_WS_IP = String(JSON.stringify(process.env.VITE_WS_IP ?? "localhost"));
+    env.VITE_WS_PORT = String(JSON.stringify(process.env.VITE_WS_PORT ?? "6789"));
 
     const envWithProcessPrefix = {
         "process.env": `${JSON.stringify(env)}`,

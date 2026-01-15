@@ -5,7 +5,8 @@ services:
     volumes:
       - ./web_client:/app/
     environment:
-      - VITE_WS_URL=ws://127.0.0.1:6789/ws/
+      - VITE_WS_IP=127.0.0.1
+      - VITE_WS_PORT=6789
     command: >
       bash -c "
         npm install &&
