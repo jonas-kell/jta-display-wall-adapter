@@ -7,7 +7,7 @@
         </v-btn>
         <v-btn @click="resetClock" class="mt-2" max-width="40em"> Reset </v-btn>
         <v-btn @click="startClock" class="mt-2" max-width="40em"> Start </v-btn>
-        <v-btn @click="endSignal" class="mt-2" max-width="40em" :disabled="startTime == null"> End Signal </v-btn>
+        <v-btn @click="endSignal" class="mt-2" max-width="40em" :disabled="debugStore.startTime == null"> End Signal </v-btn>
         <v-btn @click="evaluateOneAthlete" class="mt-2" max-width="40em" :disabled="mainStore.devMainHeatStartList == null">
             Evaluate one Athlete
         </v-btn>
@@ -17,6 +17,7 @@
 
 <script setup lang="ts">
     import useMainStore from "../stores/main";
+    import useDebugStore from "../stores/debug";
     import {
         HeatCompetitor,
         HeatCompetitorResult,
@@ -29,8 +30,8 @@
         MessageFromWebControlDevStartRace,
     } from "../generated/interface";
     import { raceTimeFromNumber } from "../functions/representation";
-    import { ref } from "vue";
     const mainStore = useMainStore();
+    const debugStore = useDebugStore();
 
     // on load, request a fake heat start list
     mainStore.sendGenericWSCommand({ type: "DevRequestMainHeatStartList" } as MessageFromWebControlDevRequestMainHeatStartList);
@@ -48,20 +49,16 @@
         mainStore.sendGenericWSCommand({ type: "DevReset" } as MessageFromWebControlDevReset);
     }
 
-    const startTime = ref(null as null | number);
-    const finishIndex = ref(-1);
-    const times = ref([] as number[]);
-
     function startClock() {
         mainStore.sendGenericWSCommand({ type: "DevStartRace" } as MessageFromWebControlDevStartRace);
-        startTime.value = Date.now();
-        finishIndex.value = -1;
-        times.value = [];
+        debugStore.startTime = Date.now();
+        debugStore.finishIndex = -1;
+        debugStore.times = [];
     }
 
     function endSignal() {
-        if (startTime.value != null) {
-            const time = (Date.now() - startTime.value) / 1000;
+        if (debugStore.startTime != null) {
+            const time = (Date.now() - debugStore.startTime) / 1000;
 
             mainStore.sendGenericWSCommand({
                 type: "DevSendFinishSignal",
@@ -87,26 +84,26 @@
                 nation: "GER",
             };
         } else {
-            if (finishIndex.value < mainStore.devMainHeatStartList.competitors.length - 1) {
-                finishIndex.value += 1;
+            if (debugStore.finishIndex < mainStore.devMainHeatStartList.competitors.length - 1) {
+                debugStore.finishIndex += 1;
             }
 
-            const comp = mainStore.devMainHeatStartList.competitors[finishIndex.value];
+            const comp = mainStore.devMainHeatStartList.competitors[debugStore.finishIndex];
             return comp;
         }
     }
 
     function evaluateOneAthlete() {
-        if (mainStore.devMainHeatStartList != null && startTime.value != null) {
+        if (mainStore.devMainHeatStartList != null && debugStore.startTime != null) {
             const heat = mainStore.devMainHeatStartList;
             const heatId = heat.id;
             const last = getAthleteAtIndex();
 
-            const time = (Date.now() - startTime.value) / 1000;
-            if (times.value.length < heat.competitors.length) {
-                times.value.push(time);
+            const time = (Date.now() - debugStore.startTime) / 1000;
+            if (debugStore.times.length < heat.competitors.length) {
+                debugStore.times.push(time);
             }
-            const lastTime = times.value[times.value.length - 1];
+            const lastTime = debugStore.times[debugStore.times.length - 1];
 
             mainStore.sendGenericWSCommand({
                 type: "DevSendEvaluated",
@@ -134,7 +131,7 @@
                 },
             } as MessageFromWebControlDevSendEvaluated);
 
-            const results = times.value.map((time, index): HeatCompetitorResult => {
+            const results = debugStore.times.map((time, index): HeatCompetitorResult => {
                 const comp = heat.competitors[index];
                 return {
                     competitor: comp,
