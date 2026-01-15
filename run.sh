@@ -1,7 +1,7 @@
 #!/bin/bash
 trap 'docker compose -f docker-compose.run.yml down; exit' INT
 
-# Usage: ./run.sh < --native>
+# Usage: ./run.sh [compose dir path] <--native>
 COMPOSE_DIR="${1:-$(pwd)}"
 
 # arguments
