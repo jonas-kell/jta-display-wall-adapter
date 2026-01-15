@@ -104,6 +104,7 @@ pub struct CompetitorEvaluated {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
+#[serde(tag = "type", content = "data")] // TODO not totaly what I like to do, but for typescript compatibility this currently seems unavoidable
 pub enum DifferenceToCandidate {
     Winner,
     Difference(RaceTime),

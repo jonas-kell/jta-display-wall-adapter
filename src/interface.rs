@@ -800,11 +800,22 @@ impl ServerStateMachine {
                 }
                 // Dev mode and debug signals
                 MessageFromWebControl::DevReset => {
+                    match fake_main_heat_start_list(dbss, &self.database_manager) {
+                        Ok(hsl) => match purge_heat_data(hsl.id, &self.database_manager) {
+                            Ok(()) => (),
+                            Err(e) => {
+                                error!("Error when purging heat data: {}", e);
+                            }
+                        },
+                        Err(_) => {}
+                    };
+                    self.send_out_main_heat_to_webclient();
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::Reset,
                     ));
                 }
                 MessageFromWebControl::DevSendStartList(hsl) => {
+                    store_to_database!(hsl.clone(), self); // needed for other functionality to work
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::Meta(hsl),
                     ));
