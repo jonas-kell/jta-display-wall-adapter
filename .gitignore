@@ -31,3 +31,5 @@ coords.txt
 /web_client/dev-dist
 
 .env
+
+/client

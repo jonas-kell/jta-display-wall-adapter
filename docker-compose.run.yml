@@ -11,5 +11,6 @@ services:
       - /dev/dri:/dev/dri
     ports:
       - "5678:5678"
+    # Variables here only get updated for docker-execution. For changing arguxecution, change /run.sh
     command: /app/client client --display-client-communication-port 5678 --wait-ms-before-testing-for-shutdown=5000 --emit-file-on-location-update
     restart: on-failure

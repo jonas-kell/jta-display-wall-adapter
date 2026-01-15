@@ -90,6 +90,8 @@ In the case of this all being available, you only need to run the following comm
 
 ```cmd
 sudo ./run.sh
+# or the native version
+sudo ./run.sh --native
 ```
 
 ### Fresh Installation on a Raspberry Pi 3B
@@ -169,7 +171,7 @@ bar {
 # hide cursor
 seat * hide_cursor 1000
 
-exec foot -e sh -c "cd /home/wall/Desktop/jta-display-wall-adapter && ./run.sh"
+exec foot -e sh -c "cd /home/wall/Desktop/jta-display-wall-adapter && ./run.sh --native"
 ```
 
 On Sway you can open a console with `Windows + Enter`.

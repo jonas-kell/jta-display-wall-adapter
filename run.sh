@@ -1,8 +1,17 @@
 #!/bin/bash
 trap 'docker compose -f docker-compose.run.yml down; exit' INT
 
-# Usage: ./run.sh /path/to/compose-dir
+# Usage: ./run.sh < --native>
 COMPOSE_DIR="${1:-$(pwd)}"
+
+# arguments
+native=false
+for arg in "$@"; do
+  if [[ "$arg" == "--native" ]]; then
+    native=true
+    break
+  fi
+done
 
 # Define logfile
 LOGFILE="log.txt"
@@ -43,8 +52,8 @@ xhost +local:docker
   done
 ) &
 
-echo "Starting docker compose in $COMPOSE_DIR"
-echo "$(date '+%Y-%m-%d %H:%M:%S') Starting docker compose in $COMPOSE_DIR" >> "$LOGFILE"
+echo "Starting client in $COMPOSE_DIR"
+echo "$(date '+%Y-%m-%d %H:%M:%S') Starting client in $COMPOSE_DIR" >> "$LOGFILE"
 cd "$COMPOSE_DIR" || {  
   echo "Command failed. Press Enter to close."
   echo "$(date '+%Y-%m-%d %H:%M:%S') Command failed." >> "$LOGFILE"
@@ -52,7 +61,24 @@ cd "$COMPOSE_DIR" || {
   exit 1
 }
 (docker compose -f docker-compose.run.yml pull || echo "⚠️ Skipping pull (offline or failed)") 2>&1 | tee -a "$LOGFILE"
-docker compose -f docker-compose.run.yml up 2>&1 | tee -a "$LOGFILE"
+
+if $native; then
+  echo "Running client natively"
+  echo "$(date '+%Y-%m-%d %H:%M:%S') Running client natively" >> "$LOGFILE"
+  echo "Copy over executable"
+  # must match values in docker-compose.yml !
+  docker create --name tmp_copy_container kellehorreur/jta-display-wall-adapter:latest
+  docker cp tmp_copy_container:/app/client .
+  docker rm tmp_copy_container
+  echo "Executable has been prepared"
+  echo "$(date '+%Y-%m-%d %H:%M:%S') Executable has been prepared" >> "$LOGFILE"
+  # Run natively
+  ./client client --display-client-communication-port 5678 --wait-ms-before-testing-for-shutdown=5000 --emit-file-on-location-update 2>&1 | tee -a "$LOGFILE"
+else
+  echo "Running client inside docker"
+  echo "$(date '+%Y-%m-%d %H:%M:%S') Running client inside docker" >> "$LOGFILE"
+  docker compose -f docker-compose.run.yml up 2>&1 | tee -a "$LOGFILE"
+fi
 
 echo "This should not be reached"
 echo "$(date '+%Y-%m-%d %H:%M:%S') This should not be reached." >> "$LOGFILE"
