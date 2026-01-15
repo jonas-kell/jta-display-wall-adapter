@@ -93,6 +93,11 @@ export type DisqualificationReasonDidNotFinish = { type: "DidNotFinish" };
 export type DisqualificationReasonDidNotStart = { type: "DidNotStart" };
 export type DisqualificationReasonDisqualified = { type: "Disqualified" };
 export type DisqualificationReasonOther = { type: "Other"; data: string };
+export type FrametimeReport = {
+    target_fps: number;
+    time_percentage_taken_per_frame_since_last_report: number;
+    worst_n: number[];
+};
 export type HeatAssignment = {
     id: number;
     heat_id: Uuid;
@@ -274,6 +279,7 @@ export type MessageToWebControl =
     | MessageToWebControlPDFConfigurationSettingsData
     | MessageToWebControlMainHeat
     | MessageToWebControlVersionMismatch
+    | MessageToWebControlFrametimeReport
     | MessageToWebControlDevModeStatus
     | MessageToWebControlDevMainHeatStartList;
 export type MessageToWebControlAthletesData = { type: "AthletesData"; data: AthleteWithMetadata[] };
@@ -282,6 +288,7 @@ export type MessageToWebControlDatabaseStaticState = { type: "DatabaseStaticStat
 export type MessageToWebControlDevMainHeatStartList = { type: "DevMainHeatStartList"; data: HeatStartList };
 export type MessageToWebControlDevModeStatus = { type: "DevModeStatus"; data: boolean };
 export type MessageToWebControlDisplayClientState = { type: "DisplayClientState"; data: DisplayClientState };
+export type MessageToWebControlFrametimeReport = { type: "FrametimeReport"; data: FrametimeReport };
 export type MessageToWebControlHeatDataMessage = { type: "HeatDataMessage"; data: HeatData };
 export type MessageToWebControlHeatsMeta = { type: "HeatsMeta"; data: HeatMeta[] };
 export type MessageToWebControlLogs = { type: "Logs"; data: PermanentlyStoredDataset[] };

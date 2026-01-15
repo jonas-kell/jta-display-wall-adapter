@@ -50,6 +50,7 @@ import {
     MessageFromWebControlRequestDevMode,
     MessageFromWebControl,
     HeatStartList,
+    FrametimeReport,
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
@@ -107,6 +108,7 @@ export default defineStore("main", () => {
     const devMode = ref(false);
     const devMainHeatStartList = ref(null as null | HeatStartList);
     const versionMismatchTriggered = ref(null as null | string);
+    let frametimeReport = ref(null as null | FrametimeReport);
 
     function handleWSMessage(ev: MessageEvent) {
         if (ev.data instanceof Blob) {
@@ -197,6 +199,9 @@ export default defineStore("main", () => {
                 return;
             case "DevMainHeatStartList":
                 devMainHeatStartList.value = msg.data;
+                return;
+            case "FrametimeReport":
+                frametimeReport.value = msg.data;
                 return;
             default:
                 console.error("Received unknown message type:", msg);
@@ -612,5 +617,6 @@ export default defineStore("main", () => {
         versionMismatchTriggered,
         devMode,
         devMainHeatStartList,
+        frametimeReport,
     };
 });

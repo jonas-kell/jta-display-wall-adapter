@@ -1,3 +1,4 @@
+use crate::client::frametime::{FrametimeReport, FrametimeTracker};
 use crate::database::{
     create_heat_assignment, delete_athlete, delete_evaluation, delete_heat_assignment,
     delete_pdf_setting, get_all_athletes_meta_data, get_database_static_state, get_main_heat,
@@ -97,6 +98,7 @@ pub enum MessageFromClientToServer {
     Version(String),
     CurrentWindow(Vec<u8>),
     TimingSettingsState(TimingSettings),
+    FrametimeReport(FrametimeReport),
 }
 
 #[derive(PartialEq, Eq, Clone)]
@@ -380,6 +382,11 @@ impl ServerStateMachine {
                 MessageFromClientToServer::TimingSettingsState(set) => {
                     self.timing_settings_template = set.clone();
                     self.send_message_to_web_control(MessageToWebControl::TimingSettingsState(set));
+                }
+                MessageFromClientToServer::FrametimeReport(ftr) => {
+                    if self.comm_channel.web_control_there_to_receive() {
+                        self.send_message_to_web_control(MessageToWebControl::FrametimeReport(ftr));
+                    }
                 }
             },
             IncomingInstruction::FromTimingProgram(inst) => match inst {
@@ -1010,6 +1017,7 @@ pub struct ClientStateMachine {
     timing_settings_template: TimingSettings,
     outbound_connection_open: bool,
     self_sender: Sender<MessageFromServerToClient>,
+    frametime_tracker: FrametimeTracker,
 }
 impl ClientStateMachine {
     pub fn new(args: &Args, sender: Sender<MessageFromServerToClient>) -> Self {
@@ -1031,6 +1039,7 @@ impl ClientStateMachine {
             timing_settings_template: TimingSettings::new(args),
             outbound_connection_open: false,
             self_sender: sender,
+            frametime_tracker: FrametimeTracker::new(),
         }
     }
 
@@ -1190,6 +1199,15 @@ impl ClientStateMachine {
                     }
                 }
             }
+        }
+    }
+
+    pub fn digest_frame_time_percentage(&mut self, percentage: u64) {
+        self.frametime_tracker
+            .digest_new_frame_time_percentage(percentage);
+
+        if let Some(report) = self.frametime_tracker.needs_to_send_out_report() {
+            self.push_new_message(MessageFromClientToServer::FrametimeReport(report));
         }
     }
 

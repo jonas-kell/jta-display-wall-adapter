@@ -1,4 +1,5 @@
 use crate::{
+    client::frametime::FrametimeReport,
     client::TimingSettings,
     database::{DatabaseStaticState, PermanentlyStoredDataset},
     server::{
@@ -118,6 +119,7 @@ pub enum MessageToWebControl {
     PDFConfigurationSettingsData(Vec<PDFConfigurationSetting>),
     MainHeat(HeatData),
     VersionMismatch((String, String)),
+    FrametimeReport(FrametimeReport),
     DevModeStatus(bool),
     // DEV test calls
     DevMainHeatStartList(HeatStartList),

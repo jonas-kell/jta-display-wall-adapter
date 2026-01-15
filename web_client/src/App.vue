@@ -135,7 +135,7 @@
             <v-navigation-drawer
                 location="bottom"
                 :permanent="true"
-                :width="bottomExpanded ? 180 : 60"
+                :width="bottomExpanded ? 200 : 60"
                 rounded="t-lg"
                 class="px-4 py-1"
             >

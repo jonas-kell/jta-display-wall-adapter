@@ -50,6 +50,22 @@
                         v-if="mainStore.currentClientFrame"
                         :src="mainStore.currentClientFrame"
                     />
+                    <br />
+
+                    <v-tooltip
+                        :text="'top frame times: ' + mainStore.frametimeReport.worst_n.map((a) => String(a) + '%').join(' - ')"
+                        location="top center"
+                        v-if="mainStore.frametimeReport"
+                    >
+                        <template v-slot:activator="{ props }">
+                            <span v-bind="props">
+                                (render takes {{ mainStore.frametimeReport.time_percentage_taken_per_frame_since_last_report }}%
+                                of time to reach {{ mainStore.frametimeReport.target_fps }}FPS )</span
+                            >
+
+                            <span style="color: crimson" v-if="max > 100"> {{ max }}%</span>
+                        </template>
+                    </v-tooltip>
                 </template>
                 <p v-else>No Connection</p>
             </div>
@@ -67,6 +83,14 @@
 
     const rightDate = computed(() => {
         return (mainStore.staticConfiguration?.date ?? "") == TODAY;
+    });
+
+    const max = computed(() => {
+        if (mainStore.frametimeReport != null) {
+            return Math.max(...mainStore.frametimeReport.worst_n);
+        } else {
+            return 0;
+        }
     });
 </script>
 
