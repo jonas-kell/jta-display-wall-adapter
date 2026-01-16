@@ -141,6 +141,9 @@
                     <v-list-item v-if="mainStore.staticConfiguration.mode == ApplicationMode.StreetLongRun">
                         <router-link to="/pdf_print" class="router-link-style">PDF Print</router-link>
                     </v-list-item>
+                    <v-list-item>
+                        <router-link to="/bib_interface" class="router-link-style">Bib Interface</router-link>
+                    </v-list-item>
                     <v-list-item v-if="mainStore.devMode">
                         <router-link to="/debug" class="router-link-style">DEBUG</router-link>
                     </v-list-item>
