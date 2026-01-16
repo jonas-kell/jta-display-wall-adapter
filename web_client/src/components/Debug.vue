@@ -8,7 +8,12 @@
         <v-btn @click="resetClock" class="mt-2" max-width="40em"> Reset </v-btn>
         <v-btn @click="startClock" class="mt-2" max-width="40em"> Start </v-btn>
         <v-btn @click="endSignal" class="mt-2" max-width="40em" :disabled="debugStore.startTime == null"> End Signal </v-btn>
-        <v-btn @click="evaluateOneAthlete" class="mt-2" max-width="40em" :disabled="mainStore.devMainHeatStartList == null">
+        <v-btn
+            @click="evaluateOneAthlete"
+            class="mt-2"
+            max-width="40em"
+            :disabled="debugStore.startTime == null || mainStore.devMainHeatStartList == null"
+        >
             Evaluate one Athlete
         </v-btn>
         <v-btn @click="debugDisplay" class="mt-2" max-width="40em"> Send Bib Test </v-btn>
