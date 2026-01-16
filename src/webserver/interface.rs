@@ -50,6 +50,7 @@ pub enum MessageFromWebControl {
     DeleteCompetitorEvaluated(DayTime), // to target the correct HeatCompetitorResult, as here are no ids
     SendDebugDisplayCommand(DisplayEntry),
     RequestDevMode,
+    RequestPassword,
     // DEV calls
     DevReset,
     DevSendStartList(HeatStartList),
@@ -121,6 +122,7 @@ pub enum MessageToWebControl {
     VersionMismatch((String, String)),
     FrametimeReport(FrametimeReport),
     DevModeStatus(bool),
+    Password(String),
     // DEV test calls
     DevMainHeatStartList(HeatStartList),
 }

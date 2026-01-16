@@ -42,6 +42,9 @@ pub struct Args {
     /// Port where the internal communication between server and webclient takes place
     #[arg(long, default_value_t = String::from("6789"))]
     pub internal_webcontrol_port: String,
+    /// Password to gate the admin webcontrol functions a little (NOT cryptographically secure in ANY way. Data gets exposed even without password!)
+    #[arg(long, default_value_t = String::from("password"))]
+    pub webcontrol_password: String,
     /// Port where the internal communication between wind server and server takes place
     #[arg(long, default_value_t = String::from("7890"))]
     pub wind_exchange_port: String,

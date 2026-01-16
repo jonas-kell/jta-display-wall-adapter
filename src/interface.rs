@@ -856,6 +856,11 @@ impl ServerStateMachine {
                         hsl,
                     ));
                 }
+                MessageFromWebControl::RequestPassword => {
+                    self.send_message_to_web_control(MessageToWebControl::Password(
+                        self.args.webcontrol_password.clone(),
+                    ));
+                }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {
                 Measured(wind_measurement) => {

@@ -51,6 +51,7 @@ import {
     MessageFromWebControl,
     HeatStartList,
     FrametimeReport,
+    MessageFromWebControlRequestPassword,
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
@@ -67,6 +68,7 @@ export default defineStore("main", () => {
     const displayConnected = ref(false);
     const displayExternalPassthrough = ref(false);
     const displayCanSwitchModeInternal = ref(false);
+    const managementPassword = ref(null as null | string);
 
     let reconnecting = false;
     let ws = null as null | WebSocket;
@@ -203,6 +205,9 @@ export default defineStore("main", () => {
             case "FrametimeReport":
                 frametimeReport.value = msg.data;
                 return;
+            case "Password":
+                managementPassword.value = msg.data;
+                return;
             default:
                 console.error("Received unknown message type:", msg);
                 const _exhaustive: never = msg;
@@ -261,7 +266,9 @@ export default defineStore("main", () => {
             console.log("Socket connected");
 
             // this is kind of an init also, as this gets requested on connection establish:
+            sendRequestPasswordCommand();
             sendRequestStaticConfigCommand();
+
             sendGetMainHeatCommand();
             sendGetHeatsCommand();
             sendRequestTimingSettingsCommand();
@@ -388,6 +395,12 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
 
+    function sendRequestPasswordCommand() {
+        const packet: MessageFromWebControlRequestPassword = {
+            type: "RequestPassword",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
     function sendRequestStaticConfigCommand() {
         const packet: MessageFromWebControlRequestStaticDatabaseState = {
             type: "RequestStaticDatabaseState",
@@ -636,5 +649,6 @@ export default defineStore("main", () => {
         devMode,
         devMainHeatStartList,
         frametimeReport,
+        managementPassword,
     };
 });

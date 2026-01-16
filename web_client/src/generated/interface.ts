@@ -222,6 +222,7 @@ export type MessageFromWebControl =
     | MessageFromWebControlDeleteCompetitorEvaluated
     | MessageFromWebControlSendDebugDisplayCommand
     | MessageFromWebControlRequestDevMode
+    | MessageFromWebControlRequestPassword
     | MessageFromWebControlDevReset
     | MessageFromWebControlDevSendStartList
     | MessageFromWebControlDevStartRace
@@ -255,6 +256,7 @@ export type MessageFromWebControlRequestAthletes = { type: "RequestAthletes" };
 export type MessageFromWebControlRequestDevMode = { type: "RequestDevMode" };
 export type MessageFromWebControlRequestDisplayClientState = { type: "RequestDisplayClientState" };
 export type MessageFromWebControlRequestPDFConfigurationSettings = { type: "RequestPDFConfigurationSettings" };
+export type MessageFromWebControlRequestPassword = { type: "RequestPassword" };
 export type MessageFromWebControlRequestStaticDatabaseState = { type: "RequestStaticDatabaseState" };
 export type MessageFromWebControlRequestTimingSettings = { type: "RequestTimingSettings" };
 export type MessageFromWebControlRequestWindValues = { type: "RequestWindValues"; data: WindValueRequestDateContainer };
@@ -281,6 +283,7 @@ export type MessageToWebControl =
     | MessageToWebControlVersionMismatch
     | MessageToWebControlFrametimeReport
     | MessageToWebControlDevModeStatus
+    | MessageToWebControlPassword
     | MessageToWebControlDevMainHeatStartList;
 export type MessageToWebControlAthletesData = { type: "AthletesData"; data: AthleteWithMetadata[] };
 export type MessageToWebControlCurrentDisplayFrame = { type: "CurrentDisplayFrame"; data: number[] };
@@ -294,6 +297,7 @@ export type MessageToWebControlHeatsMeta = { type: "HeatsMeta"; data: HeatMeta[]
 export type MessageToWebControlLogs = { type: "Logs"; data: PermanentlyStoredDataset[] };
 export type MessageToWebControlMainHeat = { type: "MainHeat"; data: HeatData };
 export type MessageToWebControlPDFConfigurationSettingsData = { type: "PDFConfigurationSettingsData"; data: PDFConfigurationSetting[] };
+export type MessageToWebControlPassword = { type: "Password"; data: string };
 export type MessageToWebControlTimingSettingsState = { type: "TimingSettingsState"; data: TimingSettings };
 export type MessageToWebControlVersionMismatch = { type: "VersionMismatch"; data: [string, string] };
 export type MessageToWebControlWindMeasurements = { type: "WindMeasurements"; data: WindMeasurement[] };
