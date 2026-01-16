@@ -240,9 +240,20 @@ impl ServerStateMachine {
                 ));
             }
 
+            self.send_message_to_web_control(
+                MessageToWebControl::StaticConfigurationNotInitialized,
+            );
+
             // static state not initialized
             let updated_successfully = match msg {
                 IncomingInstruction::FromWebControl(w) => match w {
+                    MessageFromWebControl::RequestPassword => {
+                        // this is still required, otherwise we cannot even init db
+                        self.send_message_to_web_control(MessageToWebControl::Password(
+                            self.args.webcontrol_password.clone(),
+                        ));
+                        None
+                    }
                     MessageFromWebControl::InitStaticDatabaseState(init) => {
                         match init_database_static_state(init, &self.database_manager) {
                             Ok(dbss) => {

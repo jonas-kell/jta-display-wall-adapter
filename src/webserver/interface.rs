@@ -123,6 +123,7 @@ pub enum MessageToWebControl {
     FrametimeReport(FrametimeReport),
     DevModeStatus(bool),
     Password(String),
+    StaticConfigurationNotInitialized,
     // DEV test calls
     DevMainHeatStartList(HeatStartList),
 }

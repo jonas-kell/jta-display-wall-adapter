@@ -22,9 +22,19 @@
     );
     const fullyConnectedOnce = ref(false);
     watch(
-        () => [connectedOnce.value, mainStore.connected, mainStore.staticConfiguration, authStore.password],
+        () => [
+            connectedOnce.value,
+            mainStore.connected,
+            mainStore.staticConfiguration,
+            authStore.password,
+            mainStore.staticConfigurationMissing,
+        ],
         () => {
-            if (mainStore.connected && authStore.password != null && mainStore.staticConfiguration != null) {
+            if (
+                mainStore.connected &&
+                authStore.password != null &&
+                (mainStore.staticConfiguration != null || mainStore.staticConfigurationMissing)
+            ) {
                 fullyConnectedOnce.value = true;
             }
         }

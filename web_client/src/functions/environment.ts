@@ -2,8 +2,6 @@ export function wsURL(overwriteIp: string | null = null) {
     let ip = String(import.meta.env.VITE_WS_IP);
     const port = String(import.meta.env.VITE_WS_PORT);
 
-    console.log(ip);
-
     if (overwriteIp != null) {
         ip = overwriteIp;
     }

@@ -69,6 +69,7 @@ export default defineStore("main", () => {
     const displayExternalPassthrough = ref(false);
     const displayCanSwitchModeInternal = ref(false);
     const managementPassword = ref(null as null | string);
+    const staticConfigurationMissing = ref(false);
 
     let reconnecting = false;
     let ws = null as null | WebSocket;
@@ -207,6 +208,9 @@ export default defineStore("main", () => {
                 return;
             case "Password":
                 managementPassword.value = msg.data;
+                return;
+            case "StaticConfigurationNotInitialized":
+                staticConfigurationMissing.value = true;
                 return;
             default:
                 console.error("Received unknown message type:", msg);
@@ -650,5 +654,6 @@ export default defineStore("main", () => {
         devMainHeatStartList,
         frametimeReport,
         managementPassword,
+        staticConfigurationMissing,
     };
 });
