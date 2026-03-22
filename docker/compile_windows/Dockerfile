@@ -1,4 +1,4 @@
-FROM rust:1.89
+FROM rust:1.94
 
 RUN apt-get update && apt-get install -y \
     libx11-dev \

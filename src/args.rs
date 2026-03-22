@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use clap::{Parser, ValueEnum};
 
 #[derive(Parser, Debug, Clone)]
@@ -141,6 +142,21 @@ pub struct Args {
     /// Timing control variable for sound playback (initial for client, will get sent from server to client, can be set over webcontrol)
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub play_sound_on_finish: bool,
+    /// Product key to unlock system function
+    #[arg(long)]
+    pub product_key: Option<String>,
+    /// Master Secret to generate new product keys
+    #[arg(long)]
+    pub master_secret: Option<String>,
+    /// Company name for generation of new product keys
+    #[arg(long)]
+    pub generate_key_company_name: Option<String>,
+    /// Start date for generation of new product keys
+    #[arg(long)]
+    pub generate_key_start_date: Option<NaiveDate>,
+    /// Start date for generation of new product keys
+    #[arg(long)]
+    pub generate_key_end_date: Option<NaiveDate>,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
@@ -148,6 +164,7 @@ pub enum Mode {
     Server,
     Client,
     Wind,
+    Key,
 }
 
 pub const MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS: usize = 100;

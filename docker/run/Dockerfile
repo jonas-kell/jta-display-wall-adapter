@@ -1,5 +1,5 @@
 # ===== Stage 1: Build =====
-FROM rust:1.89 AS builder
+FROM rust:1.94 AS builder
 
 # Sound code from server needs sound dev libs to be installed, even if it will not work in the container anyway
 RUN apt-get update && apt-get install -y \

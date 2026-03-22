@@ -11,6 +11,7 @@ use crate::database::schema::{
     permanent_storage,
 };
 use crate::database::DatabaseManager;
+use crate::productkey::today;
 use crate::server::bib_detection::DisplayEntry;
 use crate::server::camera_program_types::{
     Athlete, AthleteWithMetadata, CompetitorEvaluated, HeatAssignment, HeatData, HeatFalseStart,
@@ -346,9 +347,7 @@ fn transform_time(time: &Option<DayTime>) -> Option<NaiveDateTime> {
                 None => return None,
             };
 
-            let today: NaiveDate = Local::now().date_naive();
-
-            return Some(NaiveDateTime::new(today, naive_time));
+            return Some(NaiveDateTime::new(today(), naive_time));
         }
         None => None,
     }

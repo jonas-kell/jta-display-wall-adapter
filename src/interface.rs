@@ -5,6 +5,8 @@ use crate::database::{
     init_database_static_state, populate_display_from_bib, DatabaseStaticState,
 };
 use crate::open_webcontrol;
+use crate::productkey::dev_mode;
+use crate::productkey::today;
 use crate::server::audio_types::{AudioPlayer, Sound};
 use crate::server::bib_detection::DisplayEntry;
 use crate::server::camera_program_types::{CompetitorEvaluated, HeatResult};
@@ -35,7 +37,6 @@ use crate::{
     },
 };
 use async_channel::Sender;
-use chrono::Local;
 use clap::crate_version;
 use images_core::images::{IconsStorage, ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
@@ -110,8 +111,7 @@ pub enum ServerState {
 macro_rules! store_to_database_log_conditionally {
     ($value:expr, $self_val:expr, $log:expr, $ignore_date:expr) => {
         if let Some(dbss) = &$self_val.static_state {
-            let today = Local::now().date_naive();
-            if $self_val.args.can_store_to_database_on_off_day || dbss.date == today || $ignore_date {
+            if $self_val.args.can_store_to_database_on_off_day || dbss.date == today() || $ignore_date {
                 match $value.store_to_database(&$self_val.database_manager) {
                     Ok(()) => {
                         trace!("Success, we stored an instruction into the database");
@@ -810,11 +810,9 @@ impl ServerStateMachine {
                     self.send_message_to_client(MessageFromServerToClient::PushDisplayEntry(entry));
                 }
                 MessageFromWebControl::RequestDevMode => {
-                    let profile = env!("PROFILE");
-
-                    self.send_message_to_web_control(MessageToWebControl::DevModeStatus(
-                        profile != "release",
-                    ));
+                    self.send_message_to_web_control(
+                        MessageToWebControl::DevModeStatus(dev_mode()),
+                    );
                 }
                 // Dev mode and debug signals
                 MessageFromWebControl::DevReset => {

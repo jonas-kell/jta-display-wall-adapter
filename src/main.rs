@@ -3,7 +3,8 @@ extern crate log;
 
 use clap::Parser;
 use jta_display_wall_adapter::{
-    open_webcontrol, run_client, run_server, run_wind_server, Args, Mode,
+    initialize_product_key_system, open_webcontrol, run_client, run_server, run_wind_server, Args,
+    Mode,
 };
 use std::net::TcpListener;
 
@@ -72,6 +73,7 @@ async fn main() -> std::io::Result<()> {
         Mode::Server => run_server(&args).await,
         Mode::Client => run_client(&args).await,
         Mode::Wind => run_wind_server(&args).await,
+        Mode::Key => initialize_product_key_system(&args),
     }
 
     Ok(())

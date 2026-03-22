@@ -1,4 +1,4 @@
-FROM rust:1.89
+FROM rust:1.94
 
 RUN cargo install cargo-watch
 RUN rustup component add rustfmt

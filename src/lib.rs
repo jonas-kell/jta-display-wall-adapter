@@ -10,6 +10,7 @@ mod hex;
 mod instructions;
 mod interface;
 mod json;
+mod productkey;
 mod server;
 mod times;
 mod webserver;
@@ -24,6 +25,7 @@ pub fn open_webcontrol(args: &Args) {
 
 pub use args::{Args, Mode};
 pub use client::run_client;
+pub use productkey::initialize_product_key_system;
 pub use server::run_server;
 pub use wind::run_wind_server;
 
