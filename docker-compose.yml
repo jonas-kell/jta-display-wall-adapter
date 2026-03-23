@@ -33,9 +33,11 @@ services:
       - /dev/snd # not technically needed for pulse audio mapping - but can use alsa directly as a fallback
     group_add:
       - audio # not technically needed for pulse audio mapping - but can use alsa directly as a fallback
-    command: cargo watch --ignore '**/web_client/**' -x "run -- server -vv --address-camera-program 192.168.150.10 --address-wind-server 192.168.150.10 --address-bib-server 192.168.150.70 --wait-ms-before-testing-for-shutdown=100000  --address-display-client=192.168.150.150 --display-client-communication-port 5678 --dp-pos-x=0 --dp-pos-y=0 --dp-width=360 --dp-height=120 --internal-webcontrol-port=6789 --play-sound-on-start --export-folder-path database_container"
+    command: cargo watch --ignore '**/web_client/**' -x "run -- server -vv --address-camera-program 192.168.150.10 --address-wind-server 192.168.150.10 --address-bib-server 192.168.150.70 --wait-ms-before-testing-for-shutdown=100000  --address-display-client=127.0.0.1 --display-client-communication-port 5678 --dp-pos-x=1460 --dp-pos-y=1050 --dp-width=360 --dp-height=120 --internal-webcontrol-port=6789 --play-sound-on-start --export-folder-path database_container"
 
   # --passthrough-address-display-program 192.168.8.119 --passthrough-to-display-program
+  # --address-display-client=192.168.150.150
+  # --dp-pos-x=0 --dp-pos-y=0
   # --listen-to-timing-program
   # --hexdump-incoming-communication
 

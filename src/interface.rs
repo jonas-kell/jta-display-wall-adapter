@@ -5,8 +5,8 @@ use crate::database::{
     init_database_static_state, populate_display_from_bib, DatabaseStaticState,
 };
 use crate::open_webcontrol;
-use crate::productkey::today;
 use crate::productkey::{dev_mode, product_key_valid};
+use crate::productkey::{today, ProductKey};
 use crate::server::audio_types::{AudioPlayer, Sound};
 use crate::server::bib_detection::DisplayEntry;
 use crate::server::camera_program_types::{CompetitorEvaluated, HeatResult};
@@ -73,6 +73,7 @@ pub enum ClientInternalMessageFromServerToClient {
 pub enum MessageFromServerToClient {
     DisplayText(String),
     RequestVersion,
+    ProductKey(String),
     ServerImposedSettings(ServerImposedSettings),
     Clear,
     DisplayExternalFrame(Vec<u8>),
@@ -323,7 +324,15 @@ impl ServerStateMachine {
             IncomingInstruction::FromClient(inst) => match inst {
                 MessageFromClientToServer::ServerInternal(internal) => match internal {
                     ServerInternalMessageFromClientToServer::MakeVersionRequestToAllClients => {
-                        // this possibly must be changed for multiple clients (possible TODO )
+                        // this possibly must be changed for multiple clients (possible // TODO )
+                        match self.args.product_key.as_ref() {
+                            Some(key) => {
+                                self.send_message_to_client(MessageFromServerToClient::ProductKey(
+                                    key.clone(),
+                                ));
+                            }
+                            None => {}
+                        }
                         self.send_message_to_client(MessageFromServerToClient::RequestVersion);
                     }
                     ServerInternalMessageFromClientToServer::SetMainDisplayState(new_val) => {
@@ -1035,6 +1044,7 @@ static STORAGE_BYTES: &[u8] = include_bytes!(env!("STORAGE_BYTES_LOCATION"));
 static STORAGE_BYTES_ICONS: &[u8] = include_bytes!(env!("STORAGE_BYTES_ICONS_LOCATION"));
 
 pub struct ClientStateMachine {
+    pub product_key: Option<ProductKey>,
     pub state: ClientState,
     messages_to_send_out_to_server: Vec<MessageFromClientToServer>,
     pub frame_counter: u64,
@@ -1057,6 +1067,7 @@ impl ClientStateMachine {
         debug!("DONE loading Images storage");
 
         Self {
+            product_key: product_key_valid(None).ok(), // IF dev mode, this sets a default
             state: ClientState::Created,
             messages_to_send_out_to_server: Vec::new(),
             frame_counter: 0,
@@ -1075,6 +1086,18 @@ impl ClientStateMachine {
 
     pub fn parse_server_command(&mut self, msg: MessageFromServerToClient) {
         match msg {
+            MessageFromServerToClient::ProductKey(key_string) => {
+                match product_key_valid(Some(&key_string)) {
+                    Ok(key) => {
+                        info!("Valid product key loaded from server: {:?}", key);
+                        self.product_key = Some(key);
+                    }
+                    Err(e) => {
+                        self.product_key = None;
+                        error!("Product key loading error from server: {}", e);
+                    }
+                }
+            }
             MessageFromServerToClient::RequestVersion => {
                 info!("Version was requested. Communication established!!");
                 if matches!(self.state, ClientState::Created) {

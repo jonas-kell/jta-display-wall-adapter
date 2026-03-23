@@ -476,6 +476,18 @@ pub fn render_client_frame(
             );
         }
     }
+
+    if state.product_key.is_none() {
+        draw_text_as_big_as_possible(
+            "Unlicensed",
+            5.0,
+            0.0,
+            meta.texture_width.saturating_sub(10),
+            meta.texture_height,
+            &mut cache.font_size_cache_freetext,
+            meta,
+        );
+    }
 }
 
 fn get_holding_top_text(timing_state_machine: &TimingStateMachine) -> Option<String> {
