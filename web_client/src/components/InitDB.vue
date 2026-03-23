@@ -18,6 +18,7 @@
             meet_id: uuid(),
             meet_city: appCity.value,
             meet_location: appLocation.value,
+            program_licensed_for: "will get replaced in backend",
         });
     }
 

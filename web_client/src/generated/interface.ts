@@ -59,6 +59,7 @@ export type DatabaseStaticState = {
     meet_id: Uuid;
     meet_city: string;
     meet_location: string;
+    program_licensed_for: string;
 };
 export type DayTime = {
     hours: number;

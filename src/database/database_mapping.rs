@@ -528,6 +528,7 @@ pub struct DatabaseStaticState {
     pub meet_id: Uuid,
     pub meet_city: String,
     pub meet_location: String,
+    pub program_licensed_for: String,
 }
 impl TryFrom<DatabaseStaticStateDatabase> for DatabaseStaticState {
     type Error = String;

@@ -233,7 +233,7 @@ impl ServerStateMachine {
 
     pub async fn parse_incoming_command(&mut self, msg: IncomingInstruction) {
         // check license
-        let product_key = match product_key_valid(self.args.product_key.as_ref()) {
+        let product_key: ProductKey = match product_key_valid(self.args.product_key.as_ref()) {
             Ok(product_key) => product_key,
             Err(e) => {
                 error!("There is no valid product key for this software: {}", e);
@@ -266,7 +266,10 @@ impl ServerStateMachine {
                         ));
                         None
                     }
-                    MessageFromWebControl::InitStaticDatabaseState(init) => {
+                    MessageFromWebControl::InitStaticDatabaseState(mut init) => {
+                        // overwrite setting with the local value
+                        init.program_licensed_for = product_key.company_name.clone();
+
                         match init_database_static_state(init, &self.database_manager) {
                             Ok(dbss) => {
                                 self.static_state = Some(dbss.clone());

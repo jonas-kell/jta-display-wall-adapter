@@ -29,7 +29,7 @@ const CONFIG: bincode::config::Configuration<
 pub struct ProductKey {
     start_date: NaiveDate,
     end_date: NaiveDate,
-    company_name: String,
+    pub company_name: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, TypescriptSerializable)]
