@@ -52,6 +52,8 @@ import {
     HeatStartList,
     FrametimeReport,
     MessageFromWebControlRequestPassword,
+    ProductKey,
+    MessageFromWebControlRequestLicense,
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
@@ -70,6 +72,7 @@ export default defineStore("main", () => {
     const displayCanSwitchModeInternal = ref(false);
     const managementPassword = ref(null as null | string);
     const staticConfigurationMissing = ref(false);
+    const license = ref(null as ProductKey | null);
 
     let reconnecting = false;
     let ws = null as null | WebSocket;
@@ -212,6 +215,9 @@ export default defineStore("main", () => {
             case "StaticConfigurationNotInitialized":
                 staticConfigurationMissing.value = true;
                 return;
+            case "Licensed":
+                license.value = msg.data;
+                return;
             default:
                 console.error("Received unknown message type:", msg);
                 const _exhaustive: never = msg;
@@ -271,6 +277,7 @@ export default defineStore("main", () => {
 
             // this is kind of an init also, as this gets requested on connection establish:
             sendRequestPasswordCommand();
+            sendRequestLicenseCommand();
             sendRequestStaticConfigCommand();
 
             sendGetMainHeatCommand();
@@ -402,6 +409,12 @@ export default defineStore("main", () => {
     function sendRequestPasswordCommand() {
         const packet: MessageFromWebControlRequestPassword = {
             type: "RequestPassword",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    function sendRequestLicenseCommand() {
+        const packet: MessageFromWebControlRequestLicense = {
+            type: "RequestLicense",
         };
         sendWSCommand(JSON.stringify(packet));
     }
@@ -560,7 +573,7 @@ export default defineStore("main", () => {
         },
         {
             deep: true,
-        }
+        },
     );
 
     function sendGenericWSCommand(comm: MessageFromWebControl) {
@@ -655,5 +668,6 @@ export default defineStore("main", () => {
         frametimeReport,
         managementPassword,
         staticConfigurationMissing,
+        license,
     };
 });

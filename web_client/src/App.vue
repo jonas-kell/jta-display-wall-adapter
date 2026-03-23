@@ -18,7 +18,7 @@
             if (mainStore.connected) {
                 connectedOnce.value = true;
             }
-        }
+        },
     );
     const fullyConnectedOnce = ref(false);
     watch(
@@ -37,7 +37,7 @@
             ) {
                 fullyConnectedOnce.value = true;
             }
-        }
+        },
     );
 
     const leftBar = ref(true);
@@ -94,28 +94,47 @@
                     </template>
                     <div class="d-flex flex-grow-1 justify-space-between align-center">
                         <h2>JTA Display Wall Adapter</h2>
-                        <span v-if="mainStore.staticConfiguration != null">
-                            {{ mainStore.staticConfiguration.mode }} at
-                            <span>
-                                <v-tooltip
-                                    text="!!No changes are written to database, as database date does not match current date!!"
-                                    location="bottom center"
-                                    :disabled="mainStore.staticConfiguration.date == TODAY"
-                                >
-                                    <template v-slot:activator="{ props }">
-                                        <span
-                                            v-bind="props"
-                                            :style="{
-                                                color: mainStore.staticConfiguration.date == TODAY ? undefined : 'crimson',
-                                            }"
-                                            >{{ mainStore.staticConfiguration.date }}</span
-                                        >
-                                    </template>
-                                </v-tooltip>
-                            </span>
-                            in {{ mainStore.staticConfiguration.meet_city }},
-                            {{ mainStore.staticConfiguration.meet_location }}</span
-                        >
+
+                        <span>
+                            <v-tooltip
+                                :text="
+                                    'Licensed for ' +
+                                    mainStore.license.company_name +
+                                    ' from ' +
+                                    mainStore.license.start_date +
+                                    ' to ' +
+                                    mainStore.license.end_date
+                                "
+                                v-if="mainStore.license != null"
+                            >
+                                <template v-slot:activator="{ props }">
+                                    <span v-bind="props"> Licensed </span>
+                                </template>
+                            </v-tooltip>
+                            <span v-else style="color: crimson"> UNLICENSED </span>
+                            <span v-if="mainStore.staticConfiguration != null" class="ml-3">
+                                {{ mainStore.staticConfiguration.mode }} at
+                                <span>
+                                    <v-tooltip
+                                        text="!!No changes are written to database, as database date does not match current date!!"
+                                        location="bottom center"
+                                        :disabled="mainStore.staticConfiguration.date == TODAY"
+                                    >
+                                        <template v-slot:activator="{ props }">
+                                            <span
+                                                v-bind="props"
+                                                :style="{
+                                                    color: mainStore.staticConfiguration.date == TODAY ? undefined : 'crimson',
+                                                }"
+                                                >{{ mainStore.staticConfiguration.date }}</span
+                                            >
+                                        </template>
+                                    </v-tooltip>
+                                </span>
+                                in {{ mainStore.staticConfiguration.meet_city }},
+                                {{ mainStore.staticConfiguration.meet_location }}</span
+                            >
+                        </span>
                         <v-switch inset color="primary" v-model="darkMode" hide-details class="mr-5">
                             <template v-slot:label>
                                 <v-icon :icon="darkMode ? 'mdi-weather-night' : 'mdi-weather-sunny'"></v-icon>

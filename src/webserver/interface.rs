@@ -1,7 +1,7 @@
 use crate::{
-    client::frametime::FrametimeReport,
-    client::TimingSettings,
+    client::{frametime::FrametimeReport, TimingSettings},
     database::{DatabaseStaticState, PermanentlyStoredDataset},
+    productkey::ProductKey,
     server::{
         bib_detection::DisplayEntry,
         camera_program_types::{
@@ -51,6 +51,7 @@ pub enum MessageFromWebControl {
     SendDebugDisplayCommand(DisplayEntry),
     RequestDevMode,
     RequestPassword,
+    RequestLicense,
     // DEV calls
     DevReset,
     DevSendStartList(HeatStartList),
@@ -123,6 +124,7 @@ pub enum MessageToWebControl {
     FrametimeReport(FrametimeReport),
     DevModeStatus(bool),
     Password(String),
+    Licensed(Option<ProductKey>),
     StaticConfigurationNotInitialized,
     // DEV test calls
     DevMainHeatStartList(HeatStartList),

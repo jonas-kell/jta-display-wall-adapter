@@ -5,8 +5,8 @@ use crate::database::{
     init_database_static_state, populate_display_from_bib, DatabaseStaticState,
 };
 use crate::open_webcontrol;
-use crate::productkey::dev_mode;
 use crate::productkey::today;
+use crate::productkey::{dev_mode, product_key_valid};
 use crate::server::audio_types::{AudioPlayer, Sound};
 use crate::server::bib_detection::DisplayEntry;
 use crate::server::camera_program_types::{CompetitorEvaluated, HeatResult};
@@ -231,6 +231,17 @@ impl ServerStateMachine {
     }
 
     pub async fn parse_incoming_command(&mut self, msg: IncomingInstruction) {
+        // check license
+        let product_key = match product_key_valid(self.args.product_key.as_ref()) {
+            Ok(product_key) => product_key,
+            Err(e) => {
+                error!("There is no valid product key for this software: {}", e);
+
+                return;
+            }
+        };
+
+        // check database
         let dbss = if let Some(dbss) = &self.static_state {
             dbss
         } else {
@@ -813,6 +824,11 @@ impl ServerStateMachine {
                     self.send_message_to_web_control(
                         MessageToWebControl::DevModeStatus(dev_mode()),
                     );
+                }
+                MessageFromWebControl::RequestLicense => {
+                    self.send_message_to_web_control(MessageToWebControl::Licensed(Some(
+                        product_key.clone(), // at the moment if this answers, we are always licensed. Otherwise it aborts earlier
+                    )));
                 }
                 // Dev mode and debug signals
                 MessageFromWebControl::DevReset => {

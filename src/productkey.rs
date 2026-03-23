@@ -54,7 +54,7 @@ pub fn initialize_product_key_system(args: &Args) {
     match public_key_part() {
         Err(e) => {
             // initial generation of secret/public key
-            error!("Failed to reat public verifying key, du to: {}", e);
+            error!("Failed to read public verifying key, due to: {}", e);
             debug!("Generating new key pair");
 
             let (master_key_secret, master_key_public): (MasterKeySecretPart, MasterKeyPublicPart) =
@@ -114,8 +114,9 @@ pub fn initialize_product_key_system(args: &Args) {
 
 fn public_key_part() -> Result<VerifyingKey, String> {
     // return Err("No public key hardcoded".into());
-
     let hardcoded_key = "a83555080f6dd185d2fbb0c2594f3cd224af08be4ae856880e31b411bbed2ab1";
+
+    // decode the key to a usable state from string encoding
     match decode(hardcoded_key) {
         Ok(key_data) => {
             let arr_ref: &[u8; 32] = match key_data.as_slice().try_into() {

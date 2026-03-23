@@ -223,6 +223,7 @@ export type MessageFromWebControl =
     | MessageFromWebControlSendDebugDisplayCommand
     | MessageFromWebControlRequestDevMode
     | MessageFromWebControlRequestPassword
+    | MessageFromWebControlRequestLicense
     | MessageFromWebControlDevReset
     | MessageFromWebControlDevSendStartList
     | MessageFromWebControlDevStartRace
@@ -255,6 +256,7 @@ export type MessageFromWebControlInitStaticDatabaseState = { type: "InitStaticDa
 export type MessageFromWebControlRequestAthletes = { type: "RequestAthletes" };
 export type MessageFromWebControlRequestDevMode = { type: "RequestDevMode" };
 export type MessageFromWebControlRequestDisplayClientState = { type: "RequestDisplayClientState" };
+export type MessageFromWebControlRequestLicense = { type: "RequestLicense" };
 export type MessageFromWebControlRequestPDFConfigurationSettings = { type: "RequestPDFConfigurationSettings" };
 export type MessageFromWebControlRequestPassword = { type: "RequestPassword" };
 export type MessageFromWebControlRequestStaticDatabaseState = { type: "RequestStaticDatabaseState" };
@@ -284,6 +286,7 @@ export type MessageToWebControl =
     | MessageToWebControlFrametimeReport
     | MessageToWebControlDevModeStatus
     | MessageToWebControlPassword
+    | MessageToWebControlLicensed
     | MessageToWebControlStaticConfigurationNotInitialized
     | MessageToWebControlDevMainHeatStartList;
 export type MessageToWebControlAthletesData = { type: "AthletesData"; data: AthleteWithMetadata[] };
@@ -295,6 +298,7 @@ export type MessageToWebControlDisplayClientState = { type: "DisplayClientState"
 export type MessageToWebControlFrametimeReport = { type: "FrametimeReport"; data: FrametimeReport };
 export type MessageToWebControlHeatDataMessage = { type: "HeatDataMessage"; data: HeatData };
 export type MessageToWebControlHeatsMeta = { type: "HeatsMeta"; data: HeatMeta[] };
+export type MessageToWebControlLicensed = { type: "Licensed"; data: ProductKey | null };
 export type MessageToWebControlLogs = { type: "Logs"; data: PermanentlyStoredDataset[] };
 export type MessageToWebControlMainHeat = { type: "MainHeat"; data: HeatData };
 export type MessageToWebControlPDFConfigurationSettingsData = { type: "PDFConfigurationSettingsData"; data: PDFConfigurationSetting[] };
@@ -332,6 +336,11 @@ export type PermanentlyStoredDataset = {
     name_key: string;
     stored_at: NaiveDateTime;
     data: string;
+};
+export type ProductKey = {
+    start_date: NaiveDate;
+    end_date: NaiveDate;
+    company_name: string;
 };
 export type RaceTime = {
     hours: number | null;
