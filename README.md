@@ -64,6 +64,12 @@ docker buildx build \
   --push .
 ```
 
+Re-tag if forgotten in last step (could also duplicate the tag line in the command above):
+
+```cmd
+docker buildx imagetools create -t kellehorreur/jta-display-wall-adapter:vX.X.X kellehorreur/jta-display-wall-adapter:latest
+```
+
 ## Start on a Windows live system
 
 -   Copy over the executable from the previous compilation step (`/target/x86_64-pc-windows-gnu/release/jta-display-wall-adapter.exe`)
