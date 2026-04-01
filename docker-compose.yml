@@ -27,6 +27,7 @@ services:
       - rust_build_cache:/usr/local/cargo/registry/
       - target_dir:/app/container_target
       - ./:/app/
+      - vscode_server:/root/.vscode-server
       - /run/user/${UID}/pulse/native:/tmp/pulse_socket
       - ${HOME}/.config/pulse/cookie:/root/.config/pulse/cookie
     devices:
@@ -86,3 +87,4 @@ services:
 volumes:
   rust_build_cache:
   target_dir:
+  vscode_server:
