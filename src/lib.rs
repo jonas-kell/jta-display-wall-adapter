@@ -7,6 +7,7 @@ mod database;
 mod file;
 mod helpers;
 mod hex;
+mod idcapture;
 mod instructions;
 mod interface;
 mod json;
@@ -25,6 +26,7 @@ pub fn open_webcontrol(args: &Args) {
 
 pub use args::{Args, Mode};
 pub use client::run_client;
+pub use idcapture::run_idcapture_server;
 pub use productkey::initialize_product_key_system;
 pub use server::run_server;
 pub use wind::run_wind_server;

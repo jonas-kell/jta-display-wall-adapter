@@ -164,6 +164,7 @@ pub enum Mode {
     Server,
     Client,
     Wind,
+    IDCapture,
     Key,
 }
 

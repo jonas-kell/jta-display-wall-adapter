@@ -21,6 +21,8 @@ RUN apt-get update && apt-get install -y \
     alsa-utils \
     libasound2-plugins \
     libudev-dev \
+    libpcap-dev \
+    libpcap0.8 \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 

@@ -71,6 +71,25 @@ services:
 
     # --do-not-set-client-window-always-on-top
 
+  idcapture:
+    volumes:
+      - target_dir:/app/container_target
+      - ./:/app/
+    network_mode: "host"
+    build:
+      context: ./
+      dockerfile: ./docker/dev/Dockerfile
+    working_dir: /app
+    command: >
+      bash -c "
+        while [ ! -f container_target/debug/jta-display-wall-adapter ]; do
+          echo 'Executable not yet ready'
+          sleep 0.5
+        done
+
+        watchexec --poll 500ms --restart --watch ./container_target/debug/jta-display-wall-adapter -- 'while true; do ./container_target/debug/jta-display-wall-adapter id-capture   ; done'
+      "
+
   code-gen:
     environment:
       - CARGO_TARGET_DIR=container_target
