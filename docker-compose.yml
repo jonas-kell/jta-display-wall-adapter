@@ -87,7 +87,7 @@ services:
           sleep 0.5
         done
 
-        watchexec --poll 500ms --restart --watch ./container_target/debug/jta-display-wall-adapter -- 'while true; do ./container_target/debug/jta-display-wall-adapter id-capture   ; done'
+        watchexec --poll 500ms --restart --watch ./container_target/debug/jta-display-wall-adapter -- 'while true; do ./container_target/debug/jta-display-wall-adapter id-capture -vvv   ; done'
       "
 
   code-gen:

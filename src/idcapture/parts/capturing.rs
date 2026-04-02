@@ -3,10 +3,11 @@ use std::{net::IpAddr, str::FromStr, time::Duration};
 use tokio::time::sleep;
 
 pub async fn capture(dev: Device, filter: Option<(IpAddr, IpAddr, u16)>) {
-    let dev_name = dev.name.clone();
-
     loop {
-        let dev = dev.clone();
+        // let dev = dev.clone();
+        let dev = Device::lookup().unwrap().unwrap(); // works
+        let dev_name = dev.name.clone();
+
         info!("Starting packet capture on device: {}", dev_name);
 
         let mut cap = match dev.open() {
@@ -21,25 +22,31 @@ pub async fn capture(dev: Device, filter: Option<(IpAddr, IpAddr, u16)>) {
             }
         };
 
-        if let Some((source_ip, target_ip, port)) = filter {
-            match cap.filter(
-                &format!(
-                    "tcp and src host {} and dst host {} and dst port {}",
-                    source_ip, target_ip, port
-                ),
-                true,
-            ) {
-                Ok(()) => {}
-                Err(e) => {
-                    error!("Error while setting filter: {}", e.to_string());
-                    continue;
-                }
-            };
-        }
+        debug!("Got an open capture");
+
+        // if let Some((source_ip, target_ip, port)) = filter {
+        //     match cap.filter(
+        //         &format!(
+        //             "tcp and src host {} and dst host {} and dst port {}",
+        //             source_ip, target_ip, port
+        //         ),
+        //         true,
+        //     ) {
+        //         Ok(()) => {}
+        //         Err(e) => {
+        //             error!("Error while setting filter: {}", e.to_string());
+        //             continue;
+        //         }
+        //     };
+        // }
+
+        // debug!("Set filter on capture if applicable");
 
         let listening_task = tokio::task::spawn_blocking(move || {
+            debug!("Start listening on the capture");
+
             while let Ok(packet) = cap.next_packet() {
-                println!("received packet! {:?}", packet);
+                trace!("Received packet! {:?}", packet);
             }
         });
         let _ = listening_task.await; // TODO
