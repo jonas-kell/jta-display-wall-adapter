@@ -1,11 +1,13 @@
+use etherparse::{NetSlice, SlicedPacket, TransportHeader, TransportSlice};
 use pcap::Device;
 use std::{net::IpAddr, str::FromStr, time::Duration};
 use tokio::time::sleep;
 
+use crate::hex::get_hex_repr;
+
 pub async fn capture(dev: Device, filter: Option<(IpAddr, IpAddr, u16)>) {
     loop {
-        // let dev = dev.clone();
-        let dev = Device::lookup().unwrap().unwrap(); // works
+        let dev = dev.clone();
         let dev_name = dev.name.clone();
 
         info!("Starting packet capture on device: {}", dev_name);
@@ -24,29 +26,66 @@ pub async fn capture(dev: Device, filter: Option<(IpAddr, IpAddr, u16)>) {
 
         debug!("Got an open capture");
 
-        // if let Some((source_ip, target_ip, port)) = filter {
-        //     match cap.filter(
-        //         &format!(
-        //             "tcp and src host {} and dst host {} and dst port {}",
-        //             source_ip, target_ip, port
-        //         ),
-        //         true,
-        //     ) {
-        //         Ok(()) => {}
-        //         Err(e) => {
-        //             error!("Error while setting filter: {}", e.to_string());
-        //             continue;
-        //         }
-        //     };
-        // }
+        if let Some((source_ip, target_ip, port)) = filter {
+            match cap.filter(
+                &format!(
+                    "tcp and src host {} and dst host {} and dst port {}",
+                    source_ip, target_ip, port
+                ),
+                true,
+            ) {
+                Ok(()) => {}
+                Err(e) => {
+                    error!("Error while setting filter: {}", e.to_string());
+                    continue;
+                }
+            };
+        }
 
-        // debug!("Set filter on capture if applicable");
+        debug!("Set filter on capture if applicable");
 
         let listening_task = tokio::task::spawn_blocking(move || {
             debug!("Start listening on the capture");
 
             while let Ok(packet) = cap.next_packet() {
-                trace!("Received packet! {:?}", packet);
+                trace!(
+                    "Received packet with len {} on interface {}",
+                    packet.len(),
+                    dev_name,
+                );
+
+                if let Ok(ether_pack) = SlicedPacket::from_ethernet(&packet.data) {
+                    if let Some(net) = ether_pack.net {
+                        let (ip_from, ip_to) = match net {
+                            NetSlice::Ipv4(slice) => {
+                                let src = slice.header().source_addr();
+                                let dst = slice.header().destination_addr();
+                                (src.to_string(), dst.to_string())
+                            }
+                            NetSlice::Ipv6(slice) => {
+                                let src = slice.header().source_addr();
+                                let dst = slice.header().destination_addr();
+                                (src.to_string(), dst.to_string())
+                            }
+                            _ => ("unknown".into(), "unknown".into()),
+                        };
+                        if let Some(tcp) = ether_pack.transport {
+                            if let TransportSlice::Tcp(tcp_slice) = tcp {
+                                trace!(
+                                    "{}:{} -> {}:{}",
+                                    ip_from,
+                                    tcp_slice.source_port(),
+                                    ip_to,
+                                    tcp_slice.destination_port()
+                                );
+
+                                let payload = tcp_slice.payload();
+                                trace!("Payload length: {}", payload.len());
+                                trace!("Payload: {}", get_hex_repr(payload));
+                            }
+                        }
+                    }
+                }
             }
         });
         let _ = listening_task.await; // TODO

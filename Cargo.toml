@@ -47,6 +47,7 @@ sha2 = "0.10"
 bincode = { version = "2.0.1", features = ["serde"] }
 ed25519-dalek = { version = "2.2.0", features = ["rand_core"] }
 pcap = "2.4.0"
+etherparse = "0.18"
 
 images_core = { path = "./images_core" }
 rust_to_ts_types = { path = "./code_generation/rust_to_ts_types" }

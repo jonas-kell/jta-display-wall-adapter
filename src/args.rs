@@ -157,6 +157,12 @@ pub struct Args {
     /// Start date for generation of new product keys
     #[arg(long)]
     pub generate_key_end_date: Option<NaiveDate>,
+    /// Filter that is applied to the idcapture interface filter (only in idcapture mode)
+    #[arg(long)]
+    pub idcapture_interface_filter: Option<String>,
+    /// Port where the program listens for idcapture traffic (only in idcapture mode)
+    #[arg(long, default_value_t = 9797)]
+    pub idcapture_port: u16,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]

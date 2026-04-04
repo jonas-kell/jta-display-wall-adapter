@@ -4,6 +4,10 @@ Sending
 
 ```cmd
 echo "hello" | nc 127.0.0.1 9797
+
+apt-get update
+apt-get install netcat-openbsd
+echo "hello" | nc 127.0.0.1 9797
 ```
 
 Receiving
