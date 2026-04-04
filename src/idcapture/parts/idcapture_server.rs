@@ -2,7 +2,6 @@ use crate::{
     args::Args,
     idcapture::parts::capturing::{capture, find_device_to_capture},
 };
-use pcap::Device;
 use std::{net::IpAddr, str::FromStr};
 
 pub async fn run_idcapture_server(args: &Args) -> () {
@@ -17,11 +16,14 @@ pub async fn run_idcapture_server(args: &Args) -> () {
         }
     };
 
-    let filter = Some((
-        IpAddr::from_str("127.0.0.1").unwrap(),
-        IpAddr::from_str("127.0.0.1").unwrap(),
-        args.idcapture_port,
-    ));
+    let filter = match args.idcapture_port {
+        0 => None,
+        port => Some((
+            IpAddr::from_str("127.0.0.1").unwrap(),
+            IpAddr::from_str("127.0.0.1").unwrap(),
+            port,
+        )),
+    };
 
     capture(dev, filter).await;
 }

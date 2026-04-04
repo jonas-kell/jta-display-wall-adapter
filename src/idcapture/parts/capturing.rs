@@ -40,9 +40,9 @@ pub async fn capture(dev: Device, filter: Option<(IpAddr, IpAddr, u16)>) {
                     continue;
                 }
             };
-        }
 
-        debug!("Set filter on capture if applicable");
+            debug!("Set filter on capture if applicable");
+        }
 
         let listening_task = tokio::task::spawn_blocking(move || {
             debug!("Start listening on the capture");

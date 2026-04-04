@@ -1,0 +1,6 @@
+[target.x86_64-pc-windows-gnu]
+rustflags = [
+    "-L", "/app/generated_libs",
+    "-l", "wpcap",
+    "-l", "packet"
+]

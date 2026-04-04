@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     libasound2-dev \
     libpulse-dev \
     libudev-dev \
+    libpcap-dev \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
@@ -24,7 +25,9 @@ RUN --mount=type=cache,target=/usr/local/cargo-${TARGETARCH} \
 # ===== Stage 2: Runtime =====
 FROM debian:trixie
 
-# Install only runtime dependencies for GUI - display client has no sound. No sound runtime installed
+# Install only runtime dependencies for GUI - 
+# display client has no sound or package capture.
+# Seems like some runtime dependencies are needed regardless
 RUN apt-get update && apt-get install -y \
     libx11-6 \
     libx11-xcb1 \

@@ -46,6 +46,8 @@ docker compose -f docker-compose.buildlegacy.yml up --abort-on-container-exit &&
 
 ## Cross compile Windows executable on Linux
 
+You need to do [these steps](./PrepareForWindowsCompilation.md) once per machine.
+
 ```cmd
 docker compose -f docker-compose.buildwindows.yml up --abort-on-container-exit && docker compose -f docker-compose.buildwindows.yml down --remove-orphans
 ```
