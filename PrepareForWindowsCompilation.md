@@ -19,3 +19,5 @@ gendef Packet.dll
 x86_64-w64-mingw32-dlltool -d wpcap.def -l libwpcap.a
 x86_64-w64-mingw32-dlltool -d Packet.def -l libpacket.a
 ```
+
+<!-- TODO comment here if it works https://github.com/rust-pcap/pcap/issues/246 -->

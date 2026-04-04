@@ -1,5 +1,5 @@
 use etherparse::{NetSlice, SlicedPacket, TransportHeader, TransportSlice};
-use pcap::Device;
+use pcap::{Capture, Device, Error};
 use std::{net::IpAddr, str::FromStr, time::Duration};
 use tokio::time::sleep;
 
@@ -12,14 +12,28 @@ pub async fn capture(dev: Device, filter: Option<(IpAddr, IpAddr, u16)>) {
 
         info!("Starting packet capture on device: {}", dev_name);
 
-        let mut cap = match dev.open() {
+        let cap_inact = match Capture::from_device(dev) {
             Ok(cap) => cap,
             Err(e) => {
                 error!(
-                    "Could not open capture on device {}: {}",
+                    "Could not create inactive capture on device {}: {}",
                     dev_name,
                     e.to_string()
                 );
+                sleep(Duration::from_millis(1000)).await;
+                continue;
+            }
+        };
+
+        let mut cap = match cap_inact.immediate_mode(true).timeout(0).open() {
+            Ok(cap) => cap,
+            Err(e) => {
+                error!(
+                    "Could not activate capture on device {}: {}",
+                    dev_name,
+                    e.to_string()
+                );
+                sleep(Duration::from_millis(1000)).await;
                 continue;
             }
         };
@@ -37,6 +51,7 @@ pub async fn capture(dev: Device, filter: Option<(IpAddr, IpAddr, u16)>) {
                 Ok(()) => {}
                 Err(e) => {
                     error!("Error while setting filter: {}", e.to_string());
+                    sleep(Duration::from_millis(1000)).await;
                     continue;
                 }
             };
@@ -47,51 +62,61 @@ pub async fn capture(dev: Device, filter: Option<(IpAddr, IpAddr, u16)>) {
         let listening_task = tokio::task::spawn_blocking(move || {
             debug!("Start listening on the capture");
 
-            while let Ok(packet) = cap.next_packet() {
-                trace!(
-                    "Received packet with len {} on interface {}",
-                    packet.len(),
-                    dev_name,
-                );
+            loop {
+                match cap.next_packet() {
+                    Ok(packet) => {
+                        trace!(
+                            "Received packet with len {} on interface {}",
+                            packet.len(),
+                            dev_name,
+                        );
 
-                if let Ok(ether_pack) = SlicedPacket::from_ethernet(&packet.data) {
-                    if let Some(net) = ether_pack.net {
-                        let (ip_from, ip_to) = match net {
-                            NetSlice::Ipv4(slice) => {
-                                let src = slice.header().source_addr();
-                                let dst = slice.header().destination_addr();
-                                (src.to_string(), dst.to_string())
-                            }
-                            NetSlice::Ipv6(slice) => {
-                                let src = slice.header().source_addr();
-                                let dst = slice.header().destination_addr();
-                                (src.to_string(), dst.to_string())
-                            }
-                            _ => ("unknown".into(), "unknown".into()),
-                        };
-                        if let Some(tcp) = ether_pack.transport {
-                            if let TransportSlice::Tcp(tcp_slice) = tcp {
-                                trace!(
-                                    "{}:{} -> {}:{}",
-                                    ip_from,
-                                    tcp_slice.source_port(),
-                                    ip_to,
-                                    tcp_slice.destination_port()
-                                );
+                        if let Ok(ether_pack) = SlicedPacket::from_ethernet(&packet.data) {
+                            if let Some(net) = ether_pack.net {
+                                let (ip_from, ip_to) = match net {
+                                    NetSlice::Ipv4(slice) => {
+                                        let src = slice.header().source_addr();
+                                        let dst = slice.header().destination_addr();
+                                        (src.to_string(), dst.to_string())
+                                    }
+                                    NetSlice::Ipv6(slice) => {
+                                        let src = slice.header().source_addr();
+                                        let dst = slice.header().destination_addr();
+                                        (src.to_string(), dst.to_string())
+                                    }
+                                    _ => ("unknown".into(), "unknown".into()),
+                                };
+                                if let Some(tcp) = ether_pack.transport {
+                                    if let TransportSlice::Tcp(tcp_slice) = tcp {
+                                        trace!(
+                                            "{}:{} -> {}:{}",
+                                            ip_from,
+                                            tcp_slice.source_port(),
+                                            ip_to,
+                                            tcp_slice.destination_port()
+                                        );
 
-                                let payload = tcp_slice.payload();
-                                trace!("Payload length: {}", payload.len());
-                                trace!("Payload: {}", get_hex_repr(payload));
+                                        let payload = tcp_slice.payload();
+                                        trace!("Payload length: {}", payload.len());
+                                        trace!("Payload: {}", get_hex_repr(payload));
+                                    }
+                                }
                             }
                         }
                     }
+                    Err(e) => match e {
+                        Error::TimeoutExpired => {}
+                        e => {
+                            error!("Error: {}", e.to_string());
+                            break; // This was never reached in testing. Think about if other error types could also be non-fatal
+                        }
+                    },
                 }
             }
         });
-        let _ = listening_task.await; // TODO
+        let _ = listening_task.await; // TODO better handling
 
-        warn!("Capturing device went away - retrying");
-        sleep(Duration::from_millis(1000)).await;
+        warn!("Capturing device went away - reconnecting");
     }
 }
 
