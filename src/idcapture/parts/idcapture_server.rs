@@ -16,13 +16,18 @@ pub async fn run_idcapture_server(args: &Args) -> () {
         }
     };
 
-    let filter = match args.idcapture_port {
-        0 => None,
-        port => Some((
-            IpAddr::from_str("127.0.0.1").unwrap(),
-            IpAddr::from_str("127.0.0.1").unwrap(),
-            port,
-        )),
+    let filter = match args.idcapture_target_address {
+        None => None,
+        Some(address) => match IpAddr::from_str(&address) {
+            Ok(add) => Some((add, args.idcapture_target_port)),
+            Err(e) => {
+                error!(
+                    "idcapture_target_address could not be parsed: {}",
+                    e.to_string()
+                );
+                None
+            }
+        },
     };
 
     capture(dev, filter).await;

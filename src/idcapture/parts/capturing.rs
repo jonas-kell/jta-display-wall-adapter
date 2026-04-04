@@ -5,7 +5,7 @@ use tokio::time::sleep;
 
 use crate::hex::get_hex_repr;
 
-pub async fn capture(dev: Device, filter: Option<(IpAddr, IpAddr, u16)>) {
+pub async fn capture(dev: Device, filter: Option<(IpAddr, u16)>) {
     loop {
         let dev = dev.clone();
         let dev_name = dev.name.clone();
@@ -40,10 +40,11 @@ pub async fn capture(dev: Device, filter: Option<(IpAddr, IpAddr, u16)>) {
 
         debug!("Got an open capture");
 
-        if let Some((source_ip, target_ip, port)) = filter {
+        if let Some((target_ip, port)) = filter {
             match cap.filter(
                 &format!(
-                    "tcp and src host {} and dst host {} and dst port {}",
+                    // "tcp and src host {} and dst host {} and dst port {}",
+                    "tcp and dst host {} and dst port {}",
                     source_ip, target_ip, port
                 ),
                 true,

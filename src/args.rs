@@ -160,9 +160,12 @@ pub struct Args {
     /// Filter that is applied to the idcapture interface filter (only in idcapture mode)
     #[arg(long)]
     pub idcapture_interface_filter: Option<String>,
+    /// Address (like "127.0.0.1") where the program listens for idcapture traffic (only in idcapture mode)
+    #[arg(long)]
+    pub idcapture_target_address: Option<String>,
     /// Port where the program listens for idcapture traffic (only in idcapture mode)
     #[arg(long, default_value_t = 9797)]
-    pub idcapture_port: u16,
+    pub idcapture_target_port: u16,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
