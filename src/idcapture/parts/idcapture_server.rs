@@ -16,9 +16,9 @@ pub async fn run_idcapture_server(args: &Args) -> () {
         }
     };
 
-    let filter = match args.idcapture_target_address {
+    let filter = match &args.idcapture_target_address {
         None => None,
-        Some(address) => match IpAddr::from_str(&address) {
+        Some(address) => match IpAddr::from_str(address) {
             Ok(add) => Some((add, args.idcapture_target_port)),
             Err(e) => {
                 error!(

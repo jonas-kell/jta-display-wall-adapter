@@ -45,7 +45,7 @@ pub async fn capture(dev: Device, filter: Option<(IpAddr, u16)>) {
                 &format!(
                     // "tcp and src host {} and dst host {} and dst port {}",
                     "tcp and dst host {} and dst port {}",
-                    source_ip, target_ip, port
+                    target_ip, port
                 ),
                 true,
             ) {
