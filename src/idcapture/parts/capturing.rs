@@ -1,4 +1,4 @@
-use etherparse::{NetSlice, SlicedPacket, TransportHeader, TransportSlice};
+use etherparse::{NetSlice, SlicedPacket, TransportSlice};
 use pcap::{Capture, Device, Error};
 use std::{net::IpAddr, str::FromStr, time::Duration};
 use tokio::time::sleep;
@@ -147,8 +147,8 @@ pub fn find_device_to_capture(filter: Option<String>) -> Result<Device, String> 
         Ok(ip) => Some(ip),
         Err(e) => {
             warn!(
-                "Provided filter could not be parsed as an IP address: {}",
-                e
+                "Provided filter  >>{}<< could not be parsed as an IP address: {}",
+                filter, e
             );
             None
         }

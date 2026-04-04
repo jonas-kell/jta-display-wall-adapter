@@ -52,6 +52,16 @@ You need to do [these steps](./PrepareForWindowsCompilation.md) once per machine
 docker compose -f docker-compose.buildwindows.yml up --abort-on-container-exit && docker compose -f docker-compose.buildwindows.yml down --remove-orphans
 ```
 
+To run on windows (at least for some features)
+
+<!-- TODO feature-gate npcap -->
+
+you need [npcap](https://npcap.com/).
+
+- Install Npcap
+    - It needs to be of the same version, that the program was compiled with [see here](./PrepareForWindowsCompilation.md)
+    - You need to install with `Winpcap API compatibility Mode`
+
 ## Build and push to docker hub
 
 CAUTION: js must have been compiled beforehand -> run Build for linux, legacy or windows first!!!!

@@ -164,7 +164,7 @@ pub struct Args {
     #[arg(long)]
     pub idcapture_target_address: Option<String>,
     /// Port where the program listens for idcapture traffic (only in idcapture mode)
-    #[arg(long, default_value_t = 9797)]
+    #[arg(long, default_value_t = 8758)]
     pub idcapture_target_port: u16,
 }
 

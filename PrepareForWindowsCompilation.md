@@ -9,15 +9,19 @@ sudo apt install mingw-w64-tools
 sudo apt install binutils-mingw-w64
 mkdir generated_libs
 cd generated_libs
-curl https://npcap.com/dist/npcap-sdk-1.16.zip > lib.zip
 curl https://npcap.com/dist/npcap-1.87.exe > lib.exe
-unzip lib.zip
 7z x lib.exe  # Always
 
-gendef wpcap.dll
-gendef Packet.dll
+gendef wpcap_x64.dll
+mv wpcap_x64.def wpcap.def
 x86_64-w64-mingw32-dlltool -d wpcap.def -l libwpcap.a
+
+gendef Packet_x64.dll
+mv Packet_x64.def Packet.def
 x86_64-w64-mingw32-dlltool -d Packet.def -l libpacket.a
 ```
+
+<!-- curl https://npcap.com/dist/npcap-sdk-1.16.zip > lib.zip # no longer needed -->
+<!-- unzip lib.zip # no longer needed -->
 
 <!-- TODO comment here if it works https://github.com/rust-pcap/pcap/issues/246 -->
