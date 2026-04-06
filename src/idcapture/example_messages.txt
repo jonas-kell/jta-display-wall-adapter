@@ -31,7 +31,37 @@
 0001000000FFFFFFFF01000000000000000C0200000045494443616D2E45786368616E67652C2056657273696F6E3D312E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D6E756C6C05010000001B494443616D2E5061636B6574732E5365656B54696D657374616D70020000001A3C54696D657374616D703E6B5F5F4261636B696E674669656C64183C4368616E6E656C3E6B5F5F4261636B696E674669656C6400010C02000000F8787408C10000000A0B0101020203030000
 
 
+Test: 
 
+14:44:52.1248
+0xC0,0x12,0x50,0x9D,0x7B,0x00,0x00,0x00
+530920248000
+
+14:44:52.7712
+0xC0,0xB4,0xB2,0x9D,0x7B,0x00,0x00,0x00
+530926712000
+
+530926712000-530920248000=6464000
+7712-1248=6464 
+
+23:01:47.1539
+829056638000
+
+
+14:44:52.1248
+530920248000
+14×3600+44×60+52,1248=53092,1248
+
+
+A0 is some kind of end of the message bracket
+B0101020203030000 is the nrbf message terminator
+
+the 8 bytes before that are a 64 bit little endian unsigned integer (u64::from_le_bytes)
+
+The timestamp will be offset by the id-camera-difference setting (from the displayed timestamp, it sends out a timestamp that has the difference directly applied) - because of this the timestamps above do all not match by exactly 0.1s difference
+
+so, you take the u64::from_le_bytes number, multiply by 100 for a time in ns.
+then you get a timestamp by counting these ns from 00:00
 
 (Bonus) Display Moving:
 
