@@ -1,7 +1,8 @@
+use crate::times::DayTime;
+use rust_to_ts_types::TypescriptSerializable;
 use serde::{Deserialize, Serialize};
-// use rust_to_ts_types::TypescriptSerializable;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, TypescriptSerializable)]
 pub enum IDCaptureMessage {
-    TMP(bool),
+    JumpToTime(DayTime),
 }

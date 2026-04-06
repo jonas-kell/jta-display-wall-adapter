@@ -1,10 +1,13 @@
 use crate::{
+    idcapture::format::IDCaptureMessage,
     interface::MessageFromClientToServer,
-    server::camera_program_types::{
-        CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
-        HeatStartList, HeatWind, HeatWindMissing,
+    server::{
+        camera_program_types::{
+            CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult,
+            HeatStart, HeatStartList, HeatWind, HeatWindMissing,
+        },
+        BibMessage,
     },
-    server::BibMessage,
     times::{DayTime, RaceTime},
     webserver::MessageFromWebControl,
     wind::format::WindMessageBroadcast,
@@ -15,10 +18,12 @@ use std::fmt::Display;
 pub enum IncomingInstruction {
     FromClient(MessageFromClientToServer),
     FromTimingProgram(InstructionFromTimingProgram),
+    FromExternalDisplayProgram(InstructionFromExternalDisplayProgram),
     FromCameraProgram(InstructionFromCameraProgram),
     FromWebControl(MessageFromWebControl),
     FromWindServer(WindMessageBroadcast),
     FromBibServer(BibMessage),
+    FromIdcaptureServer(IDCaptureMessage),
 }
 impl Display for IncomingInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -29,11 +34,15 @@ impl Display for IncomingInstruction {
                 IncomingInstruction::FromClient(mfcts) => format!("FromClient: {:?}", mfcts),
                 IncomingInstruction::FromTimingProgram(tci) =>
                     format!("FromTimingProgram: {}", tci),
+                IncomingInstruction::FromExternalDisplayProgram(dsi) =>
+                    format!("FromExternalDisplayProgram: {}", dsi),
                 IncomingInstruction::FromCameraProgram(cpi) =>
                     format!("FromCameraProgram: {:?}", cpi),
                 IncomingInstruction::FromWebControl(wci) => format!("FromWebControl: {:?}", wci),
                 IncomingInstruction::FromWindServer(wmb) => format!("FromWindServer: {:?}", wmb),
                 IncomingInstruction::FromBibServer(bm) => format!("FromBibServer: {:?}", bm),
+                IncomingInstruction::FromIdcaptureServer(idcm) =>
+                    format!("FromIdcaptureServer: {:?}", idcm),
             }
         )
     }
@@ -68,8 +77,6 @@ pub enum InstructionFromTimingProgram {
     SetProperty,
     Results,
     ResultsUpdate,
-    ServerInfo,
-    SendFrame(Vec<u8>),
 }
 impl Display for InstructionFromTimingProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -86,8 +93,24 @@ impl Display for InstructionFromTimingProgram {
                 InstructionFromTimingProgram::SetProperty => String::from("SetProperty"),
                 InstructionFromTimingProgram::Results => String::from("Results"),
                 InstructionFromTimingProgram::ResultsUpdate => String::from("ResultsUpdate"),
-                InstructionFromTimingProgram::ServerInfo => String::from("ServerInfo"),
-                InstructionFromTimingProgram::SendFrame(_) => String::from("SendFrame"),
+            }
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum InstructionFromExternalDisplayProgram {
+    ServerInfo,
+    Frame(Vec<u8>),
+}
+impl Display for InstructionFromExternalDisplayProgram {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                InstructionFromExternalDisplayProgram::ServerInfo => String::from("ServerInfo"),
+                InstructionFromExternalDisplayProgram::Frame(_) => String::from("Frame"),
             }
         )
     }

@@ -11,6 +11,7 @@ mod idcapture;
 mod instructions;
 mod interface;
 mod json;
+mod nrbf;
 mod productkey;
 mod server;
 mod times;

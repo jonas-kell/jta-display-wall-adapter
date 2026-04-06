@@ -1,5 +1,6 @@
 use crate::hex::{get_hex_repr, take_until_and_consume};
 use crate::hex::{NomErr, NomError, NomErrorKind, NomFailure};
+use crate::idcapture::format::IDCaptureMessage;
 use nom::bytes::complete::{tag, take, take_until};
 use nom::combinator::{not, peek};
 use nom::Parser;
@@ -7,8 +8,17 @@ use nom::{branch::alt, IResult};
 
 use crate::{
     args::Args,
-    instructions::{InstructionFromTimingProgram, InstructionToTimingProgram},
+    instructions::{
+        InstructionFromExternalDisplayProgram, InstructionFromTimingProgram,
+        InstructionToTimingProgram,
+    },
 };
+
+enum NrbfDecodedInstruction {
+    FromTimingProgram(InstructionFromTimingProgram),
+    FromExternalDisplayProgram(InstructionFromExternalDisplayProgram),
+    FromIdcaptureServer(IDCaptureMessage),
+}
 
 pub struct BufferedParser {
     args: Args,
@@ -22,10 +32,7 @@ impl BufferedParser {
         }
     }
 
-    pub fn feed_bytes(
-        &mut self,
-        packet: &[u8],
-    ) -> Option<Result<InstructionFromTimingProgram, String>> {
+    fn feed_bytes(&mut self, packet: &[u8]) -> Option<Result<NrbfDecodedInstruction, String>> {
         let header_res = check_nrbf_headers(&self.args, packet);
         let termination_res = check_nrbf_termination_bytes(packet);
 
@@ -55,10 +62,10 @@ impl BufferedParser {
         None
     }
 
-    pub fn feed_bytes_return_owned_on_fail(
+    fn feed_bytes_return_owned_on_fail(
         &mut self,
         packet: &[u8],
-    ) -> Option<Result<InstructionFromTimingProgram, (String, Vec<u8>)>> {
+    ) -> Option<Result<NrbfDecodedInstruction, (String, Vec<u8>)>> {
         let header_res = check_nrbf_headers(&self.args, packet);
         let termination_res = check_nrbf_termination_bytes(packet);
 
@@ -141,7 +148,7 @@ fn check_nrbf_termination_bytes(possible_packet: &[u8]) -> bool {
 }
 
 /// Decode the message custom action
-fn decode_single_nrbf(args: &Args, packet: &[u8]) -> Result<InstructionFromTimingProgram, String> {
+fn decode_single_nrbf(args: &Args, packet: &[u8]) -> Result<NrbfDecodedInstruction, String> {
     match parse_any_known_command(packet) {
         Err(e) => warn!("Nom parser Error: {}", e.to_string()),
         Ok((_, command)) => return Ok(command),
