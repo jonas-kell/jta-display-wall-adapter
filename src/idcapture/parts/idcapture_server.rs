@@ -24,6 +24,7 @@ pub async fn run_idcapture_server(args: &Args) -> () {
     let listen_addr: SocketAddr = format!("0.0.0.0:{}", args.idcapture_exchange_port)
         .parse()
         .expect("Invalid idcapture exchange address");
+
     info!("TCP server will be bound to {}", listen_addr);
 
     let (mut tx_out_to_tcp, rx_in_from_capture_task) =
@@ -54,6 +55,11 @@ pub async fn run_idcapture_server(args: &Args) -> () {
         },
     };
 
+    info!(
+        "Capture device found. Starting packet listener on dev {} and TCP server on {}",
+        dev.name, listen_addr
+    );
+
     let shutdown_marker = Arc::new(AtomicBool::new(false));
 
     let network_task = tokio::spawn(run_network_task(
@@ -63,13 +69,16 @@ pub async fn run_idcapture_server(args: &Args) -> () {
         Arc::clone(&shutdown_marker),
     ));
     let capture_task_shutdown_marker = shutdown_marker.clone();
-    let capture_task = tokio::task::spawn(capture(
-        args.clone(),
-        dev,
-        filter,
-        tx_out_to_tcp,
-        capture_task_shutdown_marker,
-    ));
+    let capture_task_args = args.clone();
+    let capture_task = tokio::task::spawn_blocking(move || {
+        capture(
+            capture_task_args,
+            dev,
+            filter,
+            tx_out_to_tcp,
+            capture_task_shutdown_marker,
+        )
+    });
     let shutdown_marker_sdt = Arc::clone(&shutdown_marker);
     let shutdown_task = tokio::spawn(async move {
         // listen for ctrl-c
