@@ -166,6 +166,12 @@ pub struct Args {
     /// Port where the program listens for idcapture traffic (only in idcapture mode)
     #[arg(long, default_value_t = 8758)]
     pub idcapture_target_port: u16,
+    /// Address of where the idcapture server lives (for the server to talk to) (like "127.0.0.1") - if unset, no connection to idcapture server will be attempted
+    #[arg(long)]
+    pub address_idcapture_server: Option<String>,
+    /// Port where the internal communication between idcapture server and server takes place
+    #[arg(long, default_value_t = String::from("8901"))]
+    pub idcapture_exchange_port: String,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]

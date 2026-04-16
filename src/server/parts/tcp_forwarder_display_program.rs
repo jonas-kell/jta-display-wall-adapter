@@ -68,7 +68,7 @@ pub async fn tcp_forwarder_display_program(
                 let state_reader = state_reader.clone();
 
                 let read_handler = async move {
-                    let mut buf = [0u8; 65536];
+                    let mut buf = [0u8; 65536]; // TODO move to heap? (along with all similar)
                     let mut parser = BufferedParser::new(args_read.clone());
 
                     loop {

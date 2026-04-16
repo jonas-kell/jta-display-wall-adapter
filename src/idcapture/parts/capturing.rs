@@ -1,14 +1,36 @@
+use crate::{idcapture::format::IDCaptureMessage, nrbf::BufferedParser, Args};
+use async_broadcast::{Sender, TrySendError};
 use etherparse::{NetSlice, SlicedPacket, TransportSlice};
 use pcap::{Capture, Device, Error};
-use std::{net::IpAddr, str::FromStr, time::Duration};
+use std::{
+    net::IpAddr,
+    str::FromStr,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::Duration,
+};
 use tokio::time::sleep;
 
-use crate::hex::get_hex_repr;
-
-pub async fn capture(dev: Device, filter: Option<(IpAddr, u16)>) {
+pub async fn capture(
+    args: Args,
+    dev: Device,
+    filter: Option<(IpAddr, u16)>,
+    tx_to_tcp: Sender<IDCaptureMessage>,
+    shutdown_marker: Arc<AtomicBool>,
+) {
     loop {
         let dev = dev.clone();
         let dev_name = dev.name.clone();
+
+        if shutdown_marker.load(Ordering::SeqCst) {
+            info!(
+                "Shutdown requested, stopping packet capture on device {}",
+                dev_name
+            );
+            break;
+        }
 
         info!("Starting packet capture on device: {}", dev_name);
 
@@ -60,10 +82,23 @@ pub async fn capture(dev: Device, filter: Option<(IpAddr, u16)>) {
             debug!("Set filter on capture if applicable");
         }
 
+        let shutdown_marker = shutdown_marker.clone();
+        let tx_to_tcp = tx_to_tcp.clone();
+        let args = args.clone();
         let listening_task = tokio::task::spawn_blocking(move || {
             debug!("Start listening on the capture");
 
+            let mut parser = BufferedParser::new(args);
+
             loop {
+                if shutdown_marker.load(Ordering::SeqCst) {
+                    info!(
+                        "Shutdown requested, stopping packet capture on device {}",
+                        dev_name
+                    );
+                    break;
+                }
+
                 match cap.next_packet() {
                     Ok(packet) => {
                         trace!(
@@ -98,8 +133,53 @@ pub async fn capture(dev: Device, filter: Option<(IpAddr, u16)>) {
                                         );
 
                                         let payload = tcp_slice.payload();
-                                        trace!("Payload length: {}", payload.len());
-                                        trace!("Payload: {}", get_hex_repr(payload));
+                                        // no payload tcp messages are not relevant for us...
+                                        if payload.len() > 0 {
+                                            // Decoding takes care of logging if requested, as there the message is split up to provide more info!!
+
+                                            match parser.feed_bytes(payload) {
+                                                Some(res) => match res {
+                                                    Err(err) => {
+                                                        error!("Error when Decoding Outbound Communication: {}", err);
+                                                    }
+                                                    Ok(parsed) => {
+                                                        match parsed.into_idcapture_instruction() {
+                                                            Ok(msg) => {
+                                                                // not blocking, as we have set overflow_mode. if old message is returned from this, we just throw it away
+                                                                match tx_to_tcp.try_broadcast(msg) {
+                                                                    Ok(Some(_)) => {
+                                                                        trace!("Thrown away old message in internal comm channel");
+                                                                    }
+                                                                    Ok(None) => (),
+                                                                    Err(
+                                                                        TrySendError::Inactive(_),
+                                                                    ) => {
+                                                                        warn!("Internal channel not open, no active receivers");
+                                                                        continue;
+                                                                    }
+                                                                    Err(TrySendError::Full(_)) => {
+                                                                        error!("Receivers are there, but internal channel full. This should not happen!");
+                                                                        continue;
+                                                                    }
+                                                                    Err(TrySendError::Closed(
+                                                                        _,
+                                                                    )) => {
+                                                                        error!("Internal comm channel went away unexpectedly");
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                            Err(e_inst) => {
+                                                                error!("Should never get this instruction from this channel. {} Something is mis-connected", e_inst);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                None => trace!(
+                                                    "Received packet, but does not seeem to be end of communication"
+                                                ),
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -115,7 +195,12 @@ pub async fn capture(dev: Device, filter: Option<(IpAddr, u16)>) {
                 }
             }
         });
-        let _ = listening_task.await; // TODO better handling
+        match listening_task.await {
+            Ok(_) => (),
+            Err(e) => {
+                error!("Error on waiting for the listening task: {}", e.to_string())
+            }
+        }
 
         warn!("Capturing device went away - reconnecting");
     }

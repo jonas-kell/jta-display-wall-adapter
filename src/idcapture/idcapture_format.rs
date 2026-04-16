@@ -6,3 +6,6 @@ use serde::{Deserialize, Serialize};
 pub enum IDCaptureMessage {
     JumpToTime(DayTime),
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum MessageToIdcaptureServer {}

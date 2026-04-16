@@ -1,11 +1,13 @@
 use crate::hex::{get_hex_repr, take_until_and_consume};
 use crate::hex::{NomErr, NomError, NomErrorKind, NomFailure};
 use crate::idcapture::format::IDCaptureMessage;
+use crate::times::DayTime;
 use nom::bytes::complete::{tag, take, take_until};
 use nom::combinator::{not, peek};
 use nom::Parser;
 use nom::{branch::alt, IResult};
 use std::fmt::Display;
+use std::time::Duration;
 
 use crate::{
     args::Args,
@@ -410,7 +412,6 @@ const SERVER_INFO_MARKER: [u8; 45] = [
     0x6D, 0x75, 0x6E, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6F, 0x6E, 0x2E, 0x50, 0x61, 0x63, 0x6B, 0x65,
     0x74, 0x73, 0x2E, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x49, 0x6E, 0x66, 0x6F,
 ];
-// yes, technically this is sent to the timing program
 fn parse_server_info_command(input: &[u8]) -> IResult<&[u8], NrbfDecodedInstruction> {
     let (input, _) = take_until_and_consume(&SERVER_INFO_MARKER[..], input)?;
 
@@ -429,7 +430,6 @@ const SEND_FRAME_MARKER: [u8; 46] = [
     0x6D, 0x75, 0x6E, 0x69, 0x63, 0x61, 0x74, 0x69, 0x6F, 0x6E, 0x2E, 0x50, 0x61, 0x63, 0x6B, 0x65,
     0x74, 0x73, 0x2E, 0x43, 0x75, 0x72, 0x72, 0x65, 0x6E, 0x74, 0x56, 0x69, 0x65, 0x77,
 ];
-// yes, technically this is sent to the timing program
 fn parse_send_frame_command(input: &[u8]) -> IResult<&[u8], NrbfDecodedInstruction> {
     let (input, _) = take_until_and_consume(&SEND_FRAME_MARKER[..], input)?;
     let (input, _) = take_until_and_consume(&DATA_BEFORE_IMAGEA[..], input)?;
@@ -441,6 +441,53 @@ fn parse_send_frame_command(input: &[u8]) -> IResult<&[u8], NrbfDecodedInstructi
         NrbfDecodedInstruction::FromExternalDisplayProgram(
             InstructionFromExternalDisplayProgram::Frame(image_data.into()),
         ),
+    ))
+}
+
+const JUMP_TO_TIME_MARKER: [u8; 27] = [
+    0x49, 0x44, 0x43, 0x61, 0x6D, 0x2E, 0x50, 0x61, 0x63, 0x6B, 0x65, 0x74, 0x73, 0x2E, 0x53, 0x65,
+    0x65, 0x6B, 0x54, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70,
+];
+const TIME_BACKING_FIELD_MARKER: [u8; 51] = [
+    0x3C, 0x54, 0x69, 0x6D, 0x65, 0x73, 0x74, 0x61, 0x6D, 0x70, 0x3E, 0x6B, 0x5F, 0x5F, 0x42, 0x61,
+    0x63, 0x6B, 0x69, 0x6E, 0x67, 0x46, 0x69, 0x65, 0x6C, 0x64, 0x18, 0x3C, 0x43, 0x68, 0x61, 0x6E,
+    0x6E, 0x65, 0x6C, 0x3E, 0x6B, 0x5F, 0x5F, 0x42, 0x61, 0x63, 0x6B, 0x69, 0x6E, 0x67, 0x46, 0x69,
+    0x65, 0x6C, 0x64,
+];
+fn parse_jump_to_time_command(input: &[u8]) -> IResult<&[u8], NrbfDecodedInstruction> {
+    let (input, _) = take_until_and_consume(&JUMP_TO_TIME_MARKER[..], input)?;
+    let (input, _) = take_until_and_consume(&TIME_BACKING_FIELD_MARKER[..], input)?;
+    let (input, _) = take_until_and_consume(&b"\x00\x00\x00"[..], input)?;
+    let (input, timestamp_data) = take_until(&b"\x0A"[..])(input)?;
+    let (input, _) = take_until(&END_OF_MESSAGE_MARKER_TEMPLATE[..])(input)?;
+
+    // 0001000000FFFFFFFF01000000000000000C0200000045494443616D2E45786368616E67652C2056657273696F6E3D312E302E302E302C2043756C747572653D6E65757472616C2C205075626C69634B6579546F6B656E3D6E756C6C05010000001B494443616D2E5061636B6574732E5365656B54696D657374616D70020000001A3C54696D657374616D703E6B5F5F4261636B696E674669656C64183C4368616E6E656C3E6B5F5F4261636B696E674669656C6400010C02000000E80BEC997B0000000A0B0101020203030000
+
+    if timestamp_data.len() != 8 {
+        return Err(NomFailure(NomError::new(
+            input,
+            nom::error::ErrorKind::Count,
+        )));
+    }
+
+    let timestamp_data: [u8; 8] = match timestamp_data.try_into() {
+        Ok(a) => a,
+        Err(_) => {
+            return Err(NomFailure(NomError::new(
+                input,
+                nom::error::ErrorKind::Space,
+            )))
+        }
+    };
+
+    let timestamp = u64::from_le_bytes(timestamp_data);
+    let duration = Duration::from_nanos_u128(timestamp as u128 * 100);
+
+    Ok((
+        input,
+        NrbfDecodedInstruction::FromIdcaptureServer(IDCaptureMessage::JumpToTime(DayTime::from(
+            duration,
+        ))),
     ))
 }
 
@@ -456,6 +503,7 @@ fn parse_any_known_command(input: &[u8]) -> IResult<&[u8], NrbfDecodedInstructio
         |i| parse_results_command(i),
         |i| parse_server_info_command(i),
         |i| parse_send_frame_command(i),
+        |i| parse_jump_to_time_command(i),
         |i| parse_set_property_command(i),
     ))
     .parse(input)
