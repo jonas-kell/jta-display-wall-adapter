@@ -4,6 +4,8 @@ use crate::database::{
     delete_pdf_setting, get_all_athletes_meta_data, get_database_static_state, get_main_heat,
     init_database_static_state, populate_display_from_bib, DatabaseStaticState,
 };
+use crate::idcapture::format::IDCaptureMessage;
+use crate::instructions::InstructionFromExternalDisplayProgram::{Frame, ServerInfo};
 use crate::open_webcontrol;
 use crate::productkey::{dev_mode, product_key_valid};
 use crate::productkey::{today, ProductKey};
@@ -425,7 +427,6 @@ impl ServerStateMachine {
             },
             IncomingInstruction::FromTimingProgram(inst) => match inst {
                 InstructionFromTimingProgram::ClientInfo => (),
-                InstructionFromTimingProgram::ServerInfo => (),
                 InstructionFromTimingProgram::Freetext(text) => {
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::DisplayText(text))
@@ -446,26 +447,6 @@ impl ServerStateMachine {
                         self.send_message_to_client(MessageFromServerToClient::Clear);
                     } else {
                         self.state = ServerState::PassthroughClient;
-                    }
-                }
-                InstructionFromTimingProgram::SendFrame(data) => {
-                    // this is a bit of a hack, because technically this message comes from the display program
-                    trace!("Got command to send a frame inbound (should be from external display program to send back and possibly proxy to our client)");
-
-                    if self.state == ServerState::PassthroughDisplayProgram {
-                        if self.comm_channel.web_control_there_to_receive() {
-                            self.send_message_to_client(
-                                MessageFromServerToClient::DisplayExternalFrame(data.clone()),
-                            );
-                            self.send_message_to_web_control(
-                                MessageToWebControl::CurrentDisplayFrame(data),
-                            );
-                        } else {
-                            // avoid clone in this case
-                            self.send_message_to_client(
-                                MessageFromServerToClient::DisplayExternalFrame(data),
-                            );
-                        }
                     }
                 }
                 InstructionFromTimingProgram::Advertisements => {
@@ -905,6 +886,35 @@ impl ServerStateMachine {
                 }
                 Started(started_wind_measurement) => {
                     store_to_database!(started_wind_measurement, self);
+                }
+            },
+            IncomingInstruction::FromExternalDisplayProgram(inst) => match inst {
+                Frame(data) => {
+                    // this is a bit of a hack, because technically this message comes from the display program
+                    trace!("Got command to send a frame inbound (should be from external display program to send back and possibly proxy to our client)");
+
+                    if self.state == ServerState::PassthroughDisplayProgram {
+                        if self.comm_channel.web_control_there_to_receive() {
+                            self.send_message_to_client(
+                                MessageFromServerToClient::DisplayExternalFrame(data.clone()),
+                            );
+                            self.send_message_to_web_control(
+                                MessageToWebControl::CurrentDisplayFrame(data),
+                            );
+                        } else {
+                            // avoid clone in this case
+                            self.send_message_to_client(
+                                MessageFromServerToClient::DisplayExternalFrame(data),
+                            );
+                        }
+                    }
+                }
+                ServerInfo => {}
+            },
+            IncomingInstruction::FromIdcaptureServer(inst) => match inst {
+                IDCaptureMessage::JumpToTime(jtt) => {
+                    let _ = jtt;
+                    todo!(); // TODO
                 }
             },
         }

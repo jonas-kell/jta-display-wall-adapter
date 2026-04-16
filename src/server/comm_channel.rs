@@ -1,8 +1,8 @@
 use crate::{
     args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS},
     instructions::{
-        IncomingInstruction, InstructionFromCameraProgram, InstructionFromTimingProgram,
-        InstructionToTimingProgram,
+        IncomingInstruction, InstructionFromCameraProgram, InstructionFromExternalDisplayProgram,
+        InstructionFromTimingProgram, InstructionToTimingProgram,
     },
     interface::{MessageFromClientToServer, MessageFromServerToClient},
     server::BibMessage,
@@ -77,6 +77,25 @@ impl InstructionCommunicationChannel {
         match self
             .inbound_sender
             .try_send(IncomingInstruction::FromTimingProgram(inst))
+        {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
+    }
+
+    pub fn take_in_command_from_external_display_program(
+        &self,
+        inst: InstructionFromExternalDisplayProgram,
+    ) -> Result<(), String> {
+        match self
+            .inbound_sender
+            .try_send(IncomingInstruction::FromExternalDisplayProgram(inst))
         {
             Ok(_) => Ok(()),
             Err(TrySendError::Closed(_)) => {

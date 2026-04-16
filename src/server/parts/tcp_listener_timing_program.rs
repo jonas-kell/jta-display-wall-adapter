@@ -2,10 +2,10 @@ use crate::args::Args;
 use crate::hex::hex_log_bytes;
 use crate::instructions::InstructionToTimingProgram;
 use crate::interface::{ServerState, ServerStateMachineServerStateReader};
+use crate::nrbf::{generate_response_bytes, BufferedParser};
 use crate::server::comm_channel::{
     InstructionCommunicationChannel, PacketCommunicationChannel, PacketData,
 };
-use crate::server::nrbf::{generate_response_bytes, BufferedParser};
 use async_broadcast::RecvError;
 use std::io;
 use std::net::SocketAddr;
@@ -122,11 +122,19 @@ pub async fn tcp_listener_timing_program(
                                     }
                                     Ok(parsed) => {
                                         trace!("Decoded Inbound Communication: {}", parsed);
-                                        match comm_channel_read
-                                            .take_in_command_from_timing_program(parsed)
-                                        {
-                                            Ok(()) => (),
-                                            Err(e) => return Err(e.to_string()),
+
+                                        match parsed.into_timing_program_instruction() {
+                                            Ok(parsed) => {
+                                                match comm_channel_read
+                                                    .take_in_command_from_timing_program(parsed)
+                                                {
+                                                    Ok(()) => (),
+                                                    Err(e) => return Err(e.to_string()),
+                                                }
+                                            }
+                                            Err(e_inst) => {
+                                                error!("Should never get this instruction from this channel. {} Something is mis-connected", e_inst);
+                                            }
                                         }
                                     }
                                 },

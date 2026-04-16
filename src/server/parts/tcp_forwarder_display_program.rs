@@ -1,9 +1,9 @@
 use crate::args::Args;
 use crate::hex::hex_log_bytes;
-use crate::instructions::{InstructionFromTimingProgram, InstructionToTimingProgram};
+use crate::instructions::{InstructionFromExternalDisplayProgram, InstructionToTimingProgram};
 use crate::interface::{ServerState, ServerStateMachineServerStateReader};
+use crate::nrbf::BufferedParser;
 use crate::server::comm_channel::{InstructionCommunicationChannel, PacketCommunicationChannel};
-use crate::server::nrbf::BufferedParser;
 use std::io;
 use std::net::SocketAddr;
 use std::sync::{
@@ -113,36 +113,40 @@ pub async fn tcp_forwarder_display_program(
                                                         parsed
                                                     );
 
-                                                    let current_state: ServerState = state_reader.get_server_state().await;
+                                                    match parsed.into_external_display_program_instruction() {
+                                                        Ok(parsed) => {
 
-                                                    match current_state {
-                                                        ServerState::PassthroughDisplayProgram => {
-                                                            match parsed {
-                                                                // THIS IS A BIT OF A HACK -> the "SendFrame" and "SendServerInfo" flow over the "command_from_timing_program" channel, even though they flow in the opposite direction!
-                                                                InstructionFromTimingProgram::ServerInfo => {
-                                                                    match comm_channel.send_out_command_to_timing_program(InstructionToTimingProgram::SendServerInfo) {
-                                                                        Ok(()) => trace!("Detected Packet and queued server-info for rewrite-proxy"),
-                                                                        Err(e) => return Err(e.to_string()),
+                                                            let current_state: ServerState = state_reader.get_server_state().await;
+
+                                                            match current_state {
+                                                                ServerState::PassthroughDisplayProgram => {
+                                                                        match parsed {
+                                                                            InstructionFromExternalDisplayProgram::ServerInfo => {
+                                                                                match comm_channel.send_out_command_to_timing_program(InstructionToTimingProgram::SendServerInfo) {
+                                                                                    Ok(()) => trace!("Detected Packet and queued server-info for rewrite-proxy"),
+                                                                                    Err(e) => return Err(e.to_string()),
+                                                                                }
+                                                                            }
+                                                                            InstructionFromExternalDisplayProgram::Frame(frame_data) => {
+                                                                                match comm_channel.send_out_command_to_timing_program(InstructionToTimingProgram::SendFrame(frame_data.clone())) {
+                                                                                    Ok(()) => trace!("Detected Packet and queued frame for rewrite-proxy"),
+                                                                                    Err(e) => return Err(e.to_string()),
+                                                                                }
+                                                                                match comm_channel.take_in_command_from_external_display_program(InstructionFromExternalDisplayProgram::Frame(frame_data)) {
+                                                                                    Ok(()) => trace!("Detected Packet and queued frame into communication interface"),
+                                                                                    Err(e) => return Err(e.to_string()),
+                                                                                }
+                                                                            },
+                                                                        }
                                                                     }
-                                                                }
-                                                                InstructionFromTimingProgram::SendFrame(frame_data) => {
-                                                                    match comm_channel.send_out_command_to_timing_program(InstructionToTimingProgram::SendFrame(frame_data.clone())) {
-                                                                        Ok(()) => trace!("Detected Packet and queued frame for rewrite-proxy"),
-                                                                        Err(e) => return Err(e.to_string()),
+                                                                    ServerState::PassthroughClient => {
+                                                                        trace!("Outwards flowing data blocked");
                                                                     }
-                                                                    match comm_channel.take_in_command_from_timing_program(InstructionFromTimingProgram::SendFrame(frame_data)) {
-                                                                        Ok(()) => trace!("Detected Packet and queued frame into communication interface"),
-                                                                        Err(e) => return Err(e.to_string()),
-                                                                    }
-                                                                },
-                                                                comm => {
-                                                                    error!("Unexpected: got a command OUTBOUND that should not happen: {}", comm);
                                                                 }
                                                             }
-                                                        }
-                                                        ServerState::PassthroughClient => {
-                                                            trace!("Outwards flowing data blocked");
-                                                        }
+                                                            Err(e_inst) => {
+                                                                error!("Should never get this instruction from this channel. {} Something is mis-connected", e_inst);
+                                                            }
                                                     }
                                                 }
                                             },
