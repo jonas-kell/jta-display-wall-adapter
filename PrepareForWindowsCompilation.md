@@ -24,4 +24,4 @@ x86_64-w64-mingw32-dlltool -d Packet.def -l libpacket.a
 <!-- curl https://npcap.com/dist/npcap-sdk-1.16.zip > lib.zip # no longer needed -->
 <!-- unzip lib.zip # no longer needed -->
 
-<!-- TODO comment here if it works https://github.com/rust-pcap/pcap/issues/246 -->
+<!-- commented here https://github.com/rust-pcap/pcap/issues/246 that this works -->
