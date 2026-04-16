@@ -1,5 +1,6 @@
 use crate::{
     args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS},
+    idcapture::format::{IDCaptureMessage, MessageToIdcaptureServer},
     instructions::{
         IncomingInstruction, InstructionFromCameraProgram, InstructionFromExternalDisplayProgram,
         InstructionFromTimingProgram, InstructionToTimingProgram,
@@ -30,6 +31,8 @@ pub struct InstructionCommunicationChannel {
     outbound_receiver_web_control: BroadcastReceiverStorage<MessageToWebControl>,
     outbound_sender_wind_server: BroadcastSender<MessageToWindServer>,
     outbound_receiver_wind_server: BroadcastReceiverStorage<MessageToWindServer>,
+    outbound_sender_idcapture_server: BroadcastSender<MessageToIdcaptureServer>,
+    outbound_receiver_idcapture_server: BroadcastReceiverStorage<MessageToIdcaptureServer>,
 }
 impl InstructionCommunicationChannel {
     pub fn new(args: &Args) -> Self {
@@ -54,6 +57,10 @@ impl InstructionCommunicationChannel {
             MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
         );
         swi.set_overflow(true);
+        let (mut sid, rid) = async_broadcast::broadcast::<MessageToIdcaptureServer>(
+            MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+        );
+        sid.set_overflow(true);
 
         Self {
             args: args.clone(),
@@ -67,6 +74,8 @@ impl InstructionCommunicationChannel {
             outbound_receiver_web_control: BroadcastReceiverStorage::new(rwe, args),
             outbound_sender_wind_server: swi,
             outbound_receiver_wind_server: BroadcastReceiverStorage::new(rwi, args),
+            outbound_sender_idcapture_server: sid,
+            outbound_receiver_idcapture_server: BroadcastReceiverStorage::new(rid, args),
         }
     }
 
@@ -172,6 +181,25 @@ impl InstructionCommunicationChannel {
         match self
             .inbound_sender
             .try_send(IncomingInstruction::FromWindServer(inst))
+        {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
+    }
+
+    pub fn take_in_command_from_idcapture_server(
+        &self,
+        inst: IDCaptureMessage,
+    ) -> Result<(), String> {
+        match self
+            .inbound_sender
+            .try_send(IncomingInstruction::FromIdcaptureServer(inst))
         {
             Ok(_) => Ok(()),
             Err(TrySendError::Closed(_)) => {
@@ -322,8 +350,40 @@ impl InstructionCommunicationChannel {
         }
     }
 
+    #[allow(dead_code)]
+    pub fn send_out_command_to_idcapture_server(
+        &self,
+        inst: MessageToIdcaptureServer,
+    ) -> Result<(), String> {
+        match self.outbound_sender_idcapture_server.try_broadcast(inst) {
+            Ok(Some(_)) => {
+                trace!("Thrown away old message in internal comm channel (to idcapture server)");
+                Ok(())
+            }
+            Ok(None) => Ok(()),
+            Err(BroadcastTrySendError::Inactive(_)) => {
+                warn!(
+                    "Outbound internal channel not open, no active receivers (to idcapture server)",
+                );
+                Ok(())
+            }
+            Err(BroadcastTrySendError::Full(_)) => {
+                error!("Wind server receivers are there, but outbound internal channel full. This should not happen!");
+                Ok(())
+            }
+            Err(BroadcastTrySendError::Closed(_)) => Err(format!(
+                "Wind server communication channel went away unexpectedly"
+            )),
+        }
+    }
+
     pub fn wind_server_receiver(&self) -> BroadcastReceiver<MessageToWindServer> {
         self.outbound_receiver_wind_server.get_active_receiver()
+    }
+
+    pub fn idcapture_server_receiver(&self) -> BroadcastReceiver<MessageToIdcaptureServer> {
+        self.outbound_receiver_idcapture_server
+            .get_active_receiver()
     }
 }
 

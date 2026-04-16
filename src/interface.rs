@@ -913,8 +913,8 @@ impl ServerStateMachine {
             },
             IncomingInstruction::FromIdcaptureServer(inst) => match inst {
                 IDCaptureMessage::JumpToTime(jtt) => {
-                    let _ = jtt;
-                    todo!(); // TODO
+                    error!("GOT A DAY TIME TO JUMP TO: {:?}", jtt);
+                    // TODO use this
                 }
             },
         }

@@ -7,6 +7,7 @@ use crate::server::parts::intake_commands::intake_commands;
 use crate::server::parts::tcp_client_camera_program::tcp_client_camera_program;
 use crate::server::parts::tcp_forwarder_display_program::tcp_forwarder_display_program;
 use crate::server::parts::tcp_listener_bib_detection::tcp_listener_bib_detection;
+use crate::server::parts::tcp_listener_idcapture_server::tcp_listener_idcapture_server;
 use crate::server::parts::tcp_listener_timing_program::tcp_listener_timing_program;
 use crate::server::parts::tcp_listener_wind_server::tcp_listener_wind_server;
 use crate::webserver::{get_local_ip, webserver, HttpServerStateManager, Server};
@@ -133,6 +134,19 @@ pub async fn run_server(args: &Args) -> () {
         None
     };
 
+    let idcapture_server_address = if let Some(idcapture_server_ip) = &args.address_idcapture_server
+    {
+        let own_addr_idcapture_server: SocketAddr =
+            format!("{}:{}", idcapture_server_ip, args.idcapture_exchange_port)
+                .parse()
+                .expect("Invalid idcapture server address");
+
+        Some(own_addr_idcapture_server)
+    } else {
+        info!("Not configured to connect to a idcapture server");
+        None
+    };
+
     let bib_server_address = if let Some(bib_server_ip) = &args.address_bib_server {
         let own_addr_bib_server: SocketAddr =
             format!("{}:{}", bib_server_ip, args.bib_exchange_port)
@@ -220,6 +234,14 @@ pub async fn run_server(args: &Args) -> () {
         wind_server_address,
     );
 
+    let tcp_client_idcapture_server_instance = tcp_listener_idcapture_server(
+        args.clone(),
+        server_state_reader.clone(),
+        comm_channel.clone(),
+        shutdown_marker.clone(),
+        idcapture_server_address,
+    );
+
     let tcp_client_bib_server_instance = tcp_listener_bib_detection(
         args.clone(),
         server_state_reader,
@@ -235,6 +257,7 @@ pub async fn run_server(args: &Args) -> () {
     let tcp_forwarder_display_program_task = tokio::spawn(tcp_forwarder_display_program_instance);
     let tcp_client_camera_program_task = tokio::spawn(tcp_client_camera_program_instance);
     let tcp_client_wind_server_task = tokio::spawn(tcp_client_wind_server_instance);
+    let tcp_client_idcapture_server_task = tokio::spawn(tcp_client_idcapture_server_instance);
     let tcp_client_bib_server_task = tokio::spawn(tcp_client_bib_server_instance);
     let webserver_task = tokio::spawn(http_server);
     let shutdown_task = tokio::spawn(async move {
@@ -255,6 +278,7 @@ pub async fn run_server(args: &Args) -> () {
         tcp_forwarder_display_program_task,
         tcp_client_camera_program_task,
         tcp_client_wind_server_task,
+        tcp_client_idcapture_server_task,
         tcp_client_bib_server_task,
         webserver_task,
         shutdown_task,
