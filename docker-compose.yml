@@ -93,7 +93,7 @@ services:
           sleep 0.5
         done
 
-        watchexec --poll 500ms --restart --watch ./container_target/debug/jta-display-wall-adapter -- 'while true; do sleep 2; ./container_target/debug/jta-display-wall-adapter id-capture --idcapture-interface-filter=lo --idcapture-target-address=127.0.0.1 -vv ; done'
+        watchexec --poll 500ms --restart --watch ./container_target/debug/jta-display-wall-adapter -- 'while true; do sleep 2; ./container_target/debug/jta-display-wall-adapter id-capture --idcapture-interface-filter=lo --idcapture-target-address=127.0.0.1 ; done'
       "
 
   code-gen:
