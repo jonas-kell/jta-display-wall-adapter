@@ -149,6 +149,10 @@ const NUMBER_OF_HEADER_BYTES: usize = 17;
 // 4 Bytes MajorVersion -> value must be 1
 // 4 Bytes MinorVersion -> value must be 0
 fn check_nrbf_headers<'a>(args: &'a Args, possible_packet: &'a [u8]) -> Option<&'a [u8]> {
+    if possible_packet.len() < NUMBER_OF_HEADER_BYTES {
+        return None;
+    } // otherwise the next accesses could panic
+
     let header_bytes = &possible_packet[0..NUMBER_OF_HEADER_BYTES];
 
     let record_type = header_bytes[0];
