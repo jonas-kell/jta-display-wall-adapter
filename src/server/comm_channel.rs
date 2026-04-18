@@ -18,6 +18,13 @@ use async_channel::{Receiver, RecvError, Sender, TrySendError};
 use std::time::Duration;
 use tokio::time::{self, error::Elapsed};
 
+pub enum ConnectionCheck {
+    CameraProgramTimingPort,
+    CameraProgramDataPort,
+    CameraProgramXMLPort,
+    ExternalDisplayProgramPassthrough,
+}
+
 #[derive(Clone)]
 pub struct InstructionCommunicationChannel {
     args: Args,
@@ -33,6 +40,14 @@ pub struct InstructionCommunicationChannel {
     outbound_receiver_wind_server: BroadcastReceiverStorage<MessageToWindServer>,
     outbound_sender_idcapture_server: BroadcastSender<MessageToIdcaptureServer>,
     outbound_receiver_idcapture_server: BroadcastReceiverStorage<MessageToIdcaptureServer>,
+    connection_check_sender_camera_program_timing_port: BroadcastSender<bool>,
+    connection_check_receiver_camera_program_timing_port: BroadcastReceiverStorage<bool>,
+    connection_check_sender_camera_program_data_port: BroadcastSender<bool>,
+    connection_check_receiver_camera_program_data_port: BroadcastReceiverStorage<bool>,
+    connection_check_sender_camera_program_xml_port: BroadcastSender<bool>,
+    connection_check_receiver_camera_program_xml_port: BroadcastReceiverStorage<bool>,
+    connection_check_sender_external_display_passthrough: BroadcastSender<bool>,
+    connection_check_receiver_external_display_passthrough: BroadcastReceiverStorage<bool>,
 }
 impl InstructionCommunicationChannel {
     pub fn new(args: &Args) -> Self {
@@ -61,6 +76,19 @@ impl InstructionCommunicationChannel {
             MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
         );
         sid.set_overflow(true);
+        // channels that only check for connection
+        let (mut scptp, rcptp) =
+            async_broadcast::broadcast::<bool>(MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS);
+        scptp.set_overflow(true);
+        let (mut scpdp, rcpdp) =
+            async_broadcast::broadcast::<bool>(MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS);
+        scpdp.set_overflow(true);
+        let (mut scpxp, rcpxp) =
+            async_broadcast::broadcast::<bool>(MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS);
+        scpxp.set_overflow(true);
+        let (mut sdpt, rdpt) =
+            async_broadcast::broadcast::<bool>(MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS);
+        sdpt.set_overflow(true);
 
         Self {
             args: args.clone(),
@@ -76,6 +104,22 @@ impl InstructionCommunicationChannel {
             outbound_receiver_wind_server: BroadcastReceiverStorage::new(rwi, args),
             outbound_sender_idcapture_server: sid,
             outbound_receiver_idcapture_server: BroadcastReceiverStorage::new(rid, args),
+            connection_check_sender_camera_program_timing_port: scptp,
+            connection_check_receiver_camera_program_timing_port: BroadcastReceiverStorage::new(
+                rcptp, args,
+            ),
+            connection_check_sender_camera_program_data_port: scpdp,
+            connection_check_receiver_camera_program_data_port: BroadcastReceiverStorage::new(
+                rcpdp, args,
+            ),
+            connection_check_sender_camera_program_xml_port: scpxp,
+            connection_check_receiver_camera_program_xml_port: BroadcastReceiverStorage::new(
+                rcpxp, args,
+            ),
+            connection_check_sender_external_display_passthrough: sdpt,
+            connection_check_receiver_external_display_passthrough: BroadcastReceiverStorage::new(
+                rdpt, args,
+            ),
         }
     }
 
@@ -381,9 +425,59 @@ impl InstructionCommunicationChannel {
         self.outbound_receiver_wind_server.get_active_receiver()
     }
 
+    pub fn wind_server_there_to_receive(&self) -> bool {
+        self.outbound_sender_wind_server.receiver_count() > 0
+    }
+
     pub fn idcapture_server_receiver(&self) -> BroadcastReceiver<MessageToIdcaptureServer> {
         self.outbound_receiver_idcapture_server
             .get_active_receiver()
+    }
+
+    pub fn idcapture_server_there_to_receive(&self) -> bool {
+        self.outbound_sender_idcapture_server.receiver_count() > 0
+    }
+
+    pub fn connection_check(&self, tpe: ConnectionCheck) -> bool {
+        match tpe {
+            ConnectionCheck::CameraProgramTimingPort => {
+                self.connection_check_sender_camera_program_timing_port
+                    .receiver_count()
+                    > 0
+            }
+            ConnectionCheck::CameraProgramDataPort => {
+                self.connection_check_sender_camera_program_data_port
+                    .receiver_count()
+                    > 0
+            }
+            ConnectionCheck::CameraProgramXMLPort => {
+                self.connection_check_sender_camera_program_xml_port
+                    .receiver_count()
+                    > 0
+            }
+            ConnectionCheck::ExternalDisplayProgramPassthrough => {
+                self.connection_check_sender_external_display_passthrough
+                    .receiver_count()
+                    > 0
+            }
+        }
+    }
+
+    pub fn get_connection_check_marker(&self, tpe: ConnectionCheck) -> BroadcastReceiver<bool> {
+        match tpe {
+            ConnectionCheck::CameraProgramTimingPort => self
+                .connection_check_receiver_camera_program_timing_port
+                .get_active_receiver(),
+            ConnectionCheck::CameraProgramDataPort => self
+                .connection_check_receiver_camera_program_data_port
+                .get_active_receiver(),
+            ConnectionCheck::CameraProgramXMLPort => self
+                .connection_check_receiver_camera_program_xml_port
+                .get_active_receiver(),
+            ConnectionCheck::ExternalDisplayProgramPassthrough => self
+                .connection_check_receiver_external_display_passthrough
+                .get_active_receiver(),
+        }
     }
 }
 
@@ -512,5 +606,9 @@ where
             self.rec.recv(),
         )
         .await
+    }
+
+    pub fn conn_check_usage_end_function(self) -> () {
+        let _ = self.rec.deactivate();
     }
 }

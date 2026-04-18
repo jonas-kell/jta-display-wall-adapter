@@ -12,6 +12,7 @@ pub fn get_local_ip() -> String {
 }
 
 pub use interface::{
-    DisplayClientState, MessageFromWebControl, MessageToWebControl, PDFConfigurationSetting,
+    ConnectionState, DisplayClientState, MessageFromWebControl, MessageToWebControl,
+    PDFConfigurationSetting,
 };
 pub use web::{webserver, HttpServerStateManager, Server};

@@ -3,7 +3,9 @@ use crate::hex::hex_log_bytes;
 use crate::instructions::{InstructionFromExternalDisplayProgram, InstructionToTimingProgram};
 use crate::interface::{ServerState, ServerStateMachineServerStateReader};
 use crate::nrbf::BufferedParser;
-use crate::server::comm_channel::{InstructionCommunicationChannel, PacketCommunicationChannel};
+use crate::server::comm_channel::{
+    ConnectionCheck, InstructionCommunicationChannel, PacketCommunicationChannel,
+};
 use std::io;
 use std::net::SocketAddr;
 use std::sync::{
@@ -58,7 +60,8 @@ pub async fn tcp_forwarder_display_program(
 
                 // Connection is accepted. only one connection, while one is running
 
-                let comm_channel = comm_channel.clone();
+                let comm_channel_read = comm_channel.clone();
+                let comm_channel_write = comm_channel.clone();
                 let comm_channel_packets_read = comm_channel_packets.clone();
                 let mut inbound_packet_receiver = comm_channel_packets.inbound_receiver();
                 let shutdown_marker_read = shutdown_marker.clone();
@@ -122,17 +125,17 @@ pub async fn tcp_forwarder_display_program(
                                                                 ServerState::PassthroughDisplayProgram => {
                                                                         match parsed {
                                                                             InstructionFromExternalDisplayProgram::ServerInfo => {
-                                                                                match comm_channel.send_out_command_to_timing_program(InstructionToTimingProgram::SendServerInfo) {
+                                                                                match comm_channel_read.send_out_command_to_timing_program(InstructionToTimingProgram::SendServerInfo) {
                                                                                     Ok(()) => trace!("Detected Packet and queued server-info for rewrite-proxy"),
                                                                                     Err(e) => return Err(e.to_string()),
                                                                                 }
                                                                             }
                                                                             InstructionFromExternalDisplayProgram::Frame(frame_data) => {
-                                                                                match comm_channel.send_out_command_to_timing_program(InstructionToTimingProgram::SendFrame(frame_data.clone())) {
+                                                                                match comm_channel_read.send_out_command_to_timing_program(InstructionToTimingProgram::SendFrame(frame_data.clone())) {
                                                                                     Ok(()) => trace!("Detected Packet and queued frame for rewrite-proxy"),
                                                                                     Err(e) => return Err(e.to_string()),
                                                                                 }
-                                                                                match comm_channel.take_in_command_from_external_display_program(InstructionFromExternalDisplayProgram::Frame(frame_data)) {
+                                                                                match comm_channel_read.take_in_command_from_external_display_program(InstructionFromExternalDisplayProgram::Frame(frame_data)) {
                                                                                     Ok(()) => trace!("Detected Packet and queued frame into communication interface"),
                                                                                     Err(e) => return Err(e.to_string()),
                                                                                 }
@@ -166,6 +169,10 @@ pub async fn tcp_forwarder_display_program(
                 };
 
                 let write_handler = async move {
+                    let conn_check = comm_channel_write.get_connection_check_marker(
+                        ConnectionCheck::ExternalDisplayProgramPassthrough,
+                    );
+
                     loop {
                         if shutdown_marker_write.load(Ordering::SeqCst) {
                             debug!("Shutdown marker set, breaking proxy self -> external transfer");
@@ -188,6 +195,8 @@ pub async fn tcp_forwarder_display_program(
                             }
                         };
                     }
+
+                    conn_check.conn_check_usage_end_function();
 
                     Ok::<_, String>(())
                 };

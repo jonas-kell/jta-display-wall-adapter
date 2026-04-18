@@ -54,6 +54,8 @@ import {
     MessageFromWebControlRequestPassword,
     ProductKey,
     MessageFromWebControlRequestLicense,
+    ConnectionState,
+    MessageFromWebControlRequestConnectionStates,
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
@@ -73,6 +75,7 @@ export default defineStore("main", () => {
     const managementPassword = ref(null as null | string);
     const staticConfigurationMissing = ref(false);
     const license = ref(null as ProductKey | null);
+    const connectionState = ref(null as ConnectionState | null);
 
     let reconnecting = false;
     let ws = null as null | WebSocket;
@@ -96,11 +99,11 @@ export default defineStore("main", () => {
     function refreshWindConnectionTimer() {
         lastWindPing.value = Date.now();
     }
-    const windServerConnected = computed<boolean>(() => {
+    const windServerLive = computed<boolean>(() => {
         return now.value - lastWindPing.value <= WIND_CONNECTION_TIMEOUT;
     });
-    watch(windServerConnected, () => {
-        if (!windServerConnected.value) {
+    watch(windServerLive, () => {
+        if (!windServerLive.value) {
             windTime.value = WIND_MESSAGE;
             windValue.value = "----";
         }
@@ -218,6 +221,9 @@ export default defineStore("main", () => {
             case "Licensed":
                 license.value = msg.data;
                 return;
+            case "ConnectionState":
+                connectionState.value = msg.data;
+                return;
             default:
                 console.error("Received unknown message type:", msg);
                 const _exhaustive: never = msg;
@@ -264,13 +270,16 @@ export default defineStore("main", () => {
         ws = new WebSocket(wsURL(getNonLocalDomainOrIp()));
         ws.onerror = async () => {
             connected.value = false;
+            connectionState.value = null;
             reconnecting = false;
+
             await sleep(2000);
             console.log("Retry connecting to socket after error");
             initWS();
         };
         ws.onopen = () => {
             connected.value = true;
+            connectionState.value = null;
             reconnecting = false;
 
             console.log("Socket connected");
@@ -617,6 +626,13 @@ export default defineStore("main", () => {
         return timingSettingsBeingChanged.value && timingSettings.value != null;
     });
 
+    window.setInterval(() => {
+        let rcs: MessageFromWebControlRequestConnectionStates = {
+            type: "RequestConnectionStates",
+        };
+        sendWSCommand(JSON.stringify(rcs));
+    }, 500);
+
     return {
         connected,
         sendSwitchModeCommand,
@@ -654,7 +670,7 @@ export default defineStore("main", () => {
         displayConnected,
         displayExternalPassthrough,
         displayCanSwitchMode,
-        windServerConnected,
+        windServerLive,
         windTime,
         windValue,
         requestedWindMeasurements,
@@ -669,5 +685,6 @@ export default defineStore("main", () => {
         managementPassword,
         staticConfigurationMissing,
         license,
+        connectionState,
     };
 });

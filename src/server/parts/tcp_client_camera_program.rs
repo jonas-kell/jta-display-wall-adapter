@@ -1,6 +1,6 @@
 use crate::args::Args;
 use crate::interface::ServerStateMachineServerStateReader;
-use crate::server::comm_channel::InstructionCommunicationChannel;
+use crate::server::comm_channel::{ConnectionCheck, InstructionCommunicationChannel};
 use crate::server::xml_serial::{BufferedParserSerial, BufferedParserXML};
 use std::io::{self, Error, ErrorKind};
 use std::net::SocketAddr;
@@ -60,6 +60,8 @@ pub async fn tcp_client_camera_program(
                 Ok(Ok(mut timing_stream)) => {
                     info!("Connected to timing target {}", timing_addr);
                     let mut parser = BufferedParserSerial::new(&args_timing);
+                    let conn_check = comm_channel_timing
+                        .get_connection_check_marker(ConnectionCheck::CameraProgramTimingPort);
 
                     loop {
                         if shutdown_marker_timing.load(Ordering::SeqCst) {
@@ -115,6 +117,8 @@ pub async fn tcp_client_camera_program(
                             }
                         };
                     }
+
+                    conn_check.conn_check_usage_end_function();
                 }
                 Ok(Err(e)) => {
                     error!("Timing exchange error: {}", e);
@@ -168,6 +172,8 @@ pub async fn tcp_client_camera_program(
                 Ok(Ok(mut xml_stream)) => {
                     info!("Connected to xml target {}", xml_addr);
                     let mut parser = BufferedParserXML::new();
+                    let conn_check = comm_channel_xml
+                        .get_connection_check_marker(ConnectionCheck::CameraProgramXMLPort);
 
                     loop {
                         if shutdown_marker_xml.load(Ordering::SeqCst) {
@@ -220,6 +226,8 @@ pub async fn tcp_client_camera_program(
                             }
                         };
                     }
+
+                    conn_check.conn_check_usage_end_function();
                 }
                 Ok(Err(e)) => {
                     error!("XML exchange error: {}", e);
@@ -273,6 +281,8 @@ pub async fn tcp_client_camera_program(
                 Ok(Ok(mut data_stream)) => {
                     info!("Connected to data target {}", data_addr);
                     let mut parser = BufferedParserXML::new();
+                    let conn_check = comm_channel_data
+                        .get_connection_check_marker(ConnectionCheck::CameraProgramDataPort);
 
                     loop {
                         if shutdown_marker_data.load(Ordering::SeqCst) {
@@ -330,6 +340,8 @@ pub async fn tcp_client_camera_program(
                             }
                         };
                     }
+
+                    conn_check.conn_check_usage_end_function();
                 }
                 Ok(Err(e)) => {
                     error!("Data exchange error: {}", e);

@@ -12,12 +12,12 @@ use crate::productkey::{today, ProductKey};
 use crate::server::audio_types::{AudioPlayer, Sound};
 use crate::server::bib_detection::DisplayEntry;
 use crate::server::camera_program_types::{CompetitorEvaluated, HeatResult};
-use crate::server::comm_channel::InstructionCommunicationChannel;
+use crate::server::comm_channel::{ConnectionCheck, InstructionCommunicationChannel};
 use crate::server::export_functions::{
     fake_main_heat_start_list, generate_meet_data, write_to_xml_output_file,
 };
 use crate::times::RaceTime;
-use crate::webserver::PDFConfigurationSetting;
+use crate::webserver::{ConnectionState, PDFConfigurationSetting};
 use crate::{
     args::Args,
     client::{ClockState, TimingSettings, TimingStateMachine, TimingUpdate},
@@ -823,6 +823,9 @@ impl ServerStateMachine {
                         product_key.clone(), // at the moment if this answers, we are always licensed. Otherwise it aborts earlier
                     )));
                 }
+                MessageFromWebControl::RequestConnectionStates => {
+                    self.send_current_connection_state_to_webclient();
+                }
                 // Dev mode and debug signals
                 MessageFromWebControl::DevReset => {
                     match fake_main_heat_start_list(dbss, &self.database_manager) {
@@ -958,6 +961,90 @@ impl ServerStateMachine {
                 error!("Database loading error for pdf settings: {}", e);
             }
         }
+    }
+
+    fn send_current_connection_state_to_webclient(&mut self) {
+        let args = &self.args;
+
+        let camera_program_connected_on_timing_port = self
+            .comm_channel
+            .connection_check(ConnectionCheck::CameraProgramTimingPort);
+        let camera_program_connected_on_data_port = self
+            .comm_channel
+            .connection_check(ConnectionCheck::CameraProgramDataPort);
+        let camera_program_connected_on_xml_port = self
+            .comm_channel
+            .connection_check(ConnectionCheck::CameraProgramXMLPort);
+
+        let camera_program_connected = camera_program_connected_on_timing_port
+            && camera_program_connected_on_data_port
+            && camera_program_connected_on_xml_port;
+
+        self.send_message_to_web_control(MessageToWebControl::ConnectionState(ConnectionState {
+            // tries
+            try_connect_to_wind: args.address_wind_server.is_some(),
+            try_conect_to_display_client: args.address_display_client.is_some(),
+            try_connect_to_bib: args.address_bib_server.is_some(),
+            try_to_connect_to_camera_program: args.address_camera_program.is_some(),
+            try_to_connect_to_idcapture: args.address_idcapture_server.is_some(),
+            try_to_connect_to_display_passthrough: args.passthrough_to_display_program,
+            listening_to_timing_program: args.listen_to_timing_program,
+            // ports/addresses
+            display_client_address_with_port: format!(
+                "{}:{}",
+                args.address_display_client
+                    .as_ref()
+                    .unwrap_or(&String::from(""))
+                    .clone(),
+                args.display_client_communication_port
+            ),
+            camera_program_timing_port: args.camera_exchange_timing_port.clone(),
+            camera_program_data_port: args.camera_exchange_data_port.clone(),
+            camera_program_xml_port: args.camera_exchange_xml_port.clone(),
+            camera_program_address: args
+                .address_camera_program
+                .as_ref()
+                .unwrap_or(&String::from(""))
+                .clone()
+                .clone(),
+            wind_address_with_port: format!(
+                "{}:{}",
+                args.address_wind_server
+                    .as_ref()
+                    .unwrap_or(&String::from(""))
+                    .clone(),
+                args.wind_exchange_port
+            ),
+            bib_address_with_port: format!(
+                "{}:{}",
+                args.address_bib_server
+                    .as_ref()
+                    .unwrap_or(&String::from(""))
+                    .clone(),
+                args.bib_exchange_port
+            ),
+            idcapture_address_with_port: format!(
+                "{}:{}",
+                args.address_idcapture_server
+                    .as_ref()
+                    .unwrap_or(&String::from(""))
+                    .clone(),
+                args.idcapture_exchange_port
+            ),
+            display_passthrough_address: args.passthrough_address_display_program.clone(),
+            // connection states
+            bib_connected: false, // TODO
+            display_passthrough_connected: self
+                .comm_channel
+                .connection_check(ConnectionCheck::ExternalDisplayProgramPassthrough),
+            camera_program_connected: camera_program_connected,
+            camera_program_connected_on_timing_port: camera_program_connected_on_timing_port,
+            camera_program_connected_on_data_port: camera_program_connected_on_data_port,
+            camera_program_connected_on_xml_port: camera_program_connected_on_xml_port,
+            wind_connected: self.comm_channel.wind_server_there_to_receive(),
+            idcapture_connected: self.comm_channel.idcapture_server_there_to_receive(),
+            timing_program_is_connected: self.comm_channel.timing_program_there_to_receive(),
+        }));
     }
 
     fn send_out_main_heat_to_webclient(&mut self) {

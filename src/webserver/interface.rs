@@ -52,6 +52,7 @@ pub enum MessageFromWebControl {
     RequestDevMode,
     RequestPassword,
     RequestLicense,
+    RequestConnectionStates,
     // DEV calls
     DevReset,
     DevSendStartList(HeatStartList),
@@ -107,6 +108,35 @@ pub struct DisplayClientState {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
+pub struct ConnectionState {
+    pub try_connect_to_wind: bool, // wind connection status is calculated depending on ingoing wind packets that get pushed
+    pub wind_address_with_port: String,
+    pub wind_connected: bool,
+    pub try_conect_to_display_client: bool, // display client connection is exchanged on push because is carries additional information
+    pub display_client_address_with_port: String,
+    pub bib_connected: bool,
+    pub try_connect_to_bib: bool,
+    pub bib_address_with_port: String,
+    pub idcapture_connected: bool,
+    pub try_to_connect_to_idcapture: bool,
+    pub idcapture_address_with_port: String,
+    pub camera_program_connected: bool,
+    pub camera_program_connected_on_timing_port: bool,
+    pub camera_program_connected_on_data_port: bool,
+    pub camera_program_connected_on_xml_port: bool,
+    pub camera_program_timing_port: String,
+    pub camera_program_data_port: String,
+    pub camera_program_xml_port: String,
+    pub try_to_connect_to_camera_program: bool,
+    pub camera_program_address: String,
+    pub display_passthrough_connected: bool,
+    pub try_to_connect_to_display_passthrough: bool,
+    pub display_passthrough_address: String,
+    pub timing_program_is_connected: bool,
+    pub listening_to_timing_program: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]
 #[serde(tag = "type", content = "data")]
 pub enum MessageToWebControl {
     DatabaseStaticState(DatabaseStaticState),
@@ -126,6 +156,7 @@ pub enum MessageToWebControl {
     Password(String),
     Licensed(Option<ProductKey>),
     StaticConfigurationNotInitialized,
+    ConnectionState(ConnectionState),
     // DEV test calls
     DevMainHeatStartList(HeatStartList),
 }

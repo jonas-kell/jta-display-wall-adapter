@@ -53,6 +53,33 @@ export type CompetitorEvaluated = {
     id: Uuid;
     competitor_result: HeatCompetitorResult;
 };
+export type ConnectionState = {
+    try_connect_to_wind: boolean;
+    wind_address_with_port: string;
+    wind_connected: boolean;
+    try_conect_to_display_client: boolean;
+    display_client_address_with_port: string;
+    bib_connected: boolean;
+    try_connect_to_bib: boolean;
+    bib_address_with_port: string;
+    idcapture_connected: boolean;
+    try_to_connect_to_idcapture: boolean;
+    idcapture_address_with_port: string;
+    camera_program_connected: boolean;
+    camera_program_connected_on_timing_port: boolean;
+    camera_program_connected_on_data_port: boolean;
+    camera_program_connected_on_xml_port: boolean;
+    camera_program_timing_port: string;
+    camera_program_data_port: string;
+    camera_program_xml_port: string;
+    try_to_connect_to_camera_program: boolean;
+    camera_program_address: string;
+    display_passthrough_connected: boolean;
+    try_to_connect_to_display_passthrough: boolean;
+    display_passthrough_address: string;
+    timing_program_is_connected: boolean;
+    listening_to_timing_program: boolean;
+};
 export type DatabaseStaticState = {
     mode: ApplicationMode;
     date: NaiveDate;
@@ -225,6 +252,7 @@ export type MessageFromWebControl =
     | MessageFromWebControlRequestDevMode
     | MessageFromWebControlRequestPassword
     | MessageFromWebControlRequestLicense
+    | MessageFromWebControlRequestConnectionStates
     | MessageFromWebControlDevReset
     | MessageFromWebControlDevSendStartList
     | MessageFromWebControlDevStartRace
@@ -255,6 +283,7 @@ export type MessageFromWebControlGetMainHeat = { type: "GetMainHeat" };
 export type MessageFromWebControlIdle = { type: "Idle" };
 export type MessageFromWebControlInitStaticDatabaseState = { type: "InitStaticDatabaseState"; data: DatabaseStaticState };
 export type MessageFromWebControlRequestAthletes = { type: "RequestAthletes" };
+export type MessageFromWebControlRequestConnectionStates = { type: "RequestConnectionStates" };
 export type MessageFromWebControlRequestDevMode = { type: "RequestDevMode" };
 export type MessageFromWebControlRequestDisplayClientState = { type: "RequestDisplayClientState" };
 export type MessageFromWebControlRequestLicense = { type: "RequestLicense" };
@@ -289,8 +318,10 @@ export type MessageToWebControl =
     | MessageToWebControlPassword
     | MessageToWebControlLicensed
     | MessageToWebControlStaticConfigurationNotInitialized
+    | MessageToWebControlConnectionState
     | MessageToWebControlDevMainHeatStartList;
 export type MessageToWebControlAthletesData = { type: "AthletesData"; data: AthleteWithMetadata[] };
+export type MessageToWebControlConnectionState = { type: "ConnectionState"; data: ConnectionState };
 export type MessageToWebControlCurrentDisplayFrame = { type: "CurrentDisplayFrame"; data: number[] };
 export type MessageToWebControlDatabaseStaticState = { type: "DatabaseStaticState"; data: DatabaseStaticState };
 export type MessageToWebControlDevMainHeatStartList = { type: "DevMainHeatStartList"; data: HeatStartList };
