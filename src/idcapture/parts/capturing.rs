@@ -96,6 +96,7 @@ pub fn capture(
                 break;
             }
 
+            // TODO this has no timeout. It hangs indefinitely on shutdown, unless a packet is coming
             match cap.next_packet() {
                 Ok(packet) => {
                     trace!(
