@@ -79,6 +79,9 @@ fn parse_ack_commant(input: &[u8]) -> IResult<&[u8], Option<WindMessageBroadcast
     Ok((input, None))
 }
 
+// TODO 54 49 4d 59 3a 20 32 35 31 39 38 30 30 30 30 0d
+// 54 49 4d 59 3a 20 32 35 30 30 37 30 30 30 30 0d -> some kind of number after a TIMY (timestamp/status message). At the moment causes errors to be thrown but does not hinder the functionality
+
 pub fn parse_any_known_wind_command(input: &[u8]) -> IResult<&[u8], Option<WindMessageBroadcast>> {
     alt((
         // formatter helper comment
