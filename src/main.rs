@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate log;
 
-use clap::Parser;
+use clap::{crate_version, Parser};
 use jta_display_wall_adapter::{
     initialize_product_key_system, open_webcontrol, run_client, run_idcapture_server, run_server,
     run_wind_server, Args, Mode,
@@ -36,7 +36,17 @@ async fn main() -> std::io::Result<()> {
     }
     env_logger::init();
 
-    info!("Starting JTA Display Wall Adapter");
+    info!(
+        "Starting JTA Display Wall Adapter in version {} with mode {}",
+        crate_version!(),
+        match args.mode {
+            Mode::Client => "(Display) Client",
+            Mode::IDCapture => "IDcapture",
+            Mode::Key => "Key management",
+            Mode::Server => "Server",
+            Mode::Wind => "Wind recording",
+        }
+    );
 
     if matches!(args.mode, Mode::Server) {
         if is_port_in_use(&args.listen_port) || is_port_in_use(&args.internal_webcontrol_port) {
