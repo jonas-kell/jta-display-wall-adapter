@@ -200,7 +200,7 @@ impl ServerStateMachine {
                 error!("Could not read static state from Database (might be un-initialized), because: {}", e);
                 warn!("Initialize over the web interface, otherwise nothing can work...");
                 if !comm_channel.web_control_there_to_receive() {
-                    info!("Optening webcontrol in browser");
+                    info!("Opening webcontrol in browser");
                     open_webcontrol(args);
                 }
 
