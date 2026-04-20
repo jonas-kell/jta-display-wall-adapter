@@ -11,7 +11,7 @@ use crate::productkey::{dev_mode, product_key_valid};
 use crate::productkey::{today, ProductKey};
 use crate::server::audio_types::{AudioPlayer, Sound};
 use crate::server::bib_detection::DisplayEntry;
-use crate::server::camera_program_types::{CompetitorEvaluated, HeatResult};
+use crate::server::camera_program_types::{CompetitorEvaluated, HeatResult, HeatWind};
 use crate::server::comm_channel::{ConnectionCheck, InstructionCommunicationChannel};
 use crate::server::export_functions::{
     fake_main_heat_start_list, generate_meet_data, write_to_xml_output_file,
@@ -501,7 +501,7 @@ impl ServerStateMachine {
                     store_to_database!(intermediate, self);
                 }
                 InstructionFromCameraProgram::HeatWind(wind) => {
-                    store_to_database!(wind, self);
+                    self.handle_heat_wind(wind);
                 }
                 InstructionFromCameraProgram::HeatWindMissing(missing_wind) => {
                     store_to_database!(missing_wind, self);
@@ -826,6 +826,11 @@ impl ServerStateMachine {
                 MessageFromWebControl::RequestConnectionStates => {
                     self.send_current_connection_state_to_webclient();
                 }
+                MessageFromWebControl::RequestPassword => {
+                    self.send_message_to_web_control(MessageToWebControl::Password(
+                        self.args.webcontrol_password.clone(),
+                    ));
+                }
                 // Dev mode and debug signals
                 MessageFromWebControl::DevReset => {
                     match fake_main_heat_start_list(dbss, &self.database_manager) {
@@ -877,10 +882,8 @@ impl ServerStateMachine {
                         hsl,
                     ));
                 }
-                MessageFromWebControl::RequestPassword => {
-                    self.send_message_to_web_control(MessageToWebControl::Password(
-                        self.args.webcontrol_password.clone(),
-                    ));
+                MessageFromWebControl::DevSendWind(wind) => {
+                    self.handle_heat_wind(wind);
                 }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {
@@ -949,6 +952,12 @@ impl ServerStateMachine {
             }
         }
     }
+
+    fn handle_heat_wind(&mut self, wind: HeatWind) {
+        store_to_database!(wind, self);
+    }
+
+    // TODO refactor: move all settings that are accessed during run operation (and therefore are tested with the /debug menu) into here to aggregate and avoid code dupliation
 
     fn send_out_all_database_settings_to_webclient(&mut self) {
         match PDFConfigurationSetting::get_all_from_database(&self.database_manager) {

@@ -6,7 +6,7 @@ use crate::{
         bib_detection::DisplayEntry,
         camera_program_types::{
             Athlete, AthleteWithMetadata, CompetitorEvaluated, HeatAssignment, HeatData, HeatMeta,
-            HeatResult, HeatStartList,
+            HeatResult, HeatStartList, HeatWind,
         },
     },
     times::{DayTime, RaceTime},
@@ -60,6 +60,7 @@ pub enum MessageFromWebControl {
     DevSendFinishSignal(RaceTime),
     DevSendEvaluated(CompetitorEvaluated),
     DevSendResultList(HeatResult),
+    DevSendWind(HeatWind),
     DevRequestMainHeatStartList,
 }
 

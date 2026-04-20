@@ -8,6 +8,7 @@
         <v-btn @click="resetClock" class="mt-2" max-width="40em"> Reset </v-btn>
         <v-btn @click="startClock" class="mt-2" max-width="40em"> Start </v-btn>
         <v-btn @click="endSignal" class="mt-2" max-width="40em" :disabled="debugStore.startTime == null"> End Signal </v-btn>
+        <v-btn @click="sendWind" class="mt-2" max-width="40em" :disabled="debugStore.startTime == null"> Wind </v-btn>
         <v-btn
             @click="evaluateOneAthlete"
             class="mt-2"
@@ -32,6 +33,7 @@
         MessageFromWebControlDevSendFinishSignal,
         MessageFromWebControlDevSendResultList,
         MessageFromWebControlDevSendStartList,
+        MessageFromWebControlDevSendWind,
         MessageFromWebControlDevStartRace,
     } from "../generated/interface";
     import { raceTimeFromNumber } from "../functions/representation";
@@ -59,6 +61,28 @@
         debugStore.startTime = Date.now();
         debugStore.finishIndex = -1;
         debugStore.times = [];
+    }
+
+    function sendWind() {
+        if (mainStore.devMainHeatStartList != null && debugStore.startTime != null) {
+            const heat = mainStore.devMainHeatStartList;
+            const heatId = heat.id;
+
+            mainStore.sendGenericWSCommand({
+                type: "DevSendWind",
+                data: {
+                    application: "DevTest",
+                    version: "0.0.0",
+                    generated: "2026-01-01T10:10:10",
+                    id: heatId,
+                    wind: {
+                        back_wind: true,
+                        whole_number_part: 1,
+                        fraction_part: 2,
+                    },
+                },
+            } as MessageFromWebControlDevSendWind);
+        }
     }
 
     function endSignal() {

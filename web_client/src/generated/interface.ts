@@ -259,6 +259,7 @@ export type MessageFromWebControl =
     | MessageFromWebControlDevSendFinishSignal
     | MessageFromWebControlDevSendEvaluated
     | MessageFromWebControlDevSendResultList
+    | MessageFromWebControlDevSendWind
     | MessageFromWebControlDevRequestMainHeatStartList;
 export type MessageFromWebControlAdvertisements = { type: "Advertisements" };
 export type MessageFromWebControlClock = { type: "Clock"; data: DayTime };
@@ -274,6 +275,7 @@ export type MessageFromWebControlDevSendEvaluated = { type: "DevSendEvaluated"; 
 export type MessageFromWebControlDevSendFinishSignal = { type: "DevSendFinishSignal"; data: RaceTime };
 export type MessageFromWebControlDevSendResultList = { type: "DevSendResultList"; data: HeatResult };
 export type MessageFromWebControlDevSendStartList = { type: "DevSendStartList"; data: HeatStartList };
+export type MessageFromWebControlDevSendWind = { type: "DevSendWind"; data: HeatWind };
 export type MessageFromWebControlDevStartRace = { type: "DevStartRace" };
 export type MessageFromWebControlExportDataToFile = { type: "ExportDataToFile" };
 export type MessageFromWebControlFreeText = { type: "FreeText"; data: string };
