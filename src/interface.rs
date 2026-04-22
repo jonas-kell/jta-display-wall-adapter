@@ -16,6 +16,7 @@ use crate::server::comm_channel::{ConnectionCheck, InstructionCommunicationChann
 use crate::server::export_functions::{
     fake_main_heat_start_list, generate_meet_data, write_to_xml_output_file,
 };
+use crate::server::{CompetitorEvaluatedBibServer, MessageToBibServer};
 use crate::times::RaceTime;
 use crate::webserver::{ConnectionState, PDFConfigurationSetting};
 use crate::{
@@ -927,12 +928,20 @@ impl ServerStateMachine {
     }
 
     fn handle_competitor_evaluated(&mut self, evaluated: CompetitorEvaluated) {
-        store_to_database!(evaluated, self);
+        store_to_database!(evaluated.clone(), self);
         // we can assume, that the "always emit result list on change" setting is active in the camera program
         // for this reason, we ignore singular evaluation emits
 
         // street races work with evaluations. So this now is their time to shine
         self.send_out_main_heat_to_webclient();
+
+        // TODO better workflow
+        self.send_message_to_bib_server(MessageToBibServer::CompetitorEvaluated(
+            CompetitorEvaluatedBibServer {
+                bib: evaluated.competitor_result.competitor.bib,
+                day_time: evaluated.competitor_result.finish_time.to_exchange_float(),
+            },
+        ))
     }
 
     fn handle_heat_result(&mut self, result: HeatResult) {
@@ -1042,7 +1051,7 @@ impl ServerStateMachine {
             ),
             display_passthrough_address: args.passthrough_address_display_program.clone(),
             // connection states
-            bib_connected: false, // TODO
+            bib_connected: self.comm_channel.bib_server_there_to_receive(),
             display_passthrough_connected: self
                 .comm_channel
                 .connection_check(ConnectionCheck::ExternalDisplayProgramPassthrough),
@@ -1101,6 +1110,16 @@ impl ServerStateMachine {
             Ok(()) => (),
             Err(e) => error!(
                 "Failed to send out instruction to client: {}",
+                e.to_string()
+            ),
+        }
+    }
+
+    fn send_message_to_bib_server(&mut self, inst: MessageToBibServer) {
+        match self.comm_channel.send_out_command_to_bib_server(inst) {
+            Ok(()) => (),
+            Err(e) => error!(
+                "Failed to send out instruction to bib server: {}",
                 e.to_string()
             ),
         }

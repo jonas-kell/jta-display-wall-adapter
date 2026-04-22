@@ -22,6 +22,7 @@
 </template>
 
 <script setup lang="ts">
+    // TODO this page only works if athletes are loaded in MainHeat -> convert to support all heats
     import useMainStore from "../stores/main";
     import useDebugStore from "../stores/debug";
     import {

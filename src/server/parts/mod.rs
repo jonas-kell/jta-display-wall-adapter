@@ -18,4 +18,7 @@ pub mod export_functions {
     pub use super::export::*;
 }
 
-pub use tcp_listener_bib_detection::BibMessage;
+pub use tcp_listener_bib_detection::{
+    CompetitorEvaluatedBibServer, MessageFromBibServer, MessageToBibServer,
+    RaceHasStartedBibServer, SeekForTimeBibServer,
+};

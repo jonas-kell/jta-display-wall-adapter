@@ -2,7 +2,7 @@ use crate::args::Args;
 use crate::interface::ServerStateMachineServerStateReader;
 use crate::json::make_json_exchange_codec;
 use crate::server::comm_channel::InstructionCommunicationChannel;
-use futures::StreamExt;
+use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use std::io::{self, Error, ErrorKind};
 use std::net::SocketAddr;
@@ -18,8 +18,36 @@ use tokio_serde::{formats::Json, Framed};
 use tokio_util::codec::{FramedRead, FramedWrite};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct BibMessage {
+pub struct MessageFromBibServer {
     pub bib: u32,
+    pub day_time: f32, // seconds since midnight
+                       // ... There are more fields, we do not parse
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct CompetitorEvaluatedBibServer {
+    pub day_time: f32, // seconds since midnight
+    pub bib: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct SeekForTimeBibServer {
+    pub day_time: f32, // seconds since midnight
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RaceHasStartedBibServer {
+    pub name: String,
+    pub id: String,
+    pub day_time: f32, // seconds since midnight
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(tag = "type", content = "data")]
+pub enum MessageToBibServer {
+    CompetitorEvaluated(CompetitorEvaluatedBibServer),
+    SeekForTime(SeekForTimeBibServer),
+    RaceHasStarted(RaceHasStartedBibServer),
 }
 
 pub async fn tcp_listener_bib_detection(
@@ -61,14 +89,16 @@ pub async fn tcp_listener_bib_detection(
                 info!("Connected to bib server target {}", bib_server_addr);
 
                 let (read_half, write_half) = timing_stream.into_split();
-                let mut deserializer: Framed<_, BibMessage, BibMessage, _> = Framed::new(
-                    FramedRead::new(read_half, make_json_exchange_codec()),
-                    Json::<BibMessage, BibMessage>::default(),
-                );
-                let mut _serializer: Framed<_, BibMessage, BibMessage, _> = Framed::new(
-                    FramedWrite::new(write_half, make_json_exchange_codec()),
-                    Json::<BibMessage, BibMessage>::default(),
-                );
+                let mut deserializer: Framed<_, MessageFromBibServer, MessageToBibServer, _> =
+                    Framed::new(
+                        FramedRead::new(read_half, make_json_exchange_codec()),
+                        Json::<MessageFromBibServer, MessageToBibServer>::default(),
+                    );
+                let mut serializer: Framed<_, MessageFromBibServer, MessageToBibServer, _> =
+                    Framed::new(
+                        FramedWrite::new(write_half, make_json_exchange_codec()),
+                        Json::<MessageFromBibServer, MessageToBibServer>::default(),
+                    );
 
                 let args_read = args.clone();
                 let shutdown_marker_read = shutdown_marker.clone();
@@ -121,9 +151,47 @@ pub async fn tcp_listener_bib_detection(
                     Ok::<_, Error>(())
                 };
 
-                // we have nothing to say to the bib server
+                let shutdown_marker_write = shutdown_marker.clone();
+                let mut bib_server_receiver = comm_channel.bib_server_receiver();
 
-                match tokio::try_join!(bib_server_read) {
+                let bib_server_write = async move {
+                    loop {
+                        if shutdown_marker_write.load(Ordering::SeqCst) {
+                            debug!("Shutdown marker set, breaking bib server writing");
+                            break;
+                        }
+
+                        match bib_server_receiver.wait_for_some_data().await {
+                            Ok(Ok(mes)) => match serializer.send(mes).await {
+                                Ok(()) => trace!("Message to bib server was emitted"),
+                                Err(e) => {
+                                    error!(
+                                        "Error in outbound bib server communication: {}",
+                                        e.to_string()
+                                    );
+                                    // will attempt to reconnect in next iteration
+                                    return Err(Error::new(ErrorKind::Other, e.to_string()));
+                                }
+                            },
+                            Ok(Err(e)) => {
+                                error!(
+                                    "Bib server could not read from internal comm channel: {}",
+                                    e.to_string()
+                                );
+                                // problems with the internal comm channel (technically this is reason to crash on the spot, this is kind of not supported by the err architecture ins this case -> other places will shut down the program if this happens)
+                                return Err(Error::new(ErrorKind::Other, e.to_string()));
+                            }
+                            Err(_) => {
+                                trace!("No outbound bib server message within timeout interval");
+                                continue;
+                            }
+                        }
+                    }
+
+                    Ok::<_, Error>(())
+                };
+
+                match tokio::try_join!(bib_server_read, bib_server_write) {
                     Err(e) => {
                         error!("Error in a bib server listener task: {}", e.to_string());
                     }

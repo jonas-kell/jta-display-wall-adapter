@@ -6,7 +6,7 @@ use crate::{
         InstructionFromTimingProgram, InstructionToTimingProgram,
     },
     interface::{MessageFromClientToServer, MessageFromServerToClient},
-    server::BibMessage,
+    server::{MessageFromBibServer, MessageToBibServer},
     webserver::{MessageFromWebControl, MessageToWebControl},
     wind::format::{MessageToWindServer, WindMessageBroadcast},
 };
@@ -38,6 +38,8 @@ pub struct InstructionCommunicationChannel {
     outbound_receiver_web_control: BroadcastReceiverStorage<MessageToWebControl>,
     outbound_sender_wind_server: BroadcastSender<MessageToWindServer>,
     outbound_receiver_wind_server: BroadcastReceiverStorage<MessageToWindServer>,
+    outbound_sender_bib_server: BroadcastSender<MessageToBibServer>,
+    outbound_receiver_bib_server: BroadcastReceiverStorage<MessageToBibServer>,
     outbound_sender_idcapture_server: BroadcastSender<MessageToIdcaptureServer>,
     outbound_receiver_idcapture_server: BroadcastReceiverStorage<MessageToIdcaptureServer>,
     connection_check_sender_camera_program_timing_port: BroadcastSender<bool>,
@@ -72,6 +74,10 @@ impl InstructionCommunicationChannel {
             MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
         );
         swi.set_overflow(true);
+        let (mut sbi, rbi) = async_broadcast::broadcast::<MessageToBibServer>(
+            MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+        );
+        sbi.set_overflow(true);
         let (mut sid, rid) = async_broadcast::broadcast::<MessageToIdcaptureServer>(
             MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
         );
@@ -102,6 +108,8 @@ impl InstructionCommunicationChannel {
             outbound_receiver_web_control: BroadcastReceiverStorage::new(rwe, args),
             outbound_sender_wind_server: swi,
             outbound_receiver_wind_server: BroadcastReceiverStorage::new(rwi, args),
+            outbound_sender_bib_server: sbi,
+            outbound_receiver_bib_server: BroadcastReceiverStorage::new(rbi, args),
             outbound_sender_idcapture_server: sid,
             outbound_receiver_idcapture_server: BroadcastReceiverStorage::new(rid, args),
             connection_check_sender_camera_program_timing_port: scptp,
@@ -256,7 +264,10 @@ impl InstructionCommunicationChannel {
         }
     }
 
-    pub fn take_in_command_from_bib_server(&self, inst: BibMessage) -> Result<(), String> {
+    pub fn take_in_command_from_bib_server(
+        &self,
+        inst: MessageFromBibServer,
+    ) -> Result<(), String> {
         match self
             .inbound_sender
             .try_send(IncomingInstruction::FromBibServer(inst))
@@ -394,6 +405,27 @@ impl InstructionCommunicationChannel {
         }
     }
 
+    pub fn send_out_command_to_bib_server(&self, inst: MessageToBibServer) -> Result<(), String> {
+        match self.outbound_sender_bib_server.try_broadcast(inst) {
+            Ok(Some(_)) => {
+                trace!("Thrown away old message in internal comm channel (to bib server)");
+                Ok(())
+            }
+            Ok(None) => Ok(()),
+            Err(BroadcastTrySendError::Inactive(_)) => {
+                warn!("Outbound internal channel not open, no active receivers (to bib server)",);
+                Ok(())
+            }
+            Err(BroadcastTrySendError::Full(_)) => {
+                error!("Bib server receivers are there, but outbound internal channel full. This should not happen!");
+                Ok(())
+            }
+            Err(BroadcastTrySendError::Closed(_)) => Err(format!(
+                "Bib server communication channel went away unexpectedly"
+            )),
+        }
+    }
+
     #[allow(dead_code)]
     pub fn send_out_command_to_idcapture_server(
         &self,
@@ -427,6 +459,14 @@ impl InstructionCommunicationChannel {
 
     pub fn wind_server_there_to_receive(&self) -> bool {
         self.outbound_sender_wind_server.receiver_count() > 0
+    }
+
+    pub fn bib_server_receiver(&self) -> BroadcastReceiver<MessageToBibServer> {
+        self.outbound_receiver_bib_server.get_active_receiver()
+    }
+
+    pub fn bib_server_there_to_receive(&self) -> bool {
+        self.outbound_sender_bib_server.receiver_count() > 0
     }
 
     pub fn idcapture_server_receiver(&self) -> BroadcastReceiver<MessageToIdcaptureServer> {

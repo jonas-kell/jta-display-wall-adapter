@@ -6,7 +6,7 @@ use crate::{
             CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult,
             HeatStart, HeatStartList, HeatWind, HeatWindMissing,
         },
-        BibMessage,
+        MessageFromBibServer,
     },
     times::{DayTime, RaceTime},
     webserver::MessageFromWebControl,
@@ -22,7 +22,7 @@ pub enum IncomingInstruction {
     FromCameraProgram(InstructionFromCameraProgram),
     FromWebControl(MessageFromWebControl),
     FromWindServer(WindMessageBroadcast),
-    FromBibServer(BibMessage),
+    FromBibServer(MessageFromBibServer),
     FromIdcaptureServer(IDCaptureMessage),
 }
 impl Display for IncomingInstruction {

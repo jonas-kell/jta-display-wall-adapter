@@ -361,6 +361,12 @@ impl DayTime {
 
         None
     }
+
+    pub fn to_exchange_float(&self) -> f32 {
+        // TODO include bib server offset
+        let dur = Duration::from(self.clone());
+        dur.as_secs_f32()
+    }
 }
 impl Display for DayTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
