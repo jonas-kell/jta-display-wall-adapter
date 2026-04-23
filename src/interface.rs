@@ -19,7 +19,9 @@ use crate::server::comm_channel::{ConnectionCheck, InstructionCommunicationChann
 use crate::server::export_functions::{
     fake_main_heat_start_list, generate_meet_data, write_to_xml_output_file,
 };
-use crate::server::{CompetitorEvaluatedBibServer, MessageToBibServer};
+use crate::server::{
+    CompetitorEvaluatedBibServer, MessageToBibServer, RaceHasStartedBibServer, SeekForTimeBibServer,
+};
 use crate::times::RaceTime;
 use crate::webserver::{ConnectionState, PDFConfigurationSetting};
 use crate::{
@@ -887,8 +889,13 @@ impl ServerStateMachine {
             },
             IncomingInstruction::FromIdcaptureServer(inst) => match inst {
                 IDCaptureMessage::JumpToTime(jtt) => {
-                    error!("GOT A DAY TIME TO JUMP TO: {:?}", jtt);
-                    // TODO use this
+                    if self.try_work_with_bib_server() {
+                        self.send_message_to_bib_server(MessageToBibServer::SeekForTime(
+                            SeekForTimeBibServer {
+                                timestamp: jtt.to_exchange_float(),
+                            },
+                        ));
+                    }
                 }
             },
         }
@@ -902,12 +909,24 @@ impl ServerStateMachine {
     }
 
     fn handle_heat_start(&mut self, start: HeatStart) {
+        // tell the bib server immediately (real time relevant)
+        if self.try_work_with_bib_server() {
+            self.send_message_to_bib_server(MessageToBibServer::RaceHasStarted(
+                RaceHasStartedBibServer {
+                    id: start.id.to_string(),
+                    timestamp: start.time.to_exchange_float(),
+                },
+            ));
+        }
+
+        // every heat start, the wind clock gets re-synced (semi-real time relevant)
+        if self.try_work_with_wind_server() {
+            self.update_wind_server_time_reference(&start.time);
+        }
+
         if self.timing_settings_template.play_sound_on_start {
             self.play_sound(Sound::Beep1);
         }
-
-        // every heat start, the wind clock gets re-synced
-        self.update_wind_server_time_reference(&start.time);
 
         store_to_database!(start, self);
     }
@@ -987,12 +1006,14 @@ impl ServerStateMachine {
             }
         };
 
-        self.send_message_to_bib_server(MessageToBibServer::CompetitorEvaluated(
-            CompetitorEvaluatedBibServer {
-                bib: evaluated.competitor_result.competitor.bib,
-                day_time: evaluated.competitor_result.finish_time.to_exchange_float(),
-            },
-        ))
+        if self.try_work_with_bib_server() {
+            self.send_message_to_bib_server(MessageToBibServer::CompetitorEvaluated(
+                CompetitorEvaluatedBibServer {
+                    bib: evaluated.competitor_result.competitor.bib,
+                    timestamp: evaluated.competitor_result.finish_time.to_exchange_float(),
+                },
+            ));
+        }
     }
 
     fn handle_heat_result(&mut self, dbss: DatabaseStaticState, result: HeatResult) {
@@ -1034,9 +1055,11 @@ impl ServerStateMachine {
                     self.send_message_to_web_control(MessageToWebControl::MainHeat(
                         main_heat.clone(),
                     ));
-                    self.send_message_to_web_control(MessageToWebControl::DevMainHeatStartList(
-                        main_heat.start_list,
-                    ));
+                    if dev_mode() {
+                        self.send_message_to_web_control(
+                            MessageToWebControl::DevMainHeatStartList(main_heat.start_list),
+                        );
+                    }
                 }
             }
             Err(e) => {
@@ -1058,6 +1081,14 @@ impl ServerStateMachine {
         }
     }
 
+    fn try_work_with_bib_server(&self) -> bool {
+        self.args.address_bib_server.is_some()
+    }
+
+    fn try_work_with_wind_server(&self) -> bool {
+        self.args.address_wind_server.is_some()
+    }
+
     fn send_current_connection_state_to_webclient(&mut self) {
         let args = &self.args;
 
@@ -1077,9 +1108,9 @@ impl ServerStateMachine {
 
         self.send_message_to_web_control(MessageToWebControl::ConnectionState(ConnectionState {
             // tries
-            try_connect_to_wind: args.address_wind_server.is_some(),
+            try_connect_to_wind: self.try_work_with_wind_server(),
             try_conect_to_display_client: args.address_display_client.is_some(),
-            try_connect_to_bib: args.address_bib_server.is_some(),
+            try_connect_to_bib: self.try_work_with_bib_server(),
             try_to_connect_to_camera_program: args.address_camera_program.is_some(),
             try_to_connect_to_idcapture: args.address_idcapture_server.is_some(),
             try_to_connect_to_display_passthrough: args.passthrough_to_display_program,

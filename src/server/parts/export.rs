@@ -311,7 +311,7 @@ pub fn fake_main_heat_start_list(
         None => return Err("Could not generate a heat for the export...".into()),
     };
 
-    return Ok(HeatStartList {
+    let hsl = HeatStartList {
         name: heat.name,
         id: heat.id,
         nr: 1, // I think. This comes from the number in the array
@@ -319,5 +319,12 @@ pub fn fake_main_heat_start_list(
         distance_meters: heat.distance,
         scheduled_start_time: heat.scheduled_start_time,
         competitors: heat.competitors,
-    });
+    };
+
+    match hsl.clone().store_to_database(manager) {
+        Ok(_) => (),
+        Err(e) => return Err(format!("Could not store after generating fake heat: {}", e)),
+    }
+
+    return Ok(hsl);
 }

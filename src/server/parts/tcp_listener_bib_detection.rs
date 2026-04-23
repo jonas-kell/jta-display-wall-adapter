@@ -20,26 +20,25 @@ use tokio_util::codec::{FramedRead, FramedWrite};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MessageFromBibServer {
     pub bib: u32,
-    pub day_time: f32, // seconds since midnight
-                       // ... There are more fields, we do not parse
+    pub timestamp: f32, // seconds since midnight
+                        // ... There are more fields, we do not parse
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct CompetitorEvaluatedBibServer {
-    pub day_time: f32, // seconds since midnight
+    pub timestamp: f32, // seconds since midnight
     pub bib: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SeekForTimeBibServer {
-    pub day_time: f32, // seconds since midnight
+    pub timestamp: f32, // seconds since midnight
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RaceHasStartedBibServer {
-    pub name: String,
     pub id: String,
-    pub day_time: f32, // seconds since midnight
+    pub timestamp: f32, // seconds since midnight
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -2,6 +2,12 @@
     <h2>Debug</h2>
 
     <div class="d-flex flex-column">
+        <template v-if="mainStore.devMainHeatStartList != null">
+            <span v-if="mainStore.devMainHeatStartList.competitors.length == 0">
+                Load Competitors (Go street race mode and "Manage Athletes")</span
+            >
+            <span v-else> {{ mainStore.devMainHeatStartList.competitors.length }} Competitors Loaded</span>
+        </template>
         <v-btn @click="sendMeta" class="mt-2" max-width="40em" :disabled="mainStore.devMainHeatStartList == null">
             Send Meta
         </v-btn>
@@ -29,6 +35,7 @@
     import useMainStore from "../stores/main";
     import useDebugStore from "../stores/debug";
     import {
+        DayTime,
         HeatCompetitor,
         HeatCompetitorResult,
         MessageFromWebControlDevRequestMainHeatStartList,
@@ -59,6 +66,20 @@
 
     function resetClock() {
         mainStore.sendGenericWSCommand({ type: "DevReset" } as MessageFromWebControlDevReset);
+        debugStore.startTime = null;
+    }
+
+    function nowAsDayTime(): DayTime {
+        const now = new Date();
+
+        const milliseconds = now.getMilliseconds();
+
+        return {
+            hours: now.getHours(),
+            minutes: now.getMinutes(),
+            seconds: now.getSeconds(),
+            fractional_part_in_ten_thousands: Math.floor((milliseconds / 1000) * 10000),
+        };
     }
 
     function startClock() {
@@ -72,13 +93,7 @@
                     application: "DevTest",
                     version: "0.0.0",
                     generated: "2026-01-01T10:10:10",
-                    time: {
-                        // this is not really used, we just send fake data here
-                        hours: 10,
-                        minutes: 10,
-                        seconds: 10,
-                        fractional_part_in_ten_thousands: null,
-                    },
+                    time: nowAsDayTime(),
                     id: heatId,
                 },
             } as MessageFromWebControlDevStartRace);
@@ -156,13 +171,7 @@
                     application: "DevTest",
                     version: "0.0.0",
                     generated: "2026-01-01T10:10:10",
-                    time: {
-                        // this is not really used, we just send fake data here
-                        hours: 10,
-                        minutes: 10,
-                        seconds: 10,
-                        fractional_part_in_ten_thousands: null,
-                    },
+                    time: nowAsDayTime(),
                     id: heatId,
                     race_time: raceTimeFromNumber(time),
                 },
@@ -223,13 +232,7 @@
                         difference_to_previous: { type: "Winner" }, // this is not really used, we just send fake data here
                         difference_to_winner: { type: "Winner" }, // this is not really used, we just send fake data here
                         distance: heat.distance_meters,
-                        finish_time: {
-                            // this is not really used, we just send fake data here
-                            hours: 10,
-                            minutes: 10,
-                            seconds: 10,
-                            fractional_part_in_ten_thousands: null,
-                        },
+                        finish_time: nowAsDayTime(),
                         rank: 1, // this is not really used, we just send fake data here
                         runtime: raceTimeFromNumber(lastTime),
                         runtime_full_precision: raceTimeFromNumber(lastTime),
@@ -244,13 +247,7 @@
                     difference_to_previous: { type: "Winner" }, // this is not really used, we just send fake data here
                     difference_to_winner: { type: "Winner" }, // this is not really used, we just send fake data here
                     distance: heat.distance_meters,
-                    finish_time: {
-                        // this is not really used, we just send fake data here
-                        hours: 10,
-                        minutes: 10,
-                        seconds: 10,
-                        fractional_part_in_ten_thousands: null,
-                    },
+                    finish_time: nowAsDayTime(),
                     rank: 1, // this is not really used, we just send fake data here
                     runtime: raceTimeFromNumber(time),
                     runtime_full_precision: raceTimeFromNumber(time),
@@ -269,13 +266,7 @@
                     id: heatId,
                     name: heat.name,
                     wind: null, // TODO support wind!
-                    start_time: {
-                        // this is not really used, we just send fake data here
-                        hours: 10,
-                        minutes: 10,
-                        seconds: 10,
-                        fractional_part_in_ten_thousands: null,
-                    },
+                    start_time: nowAsDayTime(),
                     competitors_evaluated: results,
                     competitors_left_to_evaluate: leftToEval,
                 },
