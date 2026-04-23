@@ -94,11 +94,6 @@ export type DayTime = {
     seconds: number;
     fractional_part_in_ten_thousands: number | null;
 };
-export type DifferenceToCandidate =
-    | DifferenceToCandidateWinner
-    | DifferenceToCandidateDifference;
-export type DifferenceToCandidateDifference = { type: "Difference"; data: RaceTime };
-export type DifferenceToCandidateWinner = { type: "Winner" };
 export type DisplayClientState = {
     alive: boolean;
     external_passthrough_mode: boolean;
@@ -151,8 +146,6 @@ export type HeatCompetitorResult = {
     rank: number;
     runtime: RaceTime;
     runtime_full_precision: RaceTime;
-    difference_to_winner: DifferenceToCandidate;
-    difference_to_previous: DifferenceToCandidate;
     finish_time: DayTime;
 };
 export type HeatData = {

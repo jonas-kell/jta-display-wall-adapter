@@ -229,8 +229,6 @@
                     generated: "2026-01-01T10:10:10",
                     competitor_result: {
                         competitor: last,
-                        difference_to_previous: { type: "Winner" }, // this is not really used, we just send fake data here
-                        difference_to_winner: { type: "Winner" }, // this is not really used, we just send fake data here
                         distance: heat.distance_meters,
                         finish_time: nowAsDayTime(),
                         rank: 1, // this is not really used, we just send fake data here
@@ -244,8 +242,6 @@
                 const comp = heat.competitors[index];
                 return {
                     competitor: comp,
-                    difference_to_previous: { type: "Winner" }, // this is not really used, we just send fake data here
-                    difference_to_winner: { type: "Winner" }, // this is not really used, we just send fake data here
                     distance: heat.distance_meters,
                     finish_time: nowAsDayTime(),
                     rank: 1, // this is not really used, we just send fake data here
@@ -265,7 +261,7 @@
                     distance_meters: heat.distance_meters,
                     id: heatId,
                     name: heat.name,
-                    wind: null, // TODO support wind!
+                    wind: null, // wind is sent on different way
                     start_time: nowAsDayTime(),
                     competitors_evaluated: results,
                     competitors_left_to_evaluate: leftToEval,

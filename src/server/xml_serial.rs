@@ -3,9 +3,8 @@ use crate::hex::hex_log_bytes;
 use crate::hex::{parse_race_time, parse_two_digits, take_until_and_consume};
 use crate::instructions::InstructionFromCameraProgram;
 use crate::server::camera_program_datatypes::{
-    CompetitorEvaluated, DifferenceToCandidate, DisqualificationReason, HeatCompetitor,
-    HeatCompetitorResult, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
-    HeatStartList, HeatWind,
+    CompetitorEvaluated, DisqualificationReason, HeatCompetitor, HeatCompetitorResult,
+    HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart, HeatStartList, HeatWind,
 };
 use crate::server::camera_program_types::{
     DistanceType, Event, Heat, HeatWindMissing, Meet, Session,
@@ -518,18 +517,16 @@ impl TryFrom<CompetitorEvaluatedXML> for CompetitorEvaluated {
                     .disqualification
                     .map(|a| DisqualificationReason::parse_from_string(&a)),
             },
-            difference_to_previous: DifferenceToCandidate::parse_from_string(
-                value.difference_to_previous,
-            )?,
-            difference_to_winner: DifferenceToCandidate::parse_from_string(
-                value.difference_to_winner,
-            )?,
             distance: value.distance,
             finish_time: value.finish_time.0,
             rank: value.rank,
             runtime: value.runtime.0,
             runtime_full_precision: value.runtime_full_precision.0,
         };
+
+        // TODO: this was not supported in typescript AND bincode, as it was a tagged enum. It was not used, so it was eliminated
+        let _ = value.difference_to_previous;
+        let _ = value.difference_to_winner;
 
         let _ = value.heat_id; // drop because we get inconsistent type from source
         let _ = value.session_id;
@@ -547,20 +544,13 @@ impl TryFrom<CompetitorEvaluatedXML> for CompetitorEvaluated {
     type Error = String;
 }
 
-impl DifferenceToCandidate {
-    fn parse_from_string(input: String) -> Result<DifferenceToCandidate, String> {
-        if input == "Sieger" {
-            return Ok(DifferenceToCandidate::Winner);
-        } else {
-            return RaceTime::parse_from_string(&input)
-                .map(|i| DifferenceToCandidate::Difference(i));
-        }
-    }
-}
-
 impl TryFrom<HeatCompetitorXML> for HeatCompetitorResult {
     fn try_from(value: HeatCompetitorXML) -> Result<Self, Self::Error> {
         let heat_competitor: HeatCompetitor = value.clone().into();
+
+        // TODO: this was not supported in typescript AND bincode, as it was a tagged enum. It was not used, so it was eliminated
+        let _ = value.difference_to_previous;
+        let _ = value.difference_to_winner;
 
         if value.runtime_full_precision.is_none() {
             // does not yet have results
@@ -571,18 +561,6 @@ impl TryFrom<HeatCompetitorXML> for HeatCompetitorResult {
 
         Ok(Self {
             competitor: heat_competitor,
-            difference_to_previous: DifferenceToCandidate::parse_from_string(
-                value
-                    .difference_to_previous
-                    .ok_or(Err(String::from("DifferenceToPrevious is not set")))?,
-            )
-            .map_err(|e| Err(e))?,
-            difference_to_winner: DifferenceToCandidate::parse_from_string(
-                value
-                    .difference_to_winner
-                    .ok_or(Err(String::from("DifferenceToWinner is not set")))?,
-            )
-            .map_err(|e| Err(e))?,
             distance: value
                 .distance
                 .ok_or(String::from("Distance is not set"))

@@ -143,7 +143,12 @@ pub async fn run_network_task(
                         Ok::<_, String>(())
                     };
 
-                    tokio::try_join!(read_handler, write_handler)?;
+                    match tokio::try_join!(read_handler, write_handler) {
+                        Ok(_) => (),
+                        Err(e) => {
+                            error!("Client listening task crashed unexpectedly: {}", e);
+                        }
+                    }
 
                     Ok::<_, String>(())
                 });

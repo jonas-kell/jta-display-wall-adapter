@@ -350,11 +350,15 @@ impl TimingStateMachine {
                 if self.settings.can_currently_update_meta {
                     let rd = RaceDistance::new(hsl.distance_meters);
                     let time_continues_running = rd.get_time_continues_running();
+                    let result_list_copy = match &self.meta {
+                        Some(meta) => meta.result.clone(),
+                        None => None,
+                    };
                     self.meta = Some(TimingStateMeta {
                         title: hsl.name.clone(),
                         distance: rd,
                         start_list: Some(hsl),
-                        result: None,
+                        result: result_list_copy,
                     });
 
                     // update settings
@@ -413,6 +417,12 @@ impl TimingStateMachine {
                 self.race_wind = None; // make sure, to clear this
                 self.race_finished = false;
                 self.time_held_counter = 0;
+                match &mut self.meta {
+                    Some(meta) => {
+                        meta.result = None;
+                    }
+                    None => (),
+                }
 
                 // a reset gets sent with all start list requests, so we do not automatically switch anywhere
             }

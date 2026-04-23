@@ -1020,10 +1020,17 @@ impl ServerStateMachine {
         // this takes a DatabaseStaticState and not a &DatabaseStaticState because it is a self function that borrows mutable and we can not simultaneously borrow the dbss reference
         // I don't wanna extra unwrap the dbss though, because in the switch where this function is used, this is always done
 
-        store_to_database!(result.clone(), self);
+        if let Some(wind) = &result.wind {
+            // Can get wind here again, if it was missed
+            self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                TimingUpdate::Wind(wind.clone()),
+            ));
+        }
         self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-            TimingUpdate::ResultMeta(result),
+            TimingUpdate::ResultMeta(result.clone()),
         ));
+
+        store_to_database!(result, self); // needs to be before athletes data read
 
         // used in Street run modes (might be used in Sprinterkönig - did not check) -> is quite unnecessary overhead in Track Mode, as there the heats come from external
         match dbss.mode {
