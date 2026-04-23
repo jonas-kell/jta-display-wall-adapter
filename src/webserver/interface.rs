@@ -5,11 +5,11 @@ use crate::{
     server::{
         bib_detection::DisplayEntry,
         camera_program_types::{
-            Athlete, AthleteWithMetadata, CompetitorEvaluated, HeatAssignment, HeatData, HeatMeta,
-            HeatResult, HeatStartList, HeatWind,
+            Athlete, AthleteWithMetadata, CompetitorEvaluated, HeatAssignment, HeatData,
+            HeatFinish, HeatIntermediate, HeatMeta, HeatResult, HeatStart, HeatStartList, HeatWind,
         },
     },
-    times::{DayTime, RaceTime},
+    times::DayTime,
     wind::format::WindMeasurement,
 };
 use chrono::NaiveDateTime;
@@ -55,10 +55,10 @@ pub enum MessageFromWebControl {
     RequestConnectionStates,
     // DEV calls
     DevReset,
+    DevStartRace(HeatStart),
     DevSendStartList(HeatStartList),
-    DevStartRace,
-    DevSendIntermediateSignal(RaceTime),
-    DevSendFinishSignal(RaceTime),
+    DevSendIntermediateSignal(HeatIntermediate),
+    DevSendFinishSignal(HeatFinish),
     DevSendEvaluated(CompetitorEvaluated),
     DevSendResultList(HeatResult),
     DevSendWind(HeatWind),

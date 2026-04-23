@@ -254,8 +254,8 @@ export type MessageFromWebControl =
     | MessageFromWebControlRequestLicense
     | MessageFromWebControlRequestConnectionStates
     | MessageFromWebControlDevReset
-    | MessageFromWebControlDevSendStartList
     | MessageFromWebControlDevStartRace
+    | MessageFromWebControlDevSendStartList
     | MessageFromWebControlDevSendIntermediateSignal
     | MessageFromWebControlDevSendFinishSignal
     | MessageFromWebControlDevSendEvaluated
@@ -273,12 +273,12 @@ export type MessageFromWebControlDeletePDFConfigurationSetting = { type: "Delete
 export type MessageFromWebControlDevRequestMainHeatStartList = { type: "DevRequestMainHeatStartList" };
 export type MessageFromWebControlDevReset = { type: "DevReset" };
 export type MessageFromWebControlDevSendEvaluated = { type: "DevSendEvaluated"; data: CompetitorEvaluated };
-export type MessageFromWebControlDevSendFinishSignal = { type: "DevSendFinishSignal"; data: RaceTime };
-export type MessageFromWebControlDevSendIntermediateSignal = { type: "DevSendIntermediateSignal"; data: RaceTime };
+export type MessageFromWebControlDevSendFinishSignal = { type: "DevSendFinishSignal"; data: HeatFinish };
+export type MessageFromWebControlDevSendIntermediateSignal = { type: "DevSendIntermediateSignal"; data: HeatIntermediate };
 export type MessageFromWebControlDevSendResultList = { type: "DevSendResultList"; data: HeatResult };
 export type MessageFromWebControlDevSendStartList = { type: "DevSendStartList"; data: HeatStartList };
 export type MessageFromWebControlDevSendWind = { type: "DevSendWind"; data: HeatWind };
-export type MessageFromWebControlDevStartRace = { type: "DevStartRace" };
+export type MessageFromWebControlDevStartRace = { type: "DevStartRace"; data: HeatStart };
 export type MessageFromWebControlExportDataToFile = { type: "ExportDataToFile" };
 export type MessageFromWebControlFreeText = { type: "FreeText"; data: string };
 export type MessageFromWebControlGetHeats = { type: "GetHeats" };

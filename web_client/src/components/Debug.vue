@@ -6,7 +6,7 @@
             Send Meta
         </v-btn>
         <v-btn @click="resetClock" class="mt-2" max-width="40em"> Reset </v-btn>
-        <v-btn @click="startClock" class="mt-2" max-width="40em"> Start </v-btn>
+        <v-btn @click="startClock" class="mt-2" max-width="40em" :disabled="debugStore.startTime != null"> Start </v-btn>
         <v-btn @click="intermediateSignal" class="mt-2" max-width="40em" :disabled="debugStore.startTime == null">
             Intermediate Signal
         </v-btn>
@@ -62,10 +62,32 @@
     }
 
     function startClock() {
-        mainStore.sendGenericWSCommand({ type: "DevStartRace" } as MessageFromWebControlDevStartRace);
-        debugStore.startTime = Date.now();
-        debugStore.finishIndex = -1;
-        debugStore.times = [];
+        if (mainStore.devMainHeatStartList != null) {
+            const heat = mainStore.devMainHeatStartList;
+            const heatId = heat.id;
+
+            mainStore.sendGenericWSCommand({
+                type: "DevStartRace",
+                data: {
+                    application: "DevTest",
+                    version: "0.0.0",
+                    generated: "2026-01-01T10:10:10",
+                    time: {
+                        // this is not really used, we just send fake data here
+                        hours: 10,
+                        minutes: 10,
+                        seconds: 10,
+                        fractional_part_in_ten_thousands: null,
+                    },
+                    id: heatId,
+                },
+            } as MessageFromWebControlDevStartRace);
+            debugStore.startTime = Date.now();
+            debugStore.finishIndex = -1;
+            debugStore.times = [];
+        } else {
+            console.error("No startlist... Sad");
+        }
     }
 
     function sendWind() {
@@ -87,16 +109,34 @@
                     },
                 },
             } as MessageFromWebControlDevSendWind);
+        } else {
+            console.error("None started... Sad");
         }
     }
 
     function intermediateSignal() {
-        if (debugStore.startTime != null) {
+        if (mainStore.devMainHeatStartList != null && debugStore.startTime != null) {
+            const heat = mainStore.devMainHeatStartList;
+            const heatId = heat.id;
+
             const time = (Date.now() - debugStore.startTime) / 1000;
 
             mainStore.sendGenericWSCommand({
                 type: "DevSendIntermediateSignal",
-                data: raceTimeFromNumber(time),
+                data: {
+                    application: "DevTest",
+                    version: "0.0.0",
+                    generated: "2026-01-01T10:10:10",
+                    time: {
+                        // this is not really used, we just send fake data here
+                        hours: 10,
+                        minutes: 10,
+                        seconds: 10,
+                        fractional_part_in_ten_thousands: null,
+                    },
+                    id: heatId,
+                    intermediate_time_at: raceTimeFromNumber(time),
+                },
             } as MessageFromWebControlDevSendIntermediateSignal);
         } else {
             console.error("None started... Sad");
@@ -104,12 +144,28 @@
     }
 
     function endSignal() {
-        if (debugStore.startTime != null) {
+        if (mainStore.devMainHeatStartList != null && debugStore.startTime != null) {
+            const heat = mainStore.devMainHeatStartList;
+            const heatId = heat.id;
+
             const time = (Date.now() - debugStore.startTime) / 1000;
 
             mainStore.sendGenericWSCommand({
                 type: "DevSendFinishSignal",
-                data: raceTimeFromNumber(time),
+                data: {
+                    application: "DevTest",
+                    version: "0.0.0",
+                    generated: "2026-01-01T10:10:10",
+                    time: {
+                        // this is not really used, we just send fake data here
+                        hours: 10,
+                        minutes: 10,
+                        seconds: 10,
+                        fractional_part_in_ten_thousands: null,
+                    },
+                    id: heatId,
+                    race_time: raceTimeFromNumber(time),
+                },
             } as MessageFromWebControlDevSendFinishSignal);
         } else {
             console.error("None started... Sad");

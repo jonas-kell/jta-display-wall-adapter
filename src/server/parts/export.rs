@@ -308,7 +308,7 @@ pub fn fake_main_heat_start_list(
     // must exist as this function is designed like that
     let heat = match event.heats.pop() {
         Some(h) => h,
-        None => return Err("Could not generate a heat like for the export...".into()),
+        None => return Err("Could not generate a heat for the export...".into()),
     };
 
     return Ok(HeatStartList {

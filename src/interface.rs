@@ -2,7 +2,7 @@ use crate::client::frametime::{FrametimeReport, FrametimeTracker};
 use crate::database::{
     create_heat_assignment, delete_athlete, delete_evaluation, delete_heat_assignment,
     delete_pdf_setting, get_all_athletes_meta_data, get_database_static_state, get_main_heat,
-    init_database_static_state, populate_display_from_bib, DatabaseStaticState,
+    init_database_static_state, populate_display_from_bib, ApplicationMode, DatabaseStaticState,
 };
 use crate::idcapture::format::IDCaptureMessage;
 use crate::instructions::InstructionFromExternalDisplayProgram::{Frame, ServerInfo};
@@ -11,7 +11,10 @@ use crate::productkey::{dev_mode, product_key_valid};
 use crate::productkey::{today, ProductKey};
 use crate::server::audio_types::{AudioPlayer, Sound};
 use crate::server::bib_detection::DisplayEntry;
-use crate::server::camera_program_types::{CompetitorEvaluated, HeatResult, HeatWind};
+use crate::server::camera_program_types::{
+    CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
+    HeatWind,
+};
 use crate::server::comm_channel::{ConnectionCheck, InstructionCommunicationChannel};
 use crate::server::export_functions::{
     fake_main_heat_start_list, generate_meet_data, write_to_xml_output_file,
@@ -467,78 +470,43 @@ impl ServerStateMachine {
             },
             IncomingInstruction::FromCameraProgram(inst) => match inst {
                 InstructionFromCameraProgram::HeatStartList(list) => {
-                    store_to_database!(list.clone(), self);
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::Meta(list),
-                    ));
+                    self.handle_heat_start_list(list);
                 }
                 InstructionFromCameraProgram::HeatStart(start) => {
-                    if self.timing_settings_template.play_sound_on_start {
-                        self.play_sound(Sound::Beep1);
-                    }
-
-                    // every heat start, the wind clock gets re-synced
-                    self.update_wind_server_time_reference(&start.time);
-
-                    store_to_database!(start, self);
+                    self.handle_heat_start(start);
                 }
                 InstructionFromCameraProgram::HeatFalseStart(false_start) => {
-                    let id = false_start.id;
-                    store_to_database!(false_start, self);
-
-                    match purge_heat_data(id, &self.database_manager) {
-                        Ok(()) => (),
-                        Err(e) => {
-                            error!("Error when purging heat data: {}", e);
-                        }
-                    }
-
-                    self.send_out_main_heat_to_webclient();
+                    self.handle_heat_false_start(false_start);
                 }
                 InstructionFromCameraProgram::HeatIntermediate(intermediate) => {
-                    if self.timing_settings_template.play_sound_on_intermediate {
-                        self.play_sound(Sound::Beep2);
-                    }
-                    store_to_database!(intermediate, self);
+                    self.handle_heat_intermediate(intermediate);
                 }
                 InstructionFromCameraProgram::HeatWind(wind) => {
                     self.handle_heat_wind(wind);
                 }
                 InstructionFromCameraProgram::HeatWindMissing(missing_wind) => {
-                    store_to_database!(missing_wind, self); // this does not need to and can not be faked
+                    store_to_database!(missing_wind, self); // this does not need to and can not be faked -> it is on and has no other purpose
                 }
                 InstructionFromCameraProgram::HeatFinish(finish) => {
-                    if self.timing_settings_template.play_sound_on_finish {
-                        self.play_sound(Sound::Beep3);
-                    }
-                    store_to_database!(finish, self);
+                    self.handle_heat_finish(finish);
                 }
                 InstructionFromCameraProgram::CompetitorEvaluated(evaluated) => {
-                    self.handle_competitor_evaluated(evaluated);
+                    self.handle_competitor_evaluated(dbss.clone(), evaluated);
                 }
                 InstructionFromCameraProgram::HeatResult(result) => {
-                    self.handle_heat_result(result);
+                    self.handle_heat_result(dbss.clone(), result);
                 }
                 InstructionFromCameraProgram::ZeroTime => {
-                    // TODO think about if we really want to reset (maybe not if meta-change = off)
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::Reset,
-                    ));
+                    self.handle_heat_reset_display();
                 }
                 InstructionFromCameraProgram::RaceTime(rt) => {
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::Running(rt),
-                    ));
-                }
-                InstructionFromCameraProgram::EndTime(rt) => {
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::End(rt),
-                    ));
+                    self.handle_race_time_display(rt);
                 }
                 InstructionFromCameraProgram::IntermediateTime(rt) => {
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::Intermediate(rt),
-                    ));
+                    self.handle_intermediate_time_display(rt);
+                }
+                InstructionFromCameraProgram::EndTime(rt) => {
+                    self.handle_end_time_display(rt);
                 }
                 InstructionFromCameraProgram::DayTime(dt) => {
                     if self.state == ServerState::PassthroughClient {
@@ -797,13 +765,13 @@ impl ServerStateMachine {
                     self.send_out_all_database_settings_to_webclient();
                 }
                 MessageFromWebControl::GetMainHeat => {
-                    self.send_out_main_heat_to_webclient();
+                    self.send_out_main_heat_to_webcontrol();
                 }
                 MessageFromWebControl::DeleteCompetitorEvaluated(ft) => {
                     match delete_evaluation(ft, &self.database_manager) {
                         Ok(_) => {
                             debug!("Deleted evaluation manually");
-                            self.send_out_main_heat_to_webclient();
+                            self.send_out_main_heat_to_webcontrol();
                         }
                         Err(e) => error!(
                             "Encountered error, while deleting an evaluation: {}",
@@ -833,6 +801,17 @@ impl ServerStateMachine {
                     ));
                 }
                 // Dev mode and debug signals
+                MessageFromWebControl::DevRequestMainHeatStartList => {
+                    match fake_main_heat_start_list(dbss, &self.database_manager) {
+                        Ok(_) => {
+                            self.send_out_main_heat_to_webcontrol();
+                        }
+                        Err(e) => {
+                            error!("Failed to generate fake heat start List: {}", e);
+                            return;
+                        }
+                    };
+                }
                 MessageFromWebControl::DevReset => {
                     match fake_main_heat_start_list(dbss, &self.database_manager) {
                         Ok(hsl) => match purge_heat_data(hsl.id, &self.database_manager) {
@@ -843,50 +822,33 @@ impl ServerStateMachine {
                         },
                         Err(_) => {}
                     };
-                    self.send_out_main_heat_to_webclient();
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::Reset,
-                    ));
+
+                    self.send_out_main_heat_to_webcontrol();
+                    self.handle_heat_reset_display();
                 }
                 MessageFromWebControl::DevSendStartList(hsl) => {
-                    store_to_database!(hsl.clone(), self); // needed for other functionality to work
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::Meta(hsl),
-                    ));
+                    self.handle_heat_start_list(hsl);
                 }
-                MessageFromWebControl::DevStartRace => {
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::Running(RaceTime::get_zero_time()),
-                    ));
+                MessageFromWebControl::DevStartRace(hs) => {
+                    self.handle_heat_start(hs);
+
+                    // this is NOT constantly updated, only initial. The client can count on its own
+                    // the real one ticks this to keep it in sync
+                    self.handle_race_time_display(RaceTime::get_zero_time());
                 }
-                MessageFromWebControl::DevSendIntermediateSignal(rt) => {
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::Intermediate(rt),
-                    ));
+                MessageFromWebControl::DevSendIntermediateSignal(hi) => {
+                    self.handle_intermediate_time_display(hi.intermediate_time_at.clone());
+                    self.handle_heat_intermediate(hi);
                 }
-                MessageFromWebControl::DevSendFinishSignal(rt) => {
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::End(rt),
-                    ));
+                MessageFromWebControl::DevSendFinishSignal(hf) => {
+                    self.handle_end_time_display(hf.race_time.clone());
+                    self.handle_heat_finish(hf);
                 }
                 MessageFromWebControl::DevSendEvaluated(ce) => {
-                    self.handle_competitor_evaluated(ce);
+                    self.handle_competitor_evaluated(dbss.clone(), ce);
                 }
                 MessageFromWebControl::DevSendResultList(hr) => {
-                    self.handle_heat_result(hr);
-                }
-                MessageFromWebControl::DevRequestMainHeatStartList => {
-                    let hsl = match fake_main_heat_start_list(dbss, &self.database_manager) {
-                        Ok(hsl) => hsl,
-                        Err(e) => {
-                            error!("Failed to generate fake heat start List: {}", e);
-                            return;
-                        }
-                    };
-
-                    self.send_message_to_web_control(MessageToWebControl::DevMainHeatStartList(
-                        hsl,
-                    ));
+                    self.handle_heat_result(dbss.clone(), hr);
                 }
                 MessageFromWebControl::DevSendWind(wind) => {
                     self.handle_heat_wind(wind);
@@ -932,15 +894,99 @@ impl ServerStateMachine {
         }
     }
 
-    fn handle_competitor_evaluated(&mut self, evaluated: CompetitorEvaluated) {
+    fn handle_heat_start_list(&mut self, list: HeatStartList) {
+        store_to_database!(list.clone(), self);
+        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+            TimingUpdate::Meta(list),
+        ));
+    }
+
+    fn handle_heat_start(&mut self, start: HeatStart) {
+        if self.timing_settings_template.play_sound_on_start {
+            self.play_sound(Sound::Beep1);
+        }
+
+        // every heat start, the wind clock gets re-synced
+        self.update_wind_server_time_reference(&start.time);
+
+        store_to_database!(start, self);
+    }
+
+    fn handle_heat_false_start(&mut self, false_start: HeatFalseStart) {
+        let id = false_start.id;
+        store_to_database!(false_start, self);
+
+        match purge_heat_data(id, &self.database_manager) {
+            Ok(()) => (),
+            Err(e) => {
+                error!("Error when purging heat data: {}", e);
+            }
+        }
+
+        self.send_out_main_heat_to_webcontrol();
+    }
+
+    fn handle_heat_reset_display(&mut self) {
+        // TODO think about if we really want to reset (maybe not if meta-change = off)
+        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+            TimingUpdate::Reset,
+        ));
+    }
+
+    fn handle_race_time_display(&mut self, rt: RaceTime) {
+        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+            TimingUpdate::Running(rt),
+        ));
+    }
+
+    fn handle_heat_intermediate(&mut self, intermediate: HeatIntermediate) {
+        if self.timing_settings_template.play_sound_on_intermediate {
+            self.play_sound(Sound::Beep2);
+        }
+
+        store_to_database!(intermediate, self);
+    }
+
+    fn handle_intermediate_time_display(&mut self, rt: RaceTime) {
+        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+            TimingUpdate::Intermediate(rt),
+        ));
+    }
+
+    fn handle_heat_finish(&mut self, finish: HeatFinish) {
+        if self.timing_settings_template.play_sound_on_finish {
+            self.play_sound(Sound::Beep3);
+        }
+
+        store_to_database!(finish, self);
+    }
+
+    fn handle_end_time_display(&mut self, rt: RaceTime) {
+        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+            TimingUpdate::End(rt),
+        ));
+    }
+
+    fn handle_competitor_evaluated(
+        &mut self,
+        dbss: DatabaseStaticState,
+        evaluated: CompetitorEvaluated,
+    ) {
         store_to_database!(evaluated.clone(), self);
         // we can assume, that the "always emit result list on change" setting is active in the camera program
         // for this reason, we ignore singular evaluation emits
 
-        // street races work with evaluations. So this now is their time to shine
-        self.send_out_main_heat_to_webclient();
+        // used in Sprinterkönig and Street run modes -> is quite unnecessary overhead in Track Mode, as there the heats come from external
+        match dbss.mode {
+            // street races work with evaluations. So this now is their time to shine
+            ApplicationMode::StreetLongRun => {
+                self.send_out_main_heat_to_webcontrol();
+            }
+            _ => {
+                debug!("Main heat on evaluation is unnecessary overhead in this mode. Will not be generated");
+            }
+        };
 
-        // TODO better workflow
         self.send_message_to_bib_server(MessageToBibServer::CompetitorEvaluated(
             CompetitorEvaluatedBibServer {
                 bib: evaluated.competitor_result.competitor.bib,
@@ -949,29 +995,55 @@ impl ServerStateMachine {
         ))
     }
 
-    fn handle_heat_result(&mut self, result: HeatResult) {
+    fn handle_heat_result(&mut self, dbss: DatabaseStaticState, result: HeatResult) {
+        // this takes a DatabaseStaticState and not a &DatabaseStaticState because it is a self function that borrows mutable and we can not simultaneously borrow the dbss reference
+        // I don't wanna extra unwrap the dbss though, because in the switch where this function is used, this is always done
+
         store_to_database!(result.clone(), self);
         self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
             TimingUpdate::ResultMeta(result),
         ));
 
-        // TODO maybe only send this out on sprinterkönig mode
-        match get_all_athletes_meta_data(&self.database_manager) {
-            Ok(d) => self.send_message_to_web_control(MessageToWebControl::AthletesData(d)),
-            Err(e) => {
-                error!(
-                    "Encountered error, after heat result possibly changed data: {}",
-                    e
-                )
+        // used in Street run modes (might be used in Sprinterkönig - did not check) -> is quite unnecessary overhead in Track Mode, as there the heats come from external
+        match dbss.mode {
+            ApplicationMode::SprinterKing | ApplicationMode::StreetLongRun => {
+                match get_all_athletes_meta_data(&self.database_manager) {
+                    Ok(d) => self.send_message_to_web_control(MessageToWebControl::AthletesData(d)),
+                    Err(e) => {
+                        error!(
+                            "Encountered error, after heat result possibly changed data: {}",
+                            e
+                        )
+                    }
+                }
+            }
+            _ => {
+                debug!("All athletes metadata is unnecessary overhead in this mode. Will not be generated");
             }
         }
     }
 
     fn handle_heat_wind(&mut self, wind: HeatWind) {
-        store_to_database!(wind, self);
+        store_to_database!(wind, self); // TODO add to display
     }
 
-    // TODO refactor: move all settings that are accessed during run operation (and therefore are tested with the /debug menu) into here to aggregate and avoid code dupliation
+    fn send_out_main_heat_to_webcontrol(&mut self) {
+        match get_main_heat(&self.database_manager) {
+            Ok(data) => {
+                if let Some(main_heat) = data {
+                    self.send_message_to_web_control(MessageToWebControl::MainHeat(
+                        main_heat.clone(),
+                    ));
+                    self.send_message_to_web_control(MessageToWebControl::DevMainHeatStartList(
+                        main_heat.start_list,
+                    ));
+                }
+            }
+            Err(e) => {
+                error!("Database loading error for main heat: {}", e);
+            }
+        }
+    }
 
     fn send_out_all_database_settings_to_webclient(&mut self) {
         match PDFConfigurationSetting::get_all_from_database(&self.database_manager) {
@@ -1070,19 +1142,6 @@ impl ServerStateMachine {
         }));
     }
 
-    fn send_out_main_heat_to_webclient(&mut self) {
-        match get_main_heat(&self.database_manager) {
-            Ok(data) => {
-                if let Some(main_heat) = data {
-                    self.send_message_to_web_control(MessageToWebControl::MainHeat(main_heat));
-                }
-            }
-            Err(e) => {
-                error!("Database loading error for main heat: {}", e);
-            }
-        }
-    }
-
     fn send_out_latest_n_logs_to_webclient(&mut self, n: u32) {
         match get_log_limited(Some(n), &self.database_manager) {
             Ok(data) => {
@@ -1104,9 +1163,13 @@ impl ServerStateMachine {
     }
 
     fn send_message_to_timing_program(&mut self, inst: InstructionToTimingProgram) {
-        match self.comm_channel.send_out_command_to_timing_program(inst) {
-            Ok(()) => (),
-            Err(e) => error!("Failed to send out instruction: {}", e.to_string()),
+        if self.comm_channel.timing_program_there_to_receive() {
+            match self.comm_channel.send_out_command_to_timing_program(inst) {
+                Ok(()) => (),
+                Err(e) => error!("Failed to send out instruction: {}", e.to_string()),
+            }
+        } else {
+            debug!("No timing program connected. Skipping sending");
         }
     }
 
@@ -1121,35 +1184,47 @@ impl ServerStateMachine {
     }
 
     fn send_message_to_bib_server(&mut self, inst: MessageToBibServer) {
-        match self.comm_channel.send_out_command_to_bib_server(inst) {
-            Ok(()) => (),
-            Err(e) => error!(
-                "Failed to send out instruction to bib server: {}",
-                e.to_string()
-            ),
+        if self.comm_channel.bib_server_there_to_receive() {
+            match self.comm_channel.send_out_command_to_bib_server(inst) {
+                Ok(()) => (),
+                Err(e) => error!(
+                    "Failed to send out instruction to bib server: {}",
+                    e.to_string()
+                ),
+            }
+        } else {
+            debug!("No bib server connected. Skipping sending");
         }
     }
 
     fn send_message_to_web_control(&mut self, inst: MessageToWebControl) {
-        match self.comm_channel.send_out_command_to_web_control(inst) {
-            Ok(()) => (),
-            Err(e) => error!(
-                "Failed to send out instruction to web control: {}",
-                e.to_string()
-            ),
+        if self.comm_channel.web_control_there_to_receive() {
+            match self.comm_channel.send_out_command_to_web_control(inst) {
+                Ok(()) => (),
+                Err(e) => error!(
+                    "Failed to send out instruction to web control: {}",
+                    e.to_string()
+                ),
+            }
+        } else {
+            debug!("No web control connected. Skipping sending");
         }
     }
 
     fn update_wind_server_time_reference(&mut self, dt: &DayTime) {
-        match self
-            .comm_channel
-            .send_out_command_to_wind_server(SetTime(dt.clone()))
-        {
-            Ok(()) => (),
-            Err(e) => error!(
-                "Failed to send out instruction to wind server: {}",
-                e.to_string()
-            ),
+        if self.comm_channel.wind_server_there_to_receive() {
+            match self
+                .comm_channel
+                .send_out_command_to_wind_server(SetTime(dt.clone()))
+            {
+                Ok(()) => (),
+                Err(e) => error!(
+                    "Failed to send out instruction to wind server: {}",
+                    e.to_string()
+                ),
+            }
+        } else {
+            debug!("No wind server connected. Skipping sending");
         }
     }
 

@@ -173,8 +173,18 @@
                     <v-list-item>
                         <router-link to="/bib_interface" class="router-link-style">Bib Interface</router-link>
                     </v-list-item>
-                    <v-list-item v-if="mainStore.devMode">
-                        <router-link to="/debug" class="router-link-style">DEBUG</router-link>
+                    <v-list-item
+                        v-if="mainStore.devMode"
+                        :disabled="mainStore.staticConfiguration.mode != ApplicationMode.StreetLongRun"
+                    >
+                        <v-tooltip
+                            text="Debug only available for Street run, as we need the main heat"
+                            :disabled="mainStore.staticConfiguration.mode == ApplicationMode.StreetLongRun"
+                        >
+                            <template v-slot:activator="{ props }">
+                                <router-link v-bind="props" to="/debug" class="router-link-style">DEBUG</router-link>
+                            </template>
+                        </v-tooltip>
                     </v-list-item>
                     <v-divider></v-divider>
                     <div class="ma-2" v-if="mainStore.displayConnected">
