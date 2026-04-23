@@ -9,7 +9,7 @@ use crate::{
         bib_detection::DisplayEntry,
         camera_program_types::{HeatResult, HeatStartList},
     },
-    times::{DayTime, RaceTime},
+    times::{DayTime, RaceTime, RaceWind},
 };
 use async_channel::{Sender, TrySendError};
 use images_core::images::{Animation, AnimationPlayer, ImagesStorage};
@@ -97,6 +97,7 @@ pub enum TimingUpdate {
     Timing,
     ResultList,
     Meta(HeatStartList),
+    Wind(RaceWind),
     ResultMeta(HeatResult),
     Reset,
     Running(RaceTime),
@@ -307,6 +308,7 @@ pub struct TimingStateMachine {
     client_state_machine_sender: Sender<MessageFromServerToClient>,
     race_finished: bool,
     run_display_entries: Vec<(i64, DisplayEntry)>,
+    race_wind: Option<RaceWind>,
 }
 impl TimingStateMachine {
     pub fn new(
@@ -327,6 +329,7 @@ impl TimingStateMachine {
             race_finished: false,
             timing_mode: TimingMode::StartList,
             run_display_entries: Vec::new(),
+            race_wind: None,
         }
     }
 
@@ -397,10 +400,14 @@ impl TimingStateMachine {
             TimingUpdate::Reset => {
                 self.timing_state = TimingState::Stopped;
                 self.held_time_state = None; // make sure, to clear this
+                self.race_wind = None; // make sure, to clear this
                 self.race_finished = false;
                 self.time_held_counter = 0;
 
                 // a reset gets sent with all start list requests, so we do not automatically switch anywhere
+            }
+            TimingUpdate::Wind(rw) => {
+                self.race_wind = Some(rw);
             }
             TimingUpdate::Running(rt) => {
                 self.update_reference_computation_time(&rt);
@@ -471,7 +478,10 @@ impl TimingStateMachine {
                 if self.settings.time_continues_running {
                     self.hold_time(rt);
                 } else {
-                    self.timing_state = TimingState::Finished(rt);
+                    if !matches!(self.timing_state, TimingState::Finished(_)) {
+                        // ONLY if not yet finished, set it to finished :tipping_hands:
+                        self.timing_state = TimingState::Finished(rt);
+                    }
                 }
 
                 if self.settings.fireworks_on_finish {
@@ -547,6 +557,17 @@ impl TimingStateMachine {
 
     pub fn race_finished(&self) -> bool {
         return self.race_finished;
+    }
+
+    pub fn race_wind(&self) -> Option<String> {
+        match &self.race_wind {
+            Some(rw) => Some(rw.to_string()),
+            None => None,
+        }
+    }
+
+    pub fn time_continues_running(&self) -> bool {
+        return self.settings.time_continues_running;
     }
 
     fn update_reference_computation_time(&mut self, race_time: &RaceTime) {

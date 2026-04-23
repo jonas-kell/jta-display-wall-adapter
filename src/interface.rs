@@ -1045,7 +1045,11 @@ impl ServerStateMachine {
     }
 
     fn handle_heat_wind(&mut self, wind: HeatWind) {
-        store_to_database!(wind, self); // TODO add to display
+        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+            TimingUpdate::Wind(wind.wind.clone()),
+        ));
+
+        store_to_database!(wind, self);
     }
 
     fn send_out_main_heat_to_webcontrol(&mut self) {
