@@ -32,7 +32,9 @@ pub fn run_display_task(
 ) -> () {
     // setup event loop
     let event_loop = EventLoop::new().unwrap();
-    event_loop.set_control_flow(ControlFlow::Poll); // as fast as possible, wil get overwritten to achieve stable fps
+
+    // as fast as possible, wil get overwritten to achieve stable fps
+    event_loop.set_control_flow(ControlFlow::wait_duration(Duration::from_millis(2)));
 
     // font setup
     let font_data = include_bytes!("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") as &[u8];
@@ -108,20 +110,30 @@ impl ApplicationHandler for App {
         self.window = Some(Arc::new(event_loop.create_window(attrs).unwrap()));
 
         // trigger the first re-awakening of the event loop
-        event_loop.set_control_flow(ControlFlow::WaitUntil(
-            Instant::now() + Duration::from_millis(20), // hardcoded first frame delay, that seems to work good until stuff is initialized
+        event_loop.set_control_flow(ControlFlow::wait_duration(
+            Duration::from_millis(20), // hardcoded first frame delay, that seems to work good until stuff is initialized
         ));
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        // make sure to fire a redraw event, as that is where the delta time calculation is done
-        if let Some(window) = &self.window {
-            window.request_redraw();
+        // schedule next wakeup after we just finished a redraw session
+
+        // delta time calculation
+        let now = Instant::now();
+        let nano_since_last_draw_start = now.duration_since(self.last_draw_call).as_nanos() as u64;
+        let remaining_nanos = FRAME_TIME_NS.saturating_sub(nano_since_last_draw_start);
+
+        // make sure to fire a redraw event if it has been long enough since the last draw start
+        if remaining_nanos == 0 {
+            if let Some(window) = &self.window {
+                window.request_redraw();
+            }
         }
 
-        event_loop.set_control_flow(ControlFlow::WaitUntil(
-            Instant::now() + Duration::from_nanos(FRAME_TIME_NS / 100), // make sure, the application does not go to sleep full as the application will not get mouse events
-        ));
+        // make sure, the application wakes up when the next resraw is supposed to start
+        event_loop.set_control_flow(ControlFlow::wait_duration(Duration::from_nanos(
+            remaining_nanos,
+        )));
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
@@ -161,111 +173,95 @@ impl ApplicationHandler for App {
                 debug!("The window was moved: {:?}", p);
             }
             WindowEvent::RedrawRequested => {
-                // schedule next wakeup after we just finished a redraw session
-                let now = Instant::now();
-                let nano_since_last_draw_start =
-                    now.duration_since(self.last_draw_call).as_nanos() as u64;
-                let remaining_nanos = FRAME_TIME_NS.saturating_sub(nano_since_last_draw_start);
+                // track at the start of the renderer and IO process (as there could be more requests for redrawing, than is actually redrawn)
+                self.last_draw_call = Instant::now();
 
-                if remaining_nanos == 0 {
-                    // track at the start of the renderer and IO process (as there could be more requests for redrawing, than is actually redrawn)
-                    self.last_draw_call = Instant::now();
+                // IO and state machine
+                self.process_state(event_loop);
 
-                    // IO and state machine
-                    self.process_state(event_loop);
+                if let Some(pixels) = &mut self.pixels {
+                    let texture_size = pixels.texture().size();
+                    let mut meta = RasterizerMeta {
+                        font: &self.font,
+                        font_layout: &mut self.font_layout,
+                        frame: pixels.frame_mut(),
+                        texture_width: texture_size.width as usize,
+                        texture_height: texture_size.height as usize,
+                        server_imposed_settings: self.state_machine.server_imposed_settings.clone(),
+                    };
 
-                    if let Some(pixels) = &mut self.pixels {
-                        let texture_size = pixels.texture().size();
-                        let mut meta = RasterizerMeta {
-                            font: &self.font,
-                            font_layout: &mut self.font_layout,
-                            frame: pixels.frame_mut(),
-                            texture_width: texture_size.width as usize,
-                            texture_height: texture_size.height as usize,
-                            server_imposed_settings: self
-                                .state_machine
-                                .server_imposed_settings
-                                .clone(),
-                        };
+                    render_client_frame(&mut meta, &mut self.state_machine, &mut self.draw_cache);
 
-                        render_client_frame(
-                            &mut meta,
-                            &mut self.state_machine,
-                            &mut self.draw_cache,
-                        );
+                    let frame_count_to_emit: u64 = std::cmp::max(
+                        (self.args.client_emits_frame_every_nr_of_ms * 1000000) / FRAME_TIME_NS,
+                        1,
+                    );
 
-                        let frame_count_to_emit: u64 = std::cmp::max(
-                            (self.args.client_emits_frame_every_nr_of_ms * 1000000) / FRAME_TIME_NS,
-                            1,
-                        );
-
-                        if !matches!(
-                            self.state_machine.state,
-                            crate::interface::ClientState::DisplayExternalFrame(_)
-                        ) {
-                            // if the frame is external, why bother sending it back
-                            if self.state_machine.frame_counter % frame_count_to_emit == 0 {
-                                trace!("Sending back frame to the server");
-                                match meta.get_buffer_as_image() {
-                                    Ok(img) => {
-                                        let bytes = png_to_bmp_bytes(img);
-                                        self.state_machine.push_new_message(
-                                            MessageFromClientToServer::CurrentWindow(bytes),
-                                        );
-                                    }
-                                    Err(e) => error!("Conversion error: {}", e),
+                    if !matches!(
+                        self.state_machine.state,
+                        crate::interface::ClientState::DisplayExternalFrame(_)
+                    ) {
+                        // if the frame is external, why bother sending it back
+                        if self.state_machine.frame_counter % frame_count_to_emit == 0 {
+                            trace!("Sending back frame to the server");
+                            match meta.get_buffer_as_image() {
+                                Ok(img) => {
+                                    let bytes = png_to_bmp_bytes(img);
+                                    self.state_machine.push_new_message(
+                                        MessageFromClientToServer::CurrentWindow(bytes),
+                                    );
                                 }
+                                Err(e) => error!("Conversion error: {}", e),
                             }
                         }
+                    }
 
-                        // used in a log later (otherwise a mut-borrow problem)
-                        let texture_width = meta.texture_width;
-                        let texture_height = meta.texture_height;
+                    // used in a log later (otherwise a mut-borrow problem)
+                    let texture_width = meta.texture_width;
+                    let texture_height = meta.texture_height;
 
-                        // Render
-                        match pixels.render() {
-                            Ok(()) => {
-                                let percent = (Instant::now()
-                                    .duration_since(self.last_draw_call)
-                                    .as_nanos()
-                                    as u64
-                                    * 100)
-                                    / FRAME_TIME_NS;
+                    // Render
+                    match pixels.render() {
+                        Ok(()) => {
+                            let percent = (Instant::now()
+                                .duration_since(self.last_draw_call)
+                                .as_nanos() as u64
+                                * 100)
+                                / FRAME_TIME_NS;
 
-                                self.state_machine.digest_frame_time_percentage(percent);
+                            self.state_machine.digest_frame_time_percentage(percent);
 
-                                if (self.state_machine.frame_counter + 111) // shoud not trigger together with the other nth-frame logs
+                            if (self.state_machine.frame_counter + 111) // shoud not trigger together with the other nth-frame logs
                                     % (TARGET_FPS * REPORT_FRAME_LOGS_EVERY_SECONDS)
-                                    == 0
+                                == 0
+                            {
+                                trace!(
+                                    "Pixels were re-rendered (reports all {}s as per frame count)",
+                                    REPORT_FRAME_LOGS_EVERY_SECONDS
+                                );
+                                if let Some((sm_x, sm_y)) =
+                                    self.state_machine.current_frame_dimensions
                                 {
                                     trace!(
-                                        "Pixels were re-rendered (reports all {}s as per frame count)",
-                                        REPORT_FRAME_LOGS_EVERY_SECONDS
-                                    );
-                                    if let Some((sm_x, sm_y)) =
-                                        self.state_machine.current_frame_dimensions
-                                    {
-                                        trace!(
-                                            "Rendered a size of {}x{} - texture: {}x{}",
-                                            sm_x,
-                                            sm_y,
-                                            texture_width,
-                                            texture_height
-                                        );
-                                    }
-                                    trace!(
-                                        "Rendering a frame takes {}% of the max time to reach {}fps",
-                                        percent,
-                                        TARGET_FPS
+                                        "Rendered a size of {}x{} - texture: {}x{}",
+                                        sm_x,
+                                        sm_y,
+                                        texture_width,
+                                        texture_height
                                     );
                                 }
+                                trace!(
+                                    "Rendering a frame takes {}% of the max time to reach {}fps",
+                                    percent,
+                                    TARGET_FPS
+                                );
                             }
-                            Err(e) => error!("Error while rendering: {}", e.to_string()),
                         }
-                    } else {
-                        if self.state_machine.frame_counter % TARGET_FPS == 0 {
-                            warn!("The pixels element of the App context is not initialized");
-                        }
+                        Err(e) => error!("Error while rendering: {}", e.to_string()),
+                    }
+                } else {
+                    if self.state_machine.frame_counter % TARGET_FPS == 0 {
+                        warn!("The pixels element of the App context is not initialized");
                     }
                 }
             }
