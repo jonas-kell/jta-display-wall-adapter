@@ -246,8 +246,6 @@ pub fn render_client_frame(
                 }
             }
 
-            // TODO display WIND
-
             match &timing_state_machine.timing_mode {
                 TimingMode::Timing => {
                     match timing_state_machine.settings.mode {
@@ -352,14 +350,16 @@ pub fn render_client_frame(
                         }
                         TimingTimeDisplayMode::TimeBigAndHoldTop => {
                             if timing_state_machine.race_finished() {
-                                draw_text(
-                                    "Finished",
-                                    border,
-                                    border as f32 / 2.0,
-                                    text_height as f32 * 1.3,
+                                draw_image(
+                                    (border) as u32,
+                                    (border as f32 / 2.0) as u32,
+                                    &state.permanent_icons_storage.cached_rescaler.scale_cached(
+                                        &state.permanent_icons_storage.finish_icon,
+                                        (window_width / 12.0) as u32,
+                                        (window_height / 6.0) as u32,
+                                    ),
                                     meta,
                                 );
-                                // TODO prettier symbol
                             }
                             if let Some(top_text) = get_holding_top_text(timing_state_machine) {
                                 draw_text_right_aligned(
@@ -421,6 +421,17 @@ pub fn render_client_frame(
                                     meta,
                                 );
                             }
+                            // TODO wind dynamic
+                            draw_image(
+                                (border) as u32,
+                                (title_height as f32 * 1.1) as u32,
+                                &state.permanent_icons_storage.cached_rescaler.scale_cached(
+                                    &state.permanent_icons_storage.wind_icon,
+                                    (window_width / 12.0) as u32,
+                                    (window_height / 6.0) as u32,
+                                ),
+                                meta,
+                            );
                             draw_text_as_big_as_possible_right_aligned(
                                 &timing_state_machine
                                     .get_main_display_race_time()

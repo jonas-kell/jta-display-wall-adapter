@@ -500,11 +500,17 @@ struct IconsStorageSerealizer<'a> {
     #[serde(borrow)]
     pub round_icon: &'a [u8],
     #[serde(borrow)]
+    pub wind_icon: &'a [u8],
+    #[serde(borrow)]
+    pub finish_icon: &'a [u8],
+    #[serde(borrow)]
     pub cached_rescaler: &'a [u8],
 }
 
 pub struct IconsStorage {
     pub round_icon: ImageMeta,
+    pub wind_icon: ImageMeta,
+    pub finish_icon: ImageMeta,
     pub cached_rescaler: CachedImageScaler,
 }
 impl IconsStorage {
@@ -512,14 +518,22 @@ impl IconsStorage {
         // include static files
         let round_icon =
             ImageMeta::from_image_bytes(include_bytes!("./../../assets/Round-Icon.png")).unwrap();
+        let wind_icon =
+            ImageMeta::from_image_bytes(include_bytes!("./../../assets/Wind-Icon.png")).unwrap();
+        let finish_icon =
+            ImageMeta::from_image_bytes(include_bytes!("./../../assets/Finish-Icon.png")).unwrap();
 
         let mut scaler = CachedImageScaler::new();
         for (w, h) in precache_for_sizes {
             scaler.scale_cached(&round_icon, *w, *h);
+            scaler.scale_cached(&wind_icon, *w, *h);
+            scaler.scale_cached(&finish_icon, *w, *h);
         }
 
         return IconsStorage {
             round_icon,
+            wind_icon,
+            finish_icon,
             cached_rescaler: scaler,
         };
     }
@@ -528,6 +542,8 @@ impl IconsStorage {
     pub fn to_bytes(&self) -> Vec<u8> {
         let ser = IconsStorageSerealizer {
             round_icon: &self.round_icon.to_bytes(),
+            wind_icon: &self.wind_icon.to_bytes(),
+            finish_icon: &self.finish_icon.to_bytes(),
             cached_rescaler: &self.cached_rescaler.to_bytes(),
         };
         let bytes = encode_to_vec(&ser, CONFIG).unwrap();
@@ -541,6 +557,8 @@ impl IconsStorage {
 
         return Self {
             round_icon: ImageMeta::from_bytes(dec.round_icon),
+            wind_icon: ImageMeta::from_bytes(dec.wind_icon),
+            finish_icon: ImageMeta::from_bytes(dec.finish_icon),
             cached_rescaler: CachedImageScaler::from_bytes(dec.cached_rescaler),
         };
     }
