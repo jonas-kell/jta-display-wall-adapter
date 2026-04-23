@@ -42,8 +42,7 @@ services:
       5678 --dp-pos-x=1460 --dp-pos-y=1050 --dp-width=360 --dp-height=120
       --internal-webcontrol-port=6789 --play-sound-on-start --export-folder-path
       database_container --address-idcapture-server=127.0.0.1
-      --passthrough-address-display-program 192.168.8.119
-      --passthrough-to-display-program --listen-to-timing-program"
+      --listen-to-timing-program"
 
   # --passthrough-address-display-program 192.168.8.119 --passthrough-to-display-program
   # --address-display-client=192.168.150.150

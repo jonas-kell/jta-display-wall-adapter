@@ -256,6 +256,7 @@ export type MessageFromWebControl =
     | MessageFromWebControlDevReset
     | MessageFromWebControlDevSendStartList
     | MessageFromWebControlDevStartRace
+    | MessageFromWebControlDevSendIntermediateSignal
     | MessageFromWebControlDevSendFinishSignal
     | MessageFromWebControlDevSendEvaluated
     | MessageFromWebControlDevSendResultList
@@ -273,6 +274,7 @@ export type MessageFromWebControlDevRequestMainHeatStartList = { type: "DevReque
 export type MessageFromWebControlDevReset = { type: "DevReset" };
 export type MessageFromWebControlDevSendEvaluated = { type: "DevSendEvaluated"; data: CompetitorEvaluated };
 export type MessageFromWebControlDevSendFinishSignal = { type: "DevSendFinishSignal"; data: RaceTime };
+export type MessageFromWebControlDevSendIntermediateSignal = { type: "DevSendIntermediateSignal"; data: RaceTime };
 export type MessageFromWebControlDevSendResultList = { type: "DevSendResultList"; data: HeatResult };
 export type MessageFromWebControlDevSendStartList = { type: "DevSendStartList"; data: HeatStartList };
 export type MessageFromWebControlDevSendWind = { type: "DevSendWind"; data: HeatWind };

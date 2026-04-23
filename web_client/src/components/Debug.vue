@@ -7,6 +7,9 @@
         </v-btn>
         <v-btn @click="resetClock" class="mt-2" max-width="40em"> Reset </v-btn>
         <v-btn @click="startClock" class="mt-2" max-width="40em"> Start </v-btn>
+        <v-btn @click="intermediateSignal" class="mt-2" max-width="40em" :disabled="debugStore.startTime == null">
+            Intermediate Signal
+        </v-btn>
         <v-btn @click="endSignal" class="mt-2" max-width="40em" :disabled="debugStore.startTime == null"> End Signal </v-btn>
         <v-btn @click="sendWind" class="mt-2" max-width="40em" :disabled="debugStore.startTime == null"> Wind </v-btn>
         <v-btn
@@ -32,6 +35,7 @@
         MessageFromWebControlDevReset,
         MessageFromWebControlDevSendEvaluated,
         MessageFromWebControlDevSendFinishSignal,
+        MessageFromWebControlDevSendIntermediateSignal,
         MessageFromWebControlDevSendResultList,
         MessageFromWebControlDevSendStartList,
         MessageFromWebControlDevSendWind,
@@ -83,6 +87,19 @@
                     },
                 },
             } as MessageFromWebControlDevSendWind);
+        }
+    }
+
+    function intermediateSignal() {
+        if (debugStore.startTime != null) {
+            const time = (Date.now() - debugStore.startTime) / 1000;
+
+            mainStore.sendGenericWSCommand({
+                type: "DevSendIntermediateSignal",
+                data: raceTimeFromNumber(time),
+            } as MessageFromWebControlDevSendIntermediateSignal);
+        } else {
+            console.error("None started... Sad");
         }
     }
 

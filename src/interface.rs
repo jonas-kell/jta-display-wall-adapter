@@ -505,7 +505,7 @@ impl ServerStateMachine {
                     self.handle_heat_wind(wind);
                 }
                 InstructionFromCameraProgram::HeatWindMissing(missing_wind) => {
-                    store_to_database!(missing_wind, self);
+                    store_to_database!(missing_wind, self); // this does not need to and can not be faked
                 }
                 InstructionFromCameraProgram::HeatFinish(finish) => {
                     if self.timing_settings_template.play_sound_on_finish {
@@ -857,6 +857,11 @@ impl ServerStateMachine {
                 MessageFromWebControl::DevStartRace => {
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::Running(RaceTime::get_zero_time()),
+                    ));
+                }
+                MessageFromWebControl::DevSendIntermediateSignal(rt) => {
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::Intermediate(rt),
                     ));
                 }
                 MessageFromWebControl::DevSendFinishSignal(rt) => {

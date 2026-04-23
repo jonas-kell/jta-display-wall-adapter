@@ -57,6 +57,7 @@ pub enum MessageFromWebControl {
     DevReset,
     DevSendStartList(HeatStartList),
     DevStartRace,
+    DevSendIntermediateSignal(RaceTime),
     DevSendFinishSignal(RaceTime),
     DevSendEvaluated(CompetitorEvaluated),
     DevSendResultList(HeatResult),
