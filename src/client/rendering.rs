@@ -391,6 +391,25 @@ pub fn render_client_frame(
                             );
                         }
                         TimingTimeDisplayMode::TimeBigAndHoldWithRunName => {
+                            if let Some(wind_text) = timing_state_machine.race_wind() {
+                                draw_image(
+                                    (border) as u32,
+                                    (title_height as f32 * 1.1) as u32,
+                                    &state.permanent_icons_storage.cached_rescaler.scale_cached(
+                                        &state.permanent_icons_storage.wind_icon,
+                                        (window_width / 12.0) as u32,
+                                        (window_height / 6.0) as u32,
+                                    ),
+                                    meta,
+                                );
+                                draw_text(
+                                    &wind_text,
+                                    (border) as f32 + (window_width / 12.0),
+                                    title_height as f32 * 1.15,
+                                    text_height as f32,
+                                    meta,
+                                );
+                            }
                             draw_text_as_big_as_possible_right_aligned(
                                 &timing_state_machine
                                     .get_main_display_race_time()
