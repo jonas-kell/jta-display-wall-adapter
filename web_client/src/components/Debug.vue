@@ -118,9 +118,9 @@
                     generated: "2026-01-01T10:10:10",
                     id: heatId,
                     wind: {
-                        back_wind: true,
-                        whole_number_part: 1,
-                        fraction_part: 2,
+                        back_wind: Math.random() > 0.5,
+                        whole_number_part: Math.round(Math.random() * 2),
+                        fraction_part: Math.floor(Math.random() * 10),
                     },
                 },
             } as MessageFromWebControlDevSendWind);

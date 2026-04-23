@@ -54,7 +54,14 @@
                                 ></v-icon>
                             </template>
                         </v-tooltip>
-                        {{ mainStore.windValue }}
+                        <v-tooltip text="- is Gegenwind aka head wind, + is Rückenwind aka back wind" location="top center">
+                            <template v-slot:activator="{ props }">
+                                <span v-bind="props">
+                                    <span v-if="mainStore.windValue != '' && parseFloat(mainStore.windValue) >= 0">+</span
+                                    >{{ mainStore.windValue }}
+                                </span>
+                            </template>
+                        </v-tooltip>
                         {{ mainStore.windServerLive ? mainStore.windTime : "" }}
                     </span>
                     <span class="py-1 px-2" v-if="mainStore.connectionState.try_to_connect_to_camera_program">
