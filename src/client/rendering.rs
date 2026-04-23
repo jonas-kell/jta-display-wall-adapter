@@ -358,7 +358,7 @@ pub fn render_client_frame(
                                     ))
                                     .to_string(),
                                 window_width - border,
-                                border / 2.0,
+                                border,
                                 (window_width - 2.0 * border) as usize,
                                 (window_height - border / 4.0) as usize,
                                 &mut cache.font_size_cache_time_main_number_a,
