@@ -206,7 +206,10 @@
             if (debugStore.times.length < heat.competitors.length) {
                 debugStore.times.push(time);
             }
-            const lastTime = debugStore.times[debugStore.times.length - 1];
+            let lastTime = debugStore.times[debugStore.times.length - 1];
+            if (heat.competitors.length == 0) {
+                lastTime = time;
+            }
 
             mainStore.sendGenericWSCommand({
                 type: "DevSendEvaluated",
