@@ -130,6 +130,8 @@ impl ApplicationHandler for App {
             }
         }
 
+        // TODO could think about storing the surplus nanos and try to get back ahead of the average once spike might need more than 100% but the average does not yet
+
         // make sure, the application wakes up when the next resraw is supposed to start
         event_loop.set_control_flow(ControlFlow::wait_duration(Duration::from_nanos(
             remaining_nanos,
