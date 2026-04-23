@@ -590,10 +590,29 @@ pub fn render_client_frame(
                     }
                 }
                 TimingMode::StartList => {
-                    draw_text("Start list", 100.0, 30.0, 20.0, meta);
+                    let list = match &timing_state_machine.meta {
+                        Some(meta) => match &meta.start_list {
+                            Some(list) => list.competitors.clone(),
+                            None => Vec::new(),
+                        },
+                        None => Vec::new(),
+                    };
+                    if let Some(first) = list.first() {
+                        draw_text(&first.first_name, 100.0, 30.0, 20.0, meta);
+                    };
                 }
                 TimingMode::ResultList => {
-                    draw_text("Result list", 100.0, 30.0, 20.0, meta);
+                    let list = match &timing_state_machine.meta {
+                        Some(meta) => match &meta.result {
+                            Some(list) => list.competitors_evaluated.clone(),
+                            None => Vec::new(),
+                        },
+                        None => Vec::new(),
+                    };
+                    // TODO somehow note of the "competitors left to evaluate" maybe
+                    if let Some(first) = list.first() {
+                        draw_text(&first.competitor.first_name, 100.0, 30.0, 20.0, meta);
+                    };
                 }
             }
         }

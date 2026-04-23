@@ -286,6 +286,8 @@ impl RaceDistance {
 pub struct TimingStateMeta {
     pub title: String,
     pub distance: RaceDistance,
+    pub start_list: Option<HeatStartList>,
+    pub result: Option<HeatResult>,
 }
 
 #[derive(PartialEq, Eq, Clone)]
@@ -349,8 +351,10 @@ impl TimingStateMachine {
                     let rd = RaceDistance::new(hsl.distance_meters);
                     let time_continues_running = rd.get_time_continues_running();
                     self.meta = Some(TimingStateMeta {
-                        title: hsl.name,
+                        title: hsl.name.clone(),
                         distance: rd,
+                        start_list: Some(hsl),
+                        result: None,
                     });
 
                     // update settings
@@ -386,9 +390,15 @@ impl TimingStateMachine {
             TimingUpdate::ResultMeta(hr) => {
                 if self.settings.can_currently_update_meta {
                     let rd = RaceDistance::new(hr.distance_meters);
+                    let start_list_copy = match &self.meta {
+                        Some(meta) => meta.start_list.clone(),
+                        None => None,
+                    };
                     self.meta = Some(TimingStateMeta {
-                        title: hr.name,
+                        title: hr.name.clone(),
                         distance: rd,
+                        start_list: start_list_copy,
+                        result: Some(hr),
                     });
                 } else {
                     warn!("Race Result Meta update was trashed, because update is blocked by settings");
