@@ -420,20 +420,41 @@ pub fn render_client_frame(
                                     None,
                                     meta,
                                 );
-                            }
-                            if timing_state_machine.race_finished()
-                                && timing_state_machine.time_continues_running()
-                            {
-                                draw_image(
-                                    (border) as u32 + (window_width / 2.8) as u32, // TODO calculate size of holding top text and move this right respectively
-                                    (title_height as f32 * 1.1) as u32,
-                                    &state.permanent_icons_storage.cached_rescaler.scale_cached(
-                                        &state.permanent_icons_storage.finish_icon,
-                                        (window_width / 12.0) as u32,
-                                        (window_height / 6.0) as u32,
-                                    ),
-                                    meta,
-                                );
+                                if timing_state_machine.race_finished()
+                                    && timing_state_machine.time_continues_running()
+                                {
+                                    draw_image(
+                                        (border) as u32 + (window_width / 2.8) as u32, // TODO calculate size of holding top text and move this right respectively
+                                        (title_height as f32 * 1.1) as u32,
+                                        &state
+                                            .permanent_icons_storage
+                                            .cached_rescaler
+                                            .scale_cached(
+                                                &state.permanent_icons_storage.finish_icon,
+                                                (window_width / 12.0) as u32,
+                                                (window_height / 6.0) as u32,
+                                            ),
+                                        meta,
+                                    );
+                                }
+                            } else {
+                                if timing_state_machine.race_finished()
+                                    && timing_state_machine.time_continues_running()
+                                {
+                                    draw_image(
+                                        (window_width - border - (window_width / 12.0)) as u32,
+                                        (title_height as f32 * 1.1) as u32,
+                                        &state
+                                            .permanent_icons_storage
+                                            .cached_rescaler
+                                            .scale_cached(
+                                                &state.permanent_icons_storage.finish_icon,
+                                                (window_width / 12.0) as u32,
+                                                (window_height / 6.0) as u32,
+                                            ),
+                                        meta,
+                                    );
+                                }
                             }
                             if let Some(wind_text) = timing_state_machine.race_wind() {
                                 draw_image(
