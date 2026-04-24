@@ -175,6 +175,15 @@
                             hide-details
                             class="mt-1"
                         />
+                        <v-switch
+                            class="ml-2"
+                            color="primary"
+                            density="compact"
+                            v-model="mainStore.timingSettings.display_bibs_in_start_list"
+                            hide-details
+                            label="Bibs in Start List"
+                        >
+                        </v-switch>
                     </div>
                 </template>
                 <p v-else>Not loaded</p>

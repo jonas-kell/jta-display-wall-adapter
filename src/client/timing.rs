@@ -44,6 +44,7 @@ pub struct TimingSettings {
     pub mode: TimingTimeDisplayMode,
     pub list_animations_stopped: bool,
     pub entries_in_lists: u8,
+    pub display_bibs_in_start_list: bool,
 }
 impl TimingSettings {
     pub fn new(args: &Args) -> Self {
@@ -64,6 +65,7 @@ impl TimingSettings {
             mode: TimingTimeDisplayMode::TimeBigAndHoldTopWithRunName,
             list_animations_stopped: false,
             entries_in_lists: 4,
+            display_bibs_in_start_list: true,
         }
     }
 }

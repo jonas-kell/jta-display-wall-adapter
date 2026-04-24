@@ -616,7 +616,7 @@ pub fn render_client_frame(
                     draw_table(
                         info_for_table,
                         list,
-                        false,
+                        true,
                         tms,
                         meta,
                         0.0,
@@ -645,7 +645,7 @@ pub fn render_client_frame(
                     draw_table(
                         info_for_table,
                         list,
-                        true,
+                        false,
                         tms,
                         meta,
                         0.0,
@@ -745,6 +745,7 @@ struct TSMForTableRender {
     pub table_duration_nr_ms: u32,
     pub animations_paused: bool,
     pub no_lines_in_lists: u8,
+    pub display_bibs_in_start_list: bool,
 }
 impl TimingSettings {
     fn convert_to_table_info_ro(
@@ -756,6 +757,7 @@ impl TimingSettings {
             table_duration_nr_ms: intermediate.table_duration_nr_ms,
             animations_paused: self.list_animations_stopped,
             no_lines_in_lists: self.entries_in_lists,
+            display_bibs_in_start_list: self.display_bibs_in_start_list,
         }
     }
 }
@@ -763,7 +765,7 @@ impl TimingSettings {
 fn draw_table(
     list_settings: TSMForTableRender,
     lines: Vec<ListLine>,
-    include_result_col: bool,
+    start_list: bool,
     table_meta: &mut TableMetaStorage,
     meta: &mut RasterizerMeta,
     x: f32,
@@ -774,13 +776,15 @@ fn draw_table(
     let mut lines = lines;
     let lines_on_page = list_settings.no_lines_in_lists.max(1) as u64;
 
+    let has_a_third_col = (list_settings.display_bibs_in_start_list && start_list) || !start_list;
+
     let frames_per_page =
         ((list_settings.table_duration_nr_ms * 1000000) / (FRAME_TIME_NS as u32)) + 1;
 
     const NUMBER_SPACE_FRACTION: f32 = 0.08;
     const IN_BETWEEN_SPACE_FRACTION: f32 = 0.015;
-    const RESULT_SPACE_FRACTION_TEMPLATE: f32 = 0.25;
-    let result_space_fraction: f32 = match include_result_col {
+    const RESULT_SPACE_FRACTION_TEMPLATE: f32 = 0.20;
+    let result_space_fraction: f32 = match has_a_third_col {
         true => RESULT_SPACE_FRACTION_TEMPLATE + IN_BETWEEN_SPACE_FRACTION,
         false => 0.0,
     };
@@ -830,24 +834,36 @@ fn draw_table(
                 meta,
             );
 
-            if include_result_col {
-                if let Some(rt) = &line.res {
-                    draw_text_as_big_as_possible(
-                        &rt.optimize_representation_for_display(Some(
-                            list_settings.max_decimal_places_after_comma,
-                        ))
-                        .to_string(),
-                        width
-                            * (NUMBER_SPACE_FRACTION
-                                + identifier_space_fraction
-                                + IN_BETWEEN_SPACE_FRACTION),
-                        line_y_start,
-                        (width * (result_space_fraction - IN_BETWEEN_SPACE_FRACTION)) as usize,
-                        (line_height) as usize,
-                        &mut FontSizeChooserCache::new(), // TODO this is REALLY inefficient. But there si no time to store it currently... Sorry...
-                        meta,
-                    );
-                }
+            if has_a_third_col {
+                let text = match start_list {
+                    true => match list_settings.display_bibs_in_start_list {
+                        true => line.athlete.bib.to_string(),
+                        false => String::from(""),
+                    },
+                    false => {
+                        if let Some(rt) = &line.res {
+                            rt.optimize_representation_for_display(Some(
+                                list_settings.max_decimal_places_after_comma,
+                            ))
+                            .to_string()
+                        } else {
+                            String::from("")
+                        }
+                    }
+                };
+
+                draw_text_as_big_as_possible(
+                    &text,
+                    width
+                        * (NUMBER_SPACE_FRACTION
+                            + identifier_space_fraction
+                            + IN_BETWEEN_SPACE_FRACTION),
+                    line_y_start,
+                    (width * (result_space_fraction - IN_BETWEEN_SPACE_FRACTION)) as usize,
+                    (line_height) as usize,
+                    &mut FontSizeChooserCache::new(), // TODO this is REALLY inefficient. But there si no time to store it currently... Sorry...
+                    meta,
+                );
             }
         }
     }
