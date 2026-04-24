@@ -56,6 +56,7 @@ import {
     MessageFromWebControlRequestLicense,
     ConnectionState,
     MessageFromWebControlRequestConnectionStates,
+    MessageFromWebControlSendHeatDataToDisplay,
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
@@ -415,6 +416,13 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
 
+    function sendHeatToDisplayCommand(id: Uuid) {
+        const packet: MessageFromWebControlSendHeatDataToDisplay = {
+            type: "SendHeatDataToDisplay",
+            data: id,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
     function sendRequestPasswordCommand() {
         const packet: MessageFromWebControlRequestPassword = {
             type: "RequestPassword",
@@ -660,6 +668,7 @@ export default defineStore("main", () => {
         sendDeleteCompetitorEvaluatedCommand,
         sendDebugDisplayCommand,
         sendRequestDevModeStatusCommand,
+        sendHeatToDisplayCommand,
         sendGenericWSCommand,
         canEditTimingSettings,
         timingSettings,

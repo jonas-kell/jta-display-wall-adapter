@@ -359,7 +359,7 @@ impl TimingStateMachine {
                     let result_list_copy = match &self.meta {
                         Some(meta) => meta.result.clone(),
                         None => None,
-                    };
+                    }; // TODO this can cause disaccociation between the title on the result list (from meta from start list) and the displayed results
                     self.meta = Some(TimingStateMeta {
                         title: hsl.name.clone(),
                         distance: rd,

@@ -804,6 +804,30 @@ impl ServerStateMachine {
                         self.args.webcontrol_password.clone(),
                     ));
                 }
+                MessageFromWebControl::SendHeatDataToDisplay(uuid) => {
+                    let data = match get_heat_data(uuid, &self.database_manager) {
+                        Ok(d) => d,
+                        Err(e) => {
+                            error!("Error when reading heat data from the database: {}", e);
+                            return;
+                        }
+                    };
+
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::Reset,
+                    ));
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::Meta(data.start_list),
+                    ));
+                    if let Some(result) = data.result {
+                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                            TimingUpdate::ResultMeta(result),
+                        ));
+                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                            TimingUpdate::ResultList,
+                        ));
+                    }
+                }
                 // Dev mode and debug signals
                 MessageFromWebControl::DevRequestMainHeatStartList => {
                     match fake_main_heat_start_list(dbss, &self.database_manager) {

@@ -53,6 +53,7 @@ pub enum MessageFromWebControl {
     RequestPassword,
     RequestLicense,
     RequestConnectionStates,
+    SendHeatDataToDisplay(Uuid),
     // DEV calls
     DevReset,
     DevStartRace(HeatStart),

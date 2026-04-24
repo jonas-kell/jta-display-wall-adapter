@@ -246,6 +246,7 @@ export type MessageFromWebControl =
     | MessageFromWebControlRequestPassword
     | MessageFromWebControlRequestLicense
     | MessageFromWebControlRequestConnectionStates
+    | MessageFromWebControlSendHeatDataToDisplay
     | MessageFromWebControlDevReset
     | MessageFromWebControlDevStartRace
     | MessageFromWebControlDevSendStartList
@@ -292,6 +293,7 @@ export type MessageFromWebControlRequestWindValues = { type: "RequestWindValues"
 export type MessageFromWebControlResultList = { type: "ResultList" };
 export type MessageFromWebControlSelectHeat = { type: "SelectHeat"; data: string };
 export type MessageFromWebControlSendDebugDisplayCommand = { type: "SendDebugDisplayCommand"; data: DisplayEntry };
+export type MessageFromWebControlSendHeatDataToDisplay = { type: "SendHeatDataToDisplay"; data: Uuid };
 export type MessageFromWebControlStartList = { type: "StartList" };
 export type MessageFromWebControlStorePDFConfigurationSetting = { type: "StorePDFConfigurationSetting"; data: PDFConfigurationSetting };
 export type MessageFromWebControlSwitchMode = { type: "SwitchMode" };
