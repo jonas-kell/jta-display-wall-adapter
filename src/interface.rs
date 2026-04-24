@@ -12,8 +12,8 @@ use crate::productkey::{dev_mode, product_key_valid};
 use crate::productkey::{today, ProductKey};
 use crate::server::audio_types::{AudioPlayer, Sound};
 use crate::server::bib_detection::{
-    generate_bib_data, CompetitorEvaluatedBibServer, DisplayEntry, MessageToBibServer,
-    RaceHasStartedBibServer, SeekForTimeBibServer,
+    generate_bib_data, BibDataPoint, CompetitorEvaluatedBibServer, DisplayEntry,
+    MessageToBibServer, RaceHasStartedBibServer, SeekForTimeBibServer,
 };
 use crate::server::camera_program_types::{
     CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
@@ -49,6 +49,7 @@ use async_channel::Sender;
 use clap::crate_version;
 use images_core::images::{IconsStorage, ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
+use std::time::{Duration, Instant};
 use std::{path::Path, sync::Arc};
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -188,6 +189,7 @@ pub struct ServerStateMachine {
     static_state: Option<DatabaseStaticState>,
     database_version_mismatch: Option<(String, String)>,
     bib_heat_selection: Option<Uuid>,
+    heat_start_time_instant: Option<(DayTime, Instant)>,
 }
 impl ServerStateMachine {
     pub fn new(
@@ -234,6 +236,7 @@ impl ServerStateMachine {
             static_state,
             database_version_mismatch,
             bib_heat_selection: None,
+            heat_start_time_instant: None,
         }
     }
 
@@ -650,6 +653,73 @@ impl ServerStateMachine {
                     }
                     self.handle_bib_mode_selection();
                 }
+                MessageFromWebControl::RecordBibRound(bdp_bib) => {
+                    let now = Instant::now();
+
+                    let heat_data = match generate_bib_data(
+                        self.bib_heat_selection.clone(),
+                        &self.database_manager,
+                    ) {
+                        Some(data) => data.heat_data,
+                        None => {
+                            error!("Could not record bib event, because no heat data found");
+                            return;
+                        }
+                    };
+
+                    let heat_id = heat_data.start_list.id;
+
+                    if let Some(heat_start) = heat_data.start {
+                        if let Some(start) = &self.heat_start_time_instant {
+                            let time_of_heat_start = heat_start.time;
+                            let time_of_instant_start = start.0.clone();
+                            let instant_of_instant_start = start.1.clone();
+                            let instant_now = now;
+
+                            let time_diff =
+                                instant_now.saturating_duration_since(instant_of_instant_start);
+
+                            let time_of_heat_start_as_duration = Duration::from(time_of_heat_start);
+                            let time_of_instant_start_as_duration =
+                                Duration::from(time_of_instant_start);
+
+                            let time_diff_compensated = if time_of_heat_start_as_duration
+                                > time_of_instant_start_as_duration
+                            {
+                                time_diff.saturating_sub(
+                                    time_of_heat_start_as_duration
+                                        .saturating_sub(time_of_instant_start_as_duration),
+                                )
+                            } else if time_of_heat_start_as_duration
+                                < time_of_instant_start_as_duration
+                            {
+                                time_diff.saturating_sub(
+                                    time_of_instant_start_as_duration
+                                        .saturating_sub(time_of_heat_start_as_duration),
+                                )
+                            } else {
+                                time_diff
+                            };
+
+                            let bdp = BibDataPoint {
+                                bib: bdp_bib,
+                                heat_id: heat_id,
+                                manual: true,
+                                race_time: RaceTime::from(time_diff_compensated),
+                            };
+
+                            store_to_database!(bdp.clone(), self);
+                            self.send_message_to_web_control(
+                                MessageToWebControl::BibRoundRecorded(bdp),
+                            );
+                            self.handle_bib_mode_selection();
+                        } else {
+                            warn!("Could not record bib event, because no time sync in messages_to_send_out_to_server");
+                        }
+                    } else {
+                        warn!("Could not record bib event, because heat not yet started");
+                    }
+                }
                 MessageFromWebControl::Clock(dt) => {
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::Clock(dt));
@@ -874,6 +944,7 @@ impl ServerStateMachine {
                         Err(_) => {}
                     };
 
+                    self.handle_bib_mode_selection();
                     self.send_out_main_heat_to_webcontrol();
                     self.handle_heat_reset_display();
                 }
@@ -964,6 +1035,9 @@ impl ServerStateMachine {
     }
 
     fn handle_heat_start(&mut self, start: HeatStart) {
+        let now = Instant::now();
+        self.heat_start_time_instant = Some((start.time.clone(), now));
+
         // tell the bib server immediately (real time relevant)
         if self.try_work_with_bib_server() {
             self.send_message_to_bib_server(MessageToBibServer::RaceHasStarted(
@@ -984,6 +1058,8 @@ impl ServerStateMachine {
         }
 
         store_to_database!(start, self);
+
+        self.handle_bib_mode_selection();
     }
 
     fn handle_heat_false_start(&mut self, false_start: HeatFalseStart) {
@@ -997,6 +1073,7 @@ impl ServerStateMachine {
             }
         }
 
+        self.handle_bib_mode_selection();
         self.send_out_main_heat_to_webcontrol();
     }
 

@@ -3,7 +3,7 @@ use crate::{
     database::{DatabaseStaticState, PermanentlyStoredDataset},
     productkey::ProductKey,
     server::{
-        bib_detection::{BibEntryModeData, BibEquivalence, DisplayEntry},
+        bib_detection::{BibDataPoint, BibEntryModeData, BibEquivalence, DisplayEntry},
         camera_program_types::{
             Athlete, AthleteWithMetadata, CompetitorEvaluated, HeatAssignment, HeatData,
             HeatFinish, HeatIntermediate, HeatMeta, HeatResult, HeatStart, HeatStartList, HeatWind,
@@ -58,6 +58,7 @@ pub enum MessageFromWebControl {
     SendHeatDataToDisplay(Uuid),
     AddBibEquivalence(BibEquivalence),
     DeleteBibEquivalence(BibEquivalence),
+    RecordBibRound(u32),
     // DEV calls
     DevReset,
     DevStartRace(HeatStart),
@@ -165,6 +166,7 @@ pub enum MessageToWebControl {
     Licensed(Option<ProductKey>),
     StaticConfigurationNotInitialized,
     ConnectionState(ConnectionState),
+    BibRoundRecorded(BibDataPoint),
     // DEV test calls
     DevMainHeatStartList(HeatStartList),
 }

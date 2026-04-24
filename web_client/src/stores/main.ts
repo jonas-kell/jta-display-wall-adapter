@@ -63,6 +63,7 @@ import {
     MessageFromWebControlAddBibEquivalence,
     BibEquivalence,
     MessageFromWebControlDeleteBibEquivalence,
+    MessageFromWebControlRecordBibRound,
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
@@ -123,6 +124,7 @@ export default defineStore("main", () => {
     const mainHeat = ref(null as null | HeatData);
     const selectedHeatForBibMode = ref(null as null | BibEntryModeData);
     const devMode = ref(false);
+    const bibBlocks = ref([] as number[]);
     const devMainHeatStartList = ref(null as null | HeatStartList);
     const versionMismatchTriggered = ref(null as null | string);
     let frametimeReport = ref(null as null | FrametimeReport);
@@ -234,6 +236,17 @@ export default defineStore("main", () => {
                 return;
             case "ConnectionState":
                 connectionState.value = msg.data;
+                return;
+            case "BibRoundRecorded":
+                let bdp = msg.data;
+                bibBlocks.value.push(bdp.bib);
+                const BIB_IS_KEPT_BLOCKED_MS = 5000; // TODO make a variable setting
+                setTimeout(() => {
+                    const index = bibBlocks.value.indexOf(bdp.bib);
+                    if (index > -1) {
+                        bibBlocks.value.splice(index, 1);
+                    }
+                }, BIB_IS_KEPT_BLOCKED_MS);
                 return;
             default:
                 console.error("Received unknown message type:", msg);
@@ -375,6 +388,14 @@ export default defineStore("main", () => {
         const packet: MessageFromWebControlAddBibEquivalence = {
             type: "AddBibEquivalence",
             data: eq,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+
+    function recordBibEvent(evt_bib: number) {
+        const packet: MessageFromWebControlRecordBibRound = {
+            type: "RecordBibRound",
+            data: evt_bib,
         };
         sendWSCommand(JSON.stringify(packet));
     }
@@ -713,6 +734,8 @@ export default defineStore("main", () => {
         sendSelectBibHeatCommand,
         createBibEquivalence,
         deleteBibEquivalence,
+        recordBibEvent,
+        bibBlocks,
         selectedHeatForBibMode,
         canEditTimingSettings,
         timingSettings,

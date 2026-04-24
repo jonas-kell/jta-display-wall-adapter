@@ -37,8 +37,8 @@
                         density="compact"
                         @click="addBibAlternative(cmp.bib, mainStore.selectedHeatForBibMode.heat_data.start_list.id)"
                     ></v-btn>
-                    <tempalate v-for="eq in mainStore.selectedHeatForBibMode.equivalences">
-                        <tempalate v-if="eq.finish_bib == cmp.bib">
+                    <template v-for="eq in mainStore.selectedHeatForBibMode.equivalences">
+                        <template v-if="eq.finish_bib == cmp.bib">
                             <b class="ml-2">{{ eq.alternative_bib }}</b>
                             <v-btn
                                 class="ml-2"
@@ -52,8 +52,8 @@
                                     )
                                 "
                             ></v-btn>
-                        </tempalate>
-                    </tempalate>
+                        </template>
+                    </template>
                 </li>
             </ul>
         </div>

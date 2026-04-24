@@ -267,6 +267,7 @@ export type MessageFromWebControl =
     | MessageFromWebControlSendHeatDataToDisplay
     | MessageFromWebControlAddBibEquivalence
     | MessageFromWebControlDeleteBibEquivalence
+    | MessageFromWebControlRecordBibRound
     | MessageFromWebControlDevReset
     | MessageFromWebControlDevStartRace
     | MessageFromWebControlDevSendStartList
@@ -302,6 +303,7 @@ export type MessageFromWebControlGetLogs = { type: "GetLogs"; data: number };
 export type MessageFromWebControlGetMainHeat = { type: "GetMainHeat" };
 export type MessageFromWebControlIdle = { type: "Idle" };
 export type MessageFromWebControlInitStaticDatabaseState = { type: "InitStaticDatabaseState"; data: DatabaseStaticState };
+export type MessageFromWebControlRecordBibRound = { type: "RecordBibRound"; data: number };
 export type MessageFromWebControlRequestAthletes = { type: "RequestAthletes" };
 export type MessageFromWebControlRequestBibEntryModeData = { type: "RequestBibEntryModeData" };
 export type MessageFromWebControlRequestConnectionStates = { type: "RequestConnectionStates" };
@@ -343,8 +345,10 @@ export type MessageToWebControl =
     | MessageToWebControlLicensed
     | MessageToWebControlStaticConfigurationNotInitialized
     | MessageToWebControlConnectionState
+    | MessageToWebControlBibRoundRecorded
     | MessageToWebControlDevMainHeatStartList;
 export type MessageToWebControlAthletesData = { type: "AthletesData"; data: AthleteWithMetadata[] };
+export type MessageToWebControlBibRoundRecorded = { type: "BibRoundRecorded"; data: BibDataPoint };
 export type MessageToWebControlConnectionState = { type: "ConnectionState"; data: ConnectionState };
 export type MessageToWebControlCurrentDisplayFrame = { type: "CurrentDisplayFrame"; data: number[] };
 export type MessageToWebControlDatabaseStaticState = { type: "DatabaseStaticState"; data: DatabaseStaticState };
