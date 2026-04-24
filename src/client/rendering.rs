@@ -762,6 +762,7 @@ impl TimingSettings {
     }
 }
 
+// TODO wind on result list?
 fn draw_table(
     list_settings: TSMForTableRender,
     lines: Vec<ListLine>,
