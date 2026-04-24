@@ -1,5 +1,5 @@
 <template>
-    <h2>Timing</h2>
+    <h2>Timing Settings</h2>
 
     <div class="d-flex flex-row justify-space-between">
         <div>
