@@ -57,6 +57,9 @@ import {
     ConnectionState,
     MessageFromWebControlRequestConnectionStates,
     MessageFromWebControlSendHeatDataToDisplay,
+    BibEntryModeData,
+    MessageFromWebControlSelectHeatForBibMode,
+    MessageFromWebControlRequestBibEntryModeData,
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
@@ -115,6 +118,7 @@ export default defineStore("main", () => {
     const athletesData = ref([] as AthleteWithMetadata[]);
     const pdfConfigurationSettings = ref([] as PDFConfigurationSetting[]);
     const mainHeat = ref(null as null | HeatData);
+    const selectedHeatForBibMode = ref(null as null | BibEntryModeData);
     const devMode = ref(false);
     const devMainHeatStartList = ref(null as null | HeatStartList);
     const versionMismatchTriggered = ref(null as null | string);
@@ -147,6 +151,9 @@ export default defineStore("main", () => {
                 heatsMetaResult.value.sort((a, b) => {
                     return a.scheduled_start_time_string.localeCompare(b.scheduled_start_time_string);
                 });
+                return;
+            case "HeatDataSelectionForBibMode":
+                selectedHeatForBibMode.value = msg.data
                 return;
             case "Logs":
                 const entArr = msg.data;
@@ -290,6 +297,7 @@ export default defineStore("main", () => {
             sendRequestLicenseCommand();
             sendRequestStaticConfigCommand();
 
+            sendGetBibDataCommand();
             sendGetMainHeatCommand();
             sendGetHeatsCommand();
             sendRequestTimingSettingsCommand();
@@ -531,6 +539,19 @@ export default defineStore("main", () => {
         };
         sendWSCommand(JSON.stringify(packet));
     }
+    function sendGetBibDataCommand() {
+        const packet: MessageFromWebControlRequestBibEntryModeData = {
+            type: "RequestBibEntryModeData",
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+    function sendSelectBibHeatCommand(id: Uuid) {
+        const packet: MessageFromWebControlSelectHeatForBibMode = {
+            type: "SelectHeatForBibMode",
+            data: id
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
     function sendGetMainHeatCommand() {
         const packet: MessageFromWebControlGetMainHeat = {
             type: "GetMainHeat",
@@ -670,6 +691,8 @@ export default defineStore("main", () => {
         sendRequestDevModeStatusCommand,
         sendHeatToDisplayCommand,
         sendGenericWSCommand,
+        sendSelectBibHeatCommand,
+        selectedHeatForBibMode,
         canEditTimingSettings,
         timingSettings,
         selectedHeat,

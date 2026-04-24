@@ -8,6 +8,22 @@ diesel::table! {
 }
 
 diesel::table! {
+    bib_data_points (id) {
+        id -> Text,
+        belongs_to_id -> Text,
+        data -> Text,
+    }
+}
+
+diesel::table! {
+    bib_equivalences (id) {
+        id -> Text,
+        belongs_to_id -> Text,
+        data -> Text,
+    }
+}
+
+diesel::table! {
     database_state (id) {
         id -> Integer,
         created_with_version -> Text,
@@ -122,4 +138,4 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    athletes,database_state,heat_assignments,heat_evaluations,heat_false_starts,heat_finishes,heat_intermediates,heat_results,heat_start_lists,heat_starts,heat_wind_missings,heat_winds,internal_wind_measurements,internal_wind_readings,pdf_settings,permanent_storage,);
+    athletes,bib_data_points,bib_equivalences,database_state,heat_assignments,heat_evaluations,heat_false_starts,heat_finishes,heat_intermediates,heat_results,heat_start_lists,heat_starts,heat_wind_missings,heat_winds,internal_wind_measurements,internal_wind_readings,pdf_settings,permanent_storage,);

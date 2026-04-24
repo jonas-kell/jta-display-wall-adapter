@@ -2,11 +2,11 @@ use crate::{
     idcapture::format::IDCaptureMessage,
     interface::MessageFromClientToServer,
     server::{
+        bib_detection::MessageFromBibServer,
         camera_program_types::{
             CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult,
             HeatStart, HeatStartList, HeatWind, HeatWindMissing,
         },
-        MessageFromBibServer,
     },
     times::{DayTime, RaceTime},
     webserver::MessageFromWebControl,

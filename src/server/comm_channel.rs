@@ -6,7 +6,7 @@ use crate::{
         InstructionFromTimingProgram, InstructionToTimingProgram,
     },
     interface::{MessageFromClientToServer, MessageFromServerToClient},
-    server::{MessageFromBibServer, MessageToBibServer},
+    server::bib_detection::{MessageFromBibServer, MessageToBibServer},
     webserver::{MessageFromWebControl, MessageToWebControl},
     wind::format::{MessageToWindServer, WindMessageBroadcast},
 };

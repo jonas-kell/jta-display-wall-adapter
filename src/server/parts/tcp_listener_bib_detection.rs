@@ -1,9 +1,9 @@
 use crate::args::Args;
 use crate::interface::ServerStateMachineServerStateReader;
 use crate::json::make_json_exchange_codec;
+use crate::server::bib_detection::{MessageFromBibServer, MessageToBibServer};
 use crate::server::comm_channel::InstructionCommunicationChannel;
 use futures::{SinkExt, StreamExt};
-use serde::{Deserialize, Serialize};
 use std::io::{self, Error, ErrorKind};
 use std::net::SocketAddr;
 use std::sync::{
@@ -16,38 +16,6 @@ use tokio::time;
 use tokio::time::sleep;
 use tokio_serde::{formats::Json, Framed};
 use tokio_util::codec::{FramedRead, FramedWrite};
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct MessageFromBibServer {
-    pub bib: u32,
-    pub timestamp: f32, // seconds since midnight
-                        // ... There are more fields, we do not parse
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct CompetitorEvaluatedBibServer {
-    pub timestamp: f32, // seconds since midnight
-    pub bib: u32,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct SeekForTimeBibServer {
-    pub timestamp: f32, // seconds since midnight
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct RaceHasStartedBibServer {
-    pub id: String,
-    pub timestamp: f32, // seconds since midnight
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(tag = "type", content = "data")]
-pub enum MessageToBibServer {
-    CompetitorEvaluated(CompetitorEvaluatedBibServer),
-    SeekForTime(SeekForTimeBibServer),
-    RaceHasStarted(RaceHasStartedBibServer),
-}
 
 pub async fn tcp_listener_bib_detection(
     args: Args,

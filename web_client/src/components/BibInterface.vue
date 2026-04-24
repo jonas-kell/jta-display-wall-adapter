@@ -1,5 +1,7 @@
 <template>
     <h2>Bib Interface <v-btn density="compact" to="/" v-if="!authStore.authenticated">Home</v-btn></h2>
+
+    {{ mainStore.selectedHeatForBibMode }}
 </template>
 
 <script setup lang="ts">
@@ -9,7 +11,7 @@
     const mainStore = useMainStore();
     const authStore = useAuthStore();
 
-    mainStore;
+    authStore;
 </script>
 
 <style scoped></style>

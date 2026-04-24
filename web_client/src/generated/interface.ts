@@ -46,6 +46,22 @@ export type AthleteWithMetadata = {
     heat_assignments: HeatAssignment[];
     heats_from_assignments: [HeatCompetitorResult | null, HeatAssignment, HeatData][];
 };
+export type BibDataPoint = {
+    heat_id: Uuid;
+    bib: number;
+    race_time: RaceTime;
+    manual: boolean;
+};
+export type BibEntryModeData = {
+    heat_data: HeatData;
+    bib_data_points: BibDataPoint[];
+    equivalences: BibEquivalence[];
+};
+export type BibEquivalence = {
+    heat_id: Uuid;
+    finish_bib: number;
+    alternative_bib: number;
+};
 export type CompetitorEvaluated = {
     application: string;
     version: string;
@@ -246,6 +262,8 @@ export type MessageFromWebControl =
     | MessageFromWebControlRequestPassword
     | MessageFromWebControlRequestLicense
     | MessageFromWebControlRequestConnectionStates
+    | MessageFromWebControlSelectHeatForBibMode
+    | MessageFromWebControlRequestBibEntryModeData
     | MessageFromWebControlSendHeatDataToDisplay
     | MessageFromWebControlDevReset
     | MessageFromWebControlDevStartRace
@@ -281,6 +299,7 @@ export type MessageFromWebControlGetMainHeat = { type: "GetMainHeat" };
 export type MessageFromWebControlIdle = { type: "Idle" };
 export type MessageFromWebControlInitStaticDatabaseState = { type: "InitStaticDatabaseState"; data: DatabaseStaticState };
 export type MessageFromWebControlRequestAthletes = { type: "RequestAthletes" };
+export type MessageFromWebControlRequestBibEntryModeData = { type: "RequestBibEntryModeData" };
 export type MessageFromWebControlRequestConnectionStates = { type: "RequestConnectionStates" };
 export type MessageFromWebControlRequestDevMode = { type: "RequestDevMode" };
 export type MessageFromWebControlRequestDisplayClientState = { type: "RequestDisplayClientState" };
@@ -292,6 +311,7 @@ export type MessageFromWebControlRequestTimingSettings = { type: "RequestTimingS
 export type MessageFromWebControlRequestWindValues = { type: "RequestWindValues"; data: WindValueRequestDateContainer };
 export type MessageFromWebControlResultList = { type: "ResultList" };
 export type MessageFromWebControlSelectHeat = { type: "SelectHeat"; data: string };
+export type MessageFromWebControlSelectHeatForBibMode = { type: "SelectHeatForBibMode"; data: Uuid };
 export type MessageFromWebControlSendDebugDisplayCommand = { type: "SendDebugDisplayCommand"; data: DisplayEntry };
 export type MessageFromWebControlSendHeatDataToDisplay = { type: "SendHeatDataToDisplay"; data: Uuid };
 export type MessageFromWebControlStartList = { type: "StartList" };
@@ -305,6 +325,7 @@ export type MessageToWebControl =
     | MessageToWebControlHeatsMeta
     | MessageToWebControlLogs
     | MessageToWebControlHeatDataMessage
+    | MessageToWebControlHeatDataSelectionForBibMode
     | MessageToWebControlTimingSettingsState
     | MessageToWebControlWindMeasurements
     | MessageToWebControlCurrentDisplayFrame
@@ -328,6 +349,7 @@ export type MessageToWebControlDevModeStatus = { type: "DevModeStatus"; data: bo
 export type MessageToWebControlDisplayClientState = { type: "DisplayClientState"; data: DisplayClientState };
 export type MessageToWebControlFrametimeReport = { type: "FrametimeReport"; data: FrametimeReport };
 export type MessageToWebControlHeatDataMessage = { type: "HeatDataMessage"; data: HeatData };
+export type MessageToWebControlHeatDataSelectionForBibMode = { type: "HeatDataSelectionForBibMode"; data: BibEntryModeData | null };
 export type MessageToWebControlHeatsMeta = { type: "HeatsMeta"; data: HeatMeta[] };
 export type MessageToWebControlLicensed = { type: "Licensed"; data: ProductKey | null };
 export type MessageToWebControlLogs = { type: "Logs"; data: PermanentlyStoredDataset[] };

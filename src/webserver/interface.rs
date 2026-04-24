@@ -3,7 +3,7 @@ use crate::{
     database::{DatabaseStaticState, PermanentlyStoredDataset},
     productkey::ProductKey,
     server::{
-        bib_detection::DisplayEntry,
+        bib_detection::{BibEntryModeData, DisplayEntry},
         camera_program_types::{
             Athlete, AthleteWithMetadata, CompetitorEvaluated, HeatAssignment, HeatData,
             HeatFinish, HeatIntermediate, HeatMeta, HeatResult, HeatStart, HeatStartList, HeatWind,
@@ -53,6 +53,8 @@ pub enum MessageFromWebControl {
     RequestPassword,
     RequestLicense,
     RequestConnectionStates,
+    SelectHeatForBibMode(Uuid),
+    RequestBibEntryModeData,
     SendHeatDataToDisplay(Uuid),
     // DEV calls
     DevReset,
@@ -147,6 +149,7 @@ pub enum MessageToWebControl {
     HeatsMeta(Vec<HeatMeta>),
     Logs(Vec<PermanentlyStoredDataset>),
     HeatDataMessage(HeatData),
+    HeatDataSelectionForBibMode(Option<BibEntryModeData>),
     TimingSettingsState(TimingSettings),
     WindMeasurements(Vec<WindMeasurement>),
     CurrentDisplayFrame(Vec<u8>), // gets handled extra and sent as binary data

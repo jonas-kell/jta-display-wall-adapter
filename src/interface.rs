@@ -10,7 +10,10 @@ use crate::open_webcontrol;
 use crate::productkey::{dev_mode, product_key_valid};
 use crate::productkey::{today, ProductKey};
 use crate::server::audio_types::{AudioPlayer, Sound};
-use crate::server::bib_detection::DisplayEntry;
+use crate::server::bib_detection::{
+    generate_bib_data, CompetitorEvaluatedBibServer, DisplayEntry, MessageToBibServer,
+    RaceHasStartedBibServer, SeekForTimeBibServer,
+};
 use crate::server::camera_program_types::{
     CompetitorEvaluated, HeatFalseStart, HeatFinish, HeatIntermediate, HeatResult, HeatStart,
     HeatWind,
@@ -18,9 +21,6 @@ use crate::server::camera_program_types::{
 use crate::server::comm_channel::{ConnectionCheck, InstructionCommunicationChannel};
 use crate::server::export_functions::{
     fake_main_heat_start_list, generate_meet_data, write_to_xml_output_file,
-};
-use crate::server::{
-    CompetitorEvaluatedBibServer, MessageToBibServer, RaceHasStartedBibServer, SeekForTimeBibServer,
 };
 use crate::times::RaceTime;
 use crate::webserver::{ConnectionState, PDFConfigurationSetting};
@@ -186,6 +186,7 @@ pub struct ServerStateMachine {
     timing_settings_template: TimingSettings,
     static_state: Option<DatabaseStaticState>,
     database_version_mismatch: Option<(String, String)>,
+    bib_heat_selection: Option<Uuid>,
 }
 impl ServerStateMachine {
     pub fn new(
@@ -231,6 +232,7 @@ impl ServerStateMachine {
             timing_settings_template: TimingSettings::new(args),
             static_state,
             database_version_mismatch,
+            bib_heat_selection: None,
         }
     }
 
@@ -627,6 +629,13 @@ impl ServerStateMachine {
                 MessageFromWebControl::RequestTimingSettings => {
                     self.send_message_to_client(MessageFromServerToClient::RequestTimingSettings);
                 }
+                MessageFromWebControl::SelectHeatForBibMode(uuid) => {
+                    self.bib_heat_selection = Some(uuid);
+                    self.handle_bib_mode_selection();
+                }
+                MessageFromWebControl::RequestBibEntryModeData => {
+                    self.handle_bib_mode_selection();
+                }
                 MessageFromWebControl::Clock(dt) => {
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::Clock(dt));
@@ -925,6 +934,12 @@ impl ServerStateMachine {
                 }
             },
         }
+    }
+
+    fn handle_bib_mode_selection(&mut self) {
+        self.send_message_to_web_control(MessageToWebControl::HeatDataSelectionForBibMode(
+            generate_bib_data(self.bib_heat_selection.clone(), &self.database_manager),
+        ));
     }
 
     fn handle_heat_start_list(&mut self, list: HeatStartList) {

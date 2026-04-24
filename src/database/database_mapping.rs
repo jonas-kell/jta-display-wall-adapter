@@ -5,14 +5,14 @@ use std::collections::HashMap;
 
 use crate::database::db::DatabaseError;
 use crate::database::schema::{
-    athletes, database_state, heat_assignments, heat_evaluations, heat_false_starts, heat_finishes,
-    heat_intermediates, heat_results, heat_start_lists, heat_starts, heat_wind_missings,
-    heat_winds, internal_wind_measurements, internal_wind_readings, pdf_settings,
-    permanent_storage,
+    athletes, bib_data_points, bib_equivalences, database_state, heat_assignments,
+    heat_evaluations, heat_false_starts, heat_finishes, heat_intermediates, heat_results,
+    heat_start_lists, heat_starts, heat_wind_missings, heat_winds, internal_wind_measurements,
+    internal_wind_readings, pdf_settings, permanent_storage,
 };
 use crate::database::DatabaseManager;
 use crate::productkey::today;
-use crate::server::bib_detection::DisplayEntry;
+use crate::server::bib_detection::{BibDataPoint, BibEquivalence, DisplayEntry};
 use crate::server::camera_program_types::{
     Athlete, AthleteWithMetadata, CompetitorEvaluated, HeatAssignment, HeatData, HeatFalseStart,
     HeatFinish, HeatIntermediate, HeatResult, HeatStart, HeatStartList, HeatWind, HeatWindMissing,
@@ -351,6 +351,70 @@ fn transform_time(time: &Option<DayTime>) -> Option<NaiveDateTime> {
         }
         None => None,
     }
+}
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = bib_data_points)]
+pub struct BibDataPointDatabase {
+    id: String,
+    belongs_to_id: String,
+    data: String,
+}
+impl_database_serializable!(
+    BibDataPoint,
+    BibDataPointDatabase,
+    bib_data_points::table,
+    bib_data_points::id,
+    |self_obj: &BibDataPoint| Ok(BibDataPointDatabase {
+        id: Uuid::new_v4().to_string(),
+        belongs_to_id: self_obj.heat_id.to_string(),
+        data: serde_json::to_string(self_obj)?,
+    })
+);
+
+#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[diesel(table_name = bib_equivalences)]
+pub struct BibEquivalenceDatabase {
+    id: String,
+    belongs_to_id: String,
+    data: String,
+}
+impl_database_serializable!(
+    BibEquivalence,
+    BibEquivalenceDatabase,
+    bib_equivalences::table,
+    bib_equivalences::id,
+    |self_obj: &BibEquivalence| Ok(BibEquivalenceDatabase {
+        id: Uuid::new_v4().to_string(),
+        belongs_to_id: self_obj.heat_id.to_string(),
+        data: serde_json::to_string(self_obj)?,
+    })
+);
+
+pub fn get_bib_data(
+    id: Uuid,
+    manager: &DatabaseManager,
+) -> Result<(Vec<BibDataPoint>, Vec<BibEquivalence>), DatabaseError> {
+    let mut conn = manager.get_connection()?;
+    let id_str = id.to_string();
+
+    let bib_detections_db = bib_data_points::table::table()
+        .filter(bib_data_points::belongs_to_id.eq(id_str.clone()))
+        .load::<BibDataPointDatabase>(&mut conn)?;
+    let bib_equivalences_db = bib_equivalences::table::table()
+        .filter(bib_equivalences::belongs_to_id.eq(id_str.clone()))
+        .load::<BibEquivalenceDatabase>(&mut conn)?;
+
+    let bib_detections = bib_detections_db
+        .into_iter()
+        .filter_map(|h| BibDataPoint::try_from(h).ok())
+        .collect::<Vec<BibDataPoint>>();
+    let bib_equivalences = bib_equivalences_db
+        .into_iter()
+        .filter_map(|h| BibEquivalence::try_from(h).ok())
+        .collect::<Vec<BibEquivalence>>();
+
+    return Ok((bib_detections, bib_equivalences));
 }
 
 #[derive(Insertable, Queryable, Identifiable)]
