@@ -9,6 +9,7 @@ import Timing from "./components/Timing.vue";
 import ManageAthletes from "./components/ManageAthletes.vue";
 import Debug from "./components/Debug.vue";
 import BibInterface from "./components/BibInterface.vue";
+import BibInterfaceInternal from "./components/BibInterfaceInternal.vue";
 
 import useAuthStore from "./stores/auth";
 
@@ -21,6 +22,7 @@ const routes = [
     { path: "/pdf_settings", component: PDFSettings, name: "pdf_settings" },
     { path: "/pdf_print", component: PDFPrint, name: "pdf_print" },
     { path: "/debug", component: Debug, name: "debug" },
+    { path: "/bib_results", component: BibInterfaceInternal, name: "bib_results" },
     { path: "/bib_interface", component: BibInterface, name: "bib_interface", meta: { requiresNoAuth: true } },
     { path: "/:catchAll(.*)*", redirect: "/", meta: { requiresNoAuth: true } },
 ];

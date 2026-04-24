@@ -171,6 +171,9 @@
                         <router-link to="/pdf_print" class="router-link-style">PDF Print</router-link>
                     </v-list-item>
                     <v-list-item>
+                        <router-link to="/bib_results" class="router-link-style">Bib Results</router-link>
+                    </v-list-item>
+                    <v-list-item>
                         <router-link to="/bib_interface" class="router-link-style">Bib Interface</router-link>
                     </v-list-item>
                     <v-list-item

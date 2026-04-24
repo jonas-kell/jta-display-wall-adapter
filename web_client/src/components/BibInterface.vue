@@ -38,6 +38,8 @@
     import useAuthStore from "../stores/auth";
     import { computed, ref, watch } from "vue";
 
+    // TODO add timer of how far we are into the race
+
     const mainStore = useMainStore();
     const authStore = useAuthStore();
 
@@ -106,8 +108,6 @@
             return blocked;
         }
     });
-
-    authStore;
 </script>
 
 <style scoped></style>
