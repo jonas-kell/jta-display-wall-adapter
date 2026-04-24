@@ -18,7 +18,7 @@
             <div>
                 <h3 class="mt-4">Settings</h3>
                 <template v-if="mainStore.timingSettings">
-                    <div>
+                    <div class="d-flex flex-column flex-wrap" :style="{ 'max-height': '40vh' }">
                         <v-select
                             density="compact"
                             :items="Object.values(TimingTimeDisplayMode)"
