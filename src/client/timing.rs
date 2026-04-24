@@ -43,6 +43,7 @@ pub struct TimingSettings {
     pub switch_to_results_automatically: bool,
     pub mode: TimingTimeDisplayMode,
     pub list_animations_stopped: bool,
+    pub entries_in_lists: u8,
 }
 impl TimingSettings {
     pub fn new(args: &Args) -> Self {
@@ -62,6 +63,7 @@ impl TimingSettings {
             switch_to_results_automatically: false,
             mode: TimingTimeDisplayMode::TimeBigAndHoldTopWithRunName,
             list_animations_stopped: false,
+            entries_in_lists: 4,
         }
     }
 }
@@ -410,7 +412,14 @@ impl TimingStateMachine {
                     warn!("Race Result Meta update was trashed, because update is blocked by settings");
                 }
                 if self.settings.switch_to_results_automatically {
-                    self.timing_mode = TimingMode::ResultList(TableMetaStorage::new());
+                    match &self.timing_mode {
+                        TimingMode::Timing | TimingMode::StartList(_) => {
+                            self.timing_mode = TimingMode::ResultList(TableMetaStorage::new());
+                        }
+                        TimingMode::ResultList(a) => {
+                            self.timing_mode = TimingMode::ResultList(a.clone());
+                        }
+                    }
                 }
             }
             TimingUpdate::Reset => {

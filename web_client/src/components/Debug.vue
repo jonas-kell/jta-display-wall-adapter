@@ -231,7 +231,7 @@
                         competitor: last,
                         distance: heat.distance_meters,
                         finish_time: nowAsDayTime(),
-                        rank: 1, // this is not really used, we just send fake data here
+                        rank: 1, // this is not directly used, we just send fake data here
                         runtime: raceTimeFromNumber(lastTime),
                         runtime_full_precision: raceTimeFromNumber(lastTime),
                     },
@@ -244,7 +244,7 @@
                     competitor: comp,
                     distance: heat.distance_meters,
                     finish_time: nowAsDayTime(),
-                    rank: 1, // this is not really used, we just send fake data here
+                    rank: index + 1,
                     runtime: raceTimeFromNumber(time),
                     runtime_full_precision: raceTimeFromNumber(time),
                 };

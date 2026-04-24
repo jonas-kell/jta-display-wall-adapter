@@ -163,6 +163,18 @@
                             label="List Animations Stopped"
                         >
                         </v-switch>
+                        <v-text-field
+                            density="compact"
+                            type="number"
+                            min="1"
+                            max="8"
+                            v-model.number="mainStore.timingSettings.entries_in_lists"
+                            step="1"
+                            label="List lines"
+                            width="250"
+                            hide-details
+                            class="mt-1"
+                        />
                     </div>
                 </template>
                 <p v-else>Not loaded</p>

@@ -13,6 +13,7 @@ use crate::{
     },
     interface::{ClientState, ClientStateMachine},
     server::camera_program_types::HeatCompetitor,
+    times::RaceTime,
 };
 
 pub struct RenderCache {
@@ -616,7 +617,6 @@ pub fn render_client_frame(
                         info_for_table,
                         list,
                         false,
-                        4,
                         tms,
                         meta,
                         0.0,
@@ -632,11 +632,27 @@ pub fn render_client_frame(
                             None => Vec::new(),
                         },
                         None => Vec::new(),
-                    };
+                    }
+                    .iter()
+                    .map(|a| ListLine {
+                        number: a.rank,
+                        athlete: a.competitor.clone(),
+                        res: Some(a.runtime_full_precision.clone()),
+                    })
+                    .collect();
+
                     // TODO somehow note of the "competitors left to evaluate" maybe
-                    if let Some(first) = list.first() {
-                        draw_text(&first.competitor.first_name, 100.0, 30.0, 20.0, meta);
-                    };
+                    draw_table(
+                        info_for_table,
+                        list,
+                        true,
+                        tms,
+                        meta,
+                        0.0,
+                        (title_height + 1) as f32,
+                        window_width,
+                        window_height - 1.0 - title_height as f32,
+                    );
                 }
             }
         }
@@ -709,7 +725,7 @@ impl TableMetaStorage {
 struct ListLine {
     pub number: u32,
     pub athlete: HeatCompetitor,
-    pub res: Option<String>,
+    pub res: Option<RaceTime>,
 }
 
 /// THIS DOES NOT need a mutable pointer to self. And not a copy of TimingStateMachine. Both would suffice as pointers.
@@ -728,6 +744,7 @@ struct TSMForTableRender {
     pub max_decimal_places_after_comma: i8,
     pub table_duration_nr_ms: u32,
     pub animations_paused: bool,
+    pub no_lines_in_lists: u8,
 }
 impl TimingSettings {
     fn convert_to_table_info_ro(
@@ -738,15 +755,15 @@ impl TimingSettings {
             max_decimal_places_after_comma: self.max_decimal_places_after_comma,
             table_duration_nr_ms: intermediate.table_duration_nr_ms,
             animations_paused: self.list_animations_stopped,
+            no_lines_in_lists: self.entries_in_lists,
         }
     }
 }
 
 fn draw_table(
-    timing_state_machine_settings: TSMForTableRender,
+    list_settings: TSMForTableRender,
     lines: Vec<ListLine>,
-    include_result_line: bool,
-    no_lines: u8,
+    include_result_col: bool,
     table_meta: &mut TableMetaStorage,
     meta: &mut RasterizerMeta,
     x: f32,
@@ -755,15 +772,15 @@ fn draw_table(
     height: f32,
 ) {
     let mut lines = lines;
+    let lines_on_page = list_settings.no_lines_in_lists.max(1) as u64;
 
-    let frames_per_page = ((timing_state_machine_settings.table_duration_nr_ms * 1000000)
-        / (FRAME_TIME_NS as u32))
-        + 1;
+    let frames_per_page =
+        ((list_settings.table_duration_nr_ms * 1000000) / (FRAME_TIME_NS as u32)) + 1;
 
     const NUMBER_SPACE_FRACTION: f32 = 0.08;
-    const IN_BETWEEN_SPACE_FRACTION: f32 = 0.02;
-    const RESULT_SPACE_FRACTION_TEMPLATE: f32 = 0.3;
-    let result_space_fraction: f32 = match include_result_line {
+    const IN_BETWEEN_SPACE_FRACTION: f32 = 0.015;
+    const RESULT_SPACE_FRACTION_TEMPLATE: f32 = 0.25;
+    let result_space_fraction: f32 = match include_result_col {
         true => RESULT_SPACE_FRACTION_TEMPLATE + IN_BETWEEN_SPACE_FRACTION,
         false => 0.0,
     };
@@ -773,14 +790,13 @@ fn draw_table(
     lines.sort_by(|a, b| a.number.cmp(&b.number));
 
     let lines_in_total = lines.len() as u64;
-    let lines_on_page = no_lines as u64;
     let no_pages = if lines_in_total == 0 {
         1
     } else {
         if lines_in_total % lines_on_page == 0 {
             lines_in_total / lines_on_page
         } else {
-            (lines_in_total as f32 / no_lines as f32).ceil() as u64
+            (lines_in_total as f32 / lines_on_page as f32).ceil() as u64
         }
     };
     let we_are_on_page: u64 =
@@ -788,7 +804,7 @@ fn draw_table(
     let frame_on_page: u64 =
         (table_meta.animation_frame_counter % (frames_per_page as u128)) as u64;
 
-    let line_height: f32 = (height as f32) / (no_lines as f32);
+    let line_height: f32 = (height as f32) / (lines_on_page as f32);
     for (i, line) in lines.iter().enumerate() {
         if ((i as u64) >= (we_are_on_page * lines_on_page))
             && ((i as u64) < (we_are_on_page + 1) * lines_on_page)
@@ -806,18 +822,38 @@ fn draw_table(
             );
             draw_text_scrolling_with_width(
                 &construct_list_name_repr(&line.athlete),
-                x + (width * (NUMBER_SPACE_FRACTION)),
+                x + (width * NUMBER_SPACE_FRACTION),
                 line_y_start,
                 line_height * 0.85,
                 width * identifier_space_fraction,
                 frame_on_page,
                 meta,
             );
+
+            if include_result_col {
+                if let Some(rt) = &line.res {
+                    draw_text_as_big_as_possible(
+                        &rt.optimize_representation_for_display(Some(
+                            list_settings.max_decimal_places_after_comma,
+                        ))
+                        .to_string(),
+                        width
+                            * (NUMBER_SPACE_FRACTION
+                                + identifier_space_fraction
+                                + IN_BETWEEN_SPACE_FRACTION),
+                        line_y_start,
+                        (width * (result_space_fraction - IN_BETWEEN_SPACE_FRACTION)) as usize,
+                        (line_height) as usize,
+                        &mut FontSizeChooserCache::new(), // TODO this is REALLY inefficient. But there si no time to store it currently... Sorry...
+                        meta,
+                    );
+                }
+            }
         }
     }
 
     // finally increase the animation frame counter after rendering a frame
-    if !timing_state_machine_settings.animations_paused {
+    if !list_settings.animations_paused {
         table_meta.animation_frame_counter += 1;
     }
 }

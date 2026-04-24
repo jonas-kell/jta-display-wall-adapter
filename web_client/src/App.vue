@@ -151,7 +151,7 @@
                         <router-link to="/heats" class="router-link-style">Heats</router-link>
                     </v-list-item>
                     <v-list-item>
-                        <router-link to="/timing" class="router-link-style">Timing</router-link>
+                        <router-link to="/timing" class="router-link-style">Timing Settings</router-link>
                     </v-list-item>
                     <v-list-item
                         v-if="

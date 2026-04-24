@@ -401,6 +401,7 @@ export type TimingSettings = {
     switch_to_results_automatically: boolean;
     mode: TimingTimeDisplayMode;
     list_animations_stopped: boolean;
+    entries_in_lists: number;
 };
 export type Uuid = string;
 export type WindMeasurement = {
