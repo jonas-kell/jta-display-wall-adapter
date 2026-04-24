@@ -265,6 +265,8 @@ export type MessageFromWebControl =
     | MessageFromWebControlSelectHeatForBibMode
     | MessageFromWebControlRequestBibEntryModeData
     | MessageFromWebControlSendHeatDataToDisplay
+    | MessageFromWebControlAddBibEquivalence
+    | MessageFromWebControlDeleteBibEquivalence
     | MessageFromWebControlDevReset
     | MessageFromWebControlDevStartRace
     | MessageFromWebControlDevSendStartList
@@ -274,11 +276,13 @@ export type MessageFromWebControl =
     | MessageFromWebControlDevSendResultList
     | MessageFromWebControlDevSendWind
     | MessageFromWebControlDevRequestMainHeatStartList;
+export type MessageFromWebControlAddBibEquivalence = { type: "AddBibEquivalence"; data: BibEquivalence };
 export type MessageFromWebControlAdvertisements = { type: "Advertisements" };
 export type MessageFromWebControlClock = { type: "Clock"; data: DayTime };
 export type MessageFromWebControlCreateAthlete = { type: "CreateAthlete"; data: Athlete };
 export type MessageFromWebControlCreateHeatAssignment = { type: "CreateHeatAssignment"; data: HeatAssignment };
 export type MessageFromWebControlDeleteAthlete = { type: "DeleteAthlete"; data: Uuid };
+export type MessageFromWebControlDeleteBibEquivalence = { type: "DeleteBibEquivalence"; data: BibEquivalence };
 export type MessageFromWebControlDeleteCompetitorEvaluated = { type: "DeleteCompetitorEvaluated"; data: DayTime };
 export type MessageFromWebControlDeleteHeatAssignment = { type: "DeleteHeatAssignment"; data: number };
 export type MessageFromWebControlDeletePDFConfigurationSetting = { type: "DeletePDFConfigurationSetting"; data: Uuid };

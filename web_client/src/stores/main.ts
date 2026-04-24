@@ -60,6 +60,9 @@ import {
     BibEntryModeData,
     MessageFromWebControlSelectHeatForBibMode,
     MessageFromWebControlRequestBibEntryModeData,
+    MessageFromWebControlAddBibEquivalence,
+    BibEquivalence,
+    MessageFromWebControlDeleteBibEquivalence,
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
@@ -153,7 +156,7 @@ export default defineStore("main", () => {
                 });
                 return;
             case "HeatDataSelectionForBibMode":
-                selectedHeatForBibMode.value = msg.data
+                selectedHeatForBibMode.value = msg.data;
                 return;
             case "Logs":
                 const entArr = msg.data;
@@ -368,6 +371,22 @@ export default defineStore("main", () => {
         sendWSCommand(JSON.stringify(packet));
     }
 
+    function createBibEquivalence(eq: BibEquivalence) {
+        const packet: MessageFromWebControlAddBibEquivalence = {
+            type: "AddBibEquivalence",
+            data: eq,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+
+    function deleteBibEquivalence(eq: BibEquivalence) {
+        const packet: MessageFromWebControlDeleteBibEquivalence = {
+            type: "DeleteBibEquivalence",
+            data: eq,
+        };
+        sendWSCommand(JSON.stringify(packet));
+    }
+
     function sendResultListCommand() {
         const packet: MessageFromWebControlResultList = {
             type: "ResultList",
@@ -548,7 +567,7 @@ export default defineStore("main", () => {
     function sendSelectBibHeatCommand(id: Uuid) {
         const packet: MessageFromWebControlSelectHeatForBibMode = {
             type: "SelectHeatForBibMode",
-            data: id
+            data: id,
         };
         sendWSCommand(JSON.stringify(packet));
     }
@@ -692,6 +711,8 @@ export default defineStore("main", () => {
         sendHeatToDisplayCommand,
         sendGenericWSCommand,
         sendSelectBibHeatCommand,
+        createBibEquivalence,
+        deleteBibEquivalence,
         selectedHeatForBibMode,
         canEditTimingSettings,
         timingSettings,

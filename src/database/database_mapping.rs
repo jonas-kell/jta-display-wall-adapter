@@ -372,7 +372,7 @@ impl_database_serializable!(
     })
 );
 
-#[derive(Insertable, Queryable, Identifiable, AsChangeset)]
+#[derive(Insertable, Queryable, Identifiable, AsChangeset, Clone)]
 #[diesel(table_name = bib_equivalences)]
 pub struct BibEquivalenceDatabase {
     id: String,
@@ -415,6 +415,35 @@ pub fn get_bib_data(
         .collect::<Vec<BibEquivalence>>();
 
     return Ok((bib_detections, bib_equivalences));
+}
+
+pub fn delete_bib_equivalence(
+    bib_eq: BibEquivalence,
+    manager: &DatabaseManager,
+) -> Result<(), DatabaseError> {
+    let mut conn = manager.get_connection()?;
+
+    let eqs = bib_equivalences::table::table()
+        .filter(bib_equivalences::belongs_to_id.eq(bib_eq.heat_id.to_string()))
+        .load::<BibEquivalenceDatabase>(&mut conn)?;
+
+    for (eq_id, _) in eqs
+        .into_iter()
+        .filter_map(|a| match BibEquivalence::try_from(a.clone()) {
+            Ok(b) => Some((a.id, b)),
+            Err(_) => None,
+        })
+        .filter(|(_, a)| {
+            a.alternative_bib == bib_eq.alternative_bib
+                && a.finish_bib == bib_eq.finish_bib
+                && a.heat_id == bib_eq.heat_id
+        })
+    {
+        diesel::delete(bib_equivalences::table::table().filter(bib_equivalences::id.eq(eq_id)))
+            .execute(&mut conn)?;
+    }
+
+    Ok(())
 }
 
 #[derive(Insertable, Queryable, Identifiable)]
@@ -503,7 +532,7 @@ pub fn get_heat_data(id: Uuid, manager: &DatabaseManager) -> Result<HeatData, Da
 pub fn purge_heat_data(id: Uuid, manager: &DatabaseManager) -> Result<(), DatabaseError> {
     let mut conn = manager.get_connection()?;
 
-    // start list will egt ovrwritten immediately. Do not delete to avoid race conditions
+    // start list will get overwritten immediately. Do not delete to avoid race conditions
     diesel::delete(heat_starts::table::table().filter(heat_starts::id.eq(id.to_string())))
         .execute(&mut conn)?;
     diesel::delete(
@@ -523,6 +552,10 @@ pub fn purge_heat_data(id: Uuid, manager: &DatabaseManager) -> Result<(), Databa
     .execute(&mut conn)?;
     diesel::delete(
         heat_evaluations::table::table().filter(heat_evaluations::belongs_to_id.eq(id.to_string())),
+    )
+    .execute(&mut conn)?;
+    diesel::delete(
+        bib_data_points::table::table().filter(bib_data_points::belongs_to_id.eq(id.to_string())),
     )
     .execute(&mut conn)?;
 

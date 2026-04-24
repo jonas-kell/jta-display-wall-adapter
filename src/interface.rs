@@ -1,8 +1,9 @@
 use crate::client::frametime::{FrametimeReport, FrametimeTracker};
 use crate::database::{
-    create_heat_assignment, delete_athlete, delete_evaluation, delete_heat_assignment,
-    delete_pdf_setting, get_all_athletes_meta_data, get_database_static_state, get_main_heat,
-    init_database_static_state, populate_display_from_bib, ApplicationMode, DatabaseStaticState,
+    create_heat_assignment, delete_athlete, delete_bib_equivalence, delete_evaluation,
+    delete_heat_assignment, delete_pdf_setting, get_all_athletes_meta_data,
+    get_database_static_state, get_main_heat, init_database_static_state,
+    populate_display_from_bib, ApplicationMode, DatabaseStaticState,
 };
 use crate::idcapture::format::IDCaptureMessage;
 use crate::instructions::InstructionFromExternalDisplayProgram::{Frame, ServerInfo};
@@ -634,6 +635,19 @@ impl ServerStateMachine {
                     self.handle_bib_mode_selection();
                 }
                 MessageFromWebControl::RequestBibEntryModeData => {
+                    self.handle_bib_mode_selection();
+                }
+                MessageFromWebControl::AddBibEquivalence(eq) => {
+                    store_to_database!(eq, self);
+                    self.handle_bib_mode_selection();
+                }
+                MessageFromWebControl::DeleteBibEquivalence(eq) => {
+                    match delete_bib_equivalence(eq, &self.database_manager) {
+                        Ok(()) => {}
+                        Err(e) => {
+                            error!("Deletion failed because of: {}", e);
+                        }
+                    }
                     self.handle_bib_mode_selection();
                 }
                 MessageFromWebControl::Clock(dt) => {
