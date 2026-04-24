@@ -154,6 +154,15 @@
                             label="Switch to Results automatically"
                         >
                         </v-switch>
+                        <v-switch
+                            class="ml-2"
+                            color="primary"
+                            density="compact"
+                            v-model="mainStore.timingSettings.list_animations_stopped"
+                            hide-details
+                            label="List Animations Stopped"
+                        >
+                        </v-switch>
                     </div>
                 </template>
                 <p v-else>Not loaded</p>

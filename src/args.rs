@@ -94,6 +94,9 @@ pub struct Args {
     /// Number of time that passes, until the client sends the next frame
     #[arg(long, default_value_t = 500)]
     pub client_emits_frame_every_nr_of_ms: u64,
+    /// Duration of one table view (initial for client, will get sent from server to client)
+    #[arg(long, default_value_t = 3000)]
+    pub table_duration_nr_ms: u32, // TODO if we can render text transparently, we could realize smooth transitions for tables (COULD also be faked, by rendering, taking the buffer as image, rederin once more and the rendering the first transparently over it. But that is all complicated)
     /// Duration of one advertisement slideshow slide (initial for client, will get sent from server to client)
     #[arg(long, default_value_t = 2000)]
     pub slideshow_duration_nr_ms: u32,

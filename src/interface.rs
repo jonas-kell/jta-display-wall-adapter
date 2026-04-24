@@ -55,6 +55,7 @@ use uuid::Uuid;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ServerImposedSettings {
     pub position: (u32, u32, u32, u32),
+    pub table_duration_nr_ms: u32,
     pub slideshow_duration_nr_ms: u32,
     pub slideshow_transition_duration_nr_ms: u32,
     pub scroll_text_speed: u32,
@@ -64,6 +65,7 @@ impl ServerImposedSettings {
     fn new(args: &Args) -> Self {
         Self {
             position: (args.dp_pos_x, args.dp_pos_y, args.dp_width, args.dp_height),
+            table_duration_nr_ms: args.table_duration_nr_ms,
             slideshow_duration_nr_ms: args.slideshow_duration_nr_ms,
             slideshow_transition_duration_nr_ms: args.slideshow_transition_duration_nr_ms,
             scroll_text_speed: args.scroll_text_speed,

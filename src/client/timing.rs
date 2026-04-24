@@ -1,6 +1,6 @@
 use crate::{
     args::Args,
-    client::FRAME_TIME_NS,
+    client::{rendering::TableMetaStorage, FRAME_TIME_NS},
     interface::{
         ClientInternalMessageFromServerToClient::EmitTimingSettingsUpdate,
         MessageFromServerToClient,
@@ -42,6 +42,7 @@ pub struct TimingSettings {
     pub switch_to_timing_automatically: bool,
     pub switch_to_results_automatically: bool,
     pub mode: TimingTimeDisplayMode,
+    pub list_animations_stopped: bool,
 }
 impl TimingSettings {
     pub fn new(args: &Args) -> Self {
@@ -60,6 +61,7 @@ impl TimingSettings {
             switch_to_timing_automatically: true,
             switch_to_results_automatically: false,
             mode: TimingTimeDisplayMode::TimeBigAndHoldTopWithRunName,
+            list_animations_stopped: false,
         }
     }
 }
@@ -292,9 +294,9 @@ pub struct TimingStateMeta {
 
 #[derive(PartialEq, Eq, Clone)]
 pub enum TimingMode {
-    StartList,
+    StartList(TableMetaStorage),
     Timing,
-    ResultList,
+    ResultList(TableMetaStorage),
 }
 
 pub struct TimingStateMachine {
@@ -329,8 +331,8 @@ impl TimingStateMachine {
             reference_computation_time: Instant::now(),
             client_state_machine_sender,
             race_finished: false,
-            timing_mode: TimingMode::StartList,
-            run_display_entries: Vec::new(),
+            timing_mode: TimingMode::StartList(TableMetaStorage::new()),
+            run_display_entries: Vec::new(), // TODO limit this. It will overflow someday
             race_wind: None,
         }
     }
@@ -341,10 +343,10 @@ impl TimingStateMachine {
                 self.timing_mode = TimingMode::Timing;
             }
             TimingUpdate::StartList => {
-                self.timing_mode = TimingMode::StartList;
+                self.timing_mode = TimingMode::StartList(TableMetaStorage::new());
             }
             TimingUpdate::ResultList => {
-                self.timing_mode = TimingMode::ResultList;
+                self.timing_mode = TimingMode::ResultList(TableMetaStorage::new());
             }
             TimingUpdate::Meta(hsl) => {
                 if self.settings.can_currently_update_meta {
@@ -388,7 +390,7 @@ impl TimingStateMachine {
                 {
                     // we do not want to switch BACK to start list from timing (e.g. on reset, as it sends both)
                     // but if we are further along, we are probably already on the fresh start of a new run
-                    self.timing_mode = TimingMode::StartList;
+                    self.timing_mode = TimingMode::StartList(TableMetaStorage::new());
                 }
             }
             TimingUpdate::ResultMeta(hr) => {
@@ -408,7 +410,7 @@ impl TimingStateMachine {
                     warn!("Race Result Meta update was trashed, because update is blocked by settings");
                 }
                 if self.settings.switch_to_results_automatically {
-                    self.timing_mode = TimingMode::ResultList;
+                    self.timing_mode = TimingMode::ResultList(TableMetaStorage::new());
                 }
             }
             TimingUpdate::Reset => {
@@ -432,7 +434,7 @@ impl TimingStateMachine {
             TimingUpdate::Running(rt) => {
                 self.update_reference_computation_time(&rt);
                 if self.settings.switch_to_timing_automatically
-                    && self.timing_mode == TimingMode::StartList
+                    && matches!(self.timing_mode, TimingMode::StartList(_))
                 {
                     // can only switch to timing automatically from start list, not from result list
                     self.timing_mode = TimingMode::Timing;
@@ -464,7 +466,7 @@ impl TimingStateMachine {
             TimingUpdate::Intermediate(rt) => {
                 self.update_reference_computation_time(&rt);
                 if self.settings.switch_to_timing_automatically
-                    && self.timing_mode == TimingMode::StartList
+                    && matches!(self.timing_mode, TimingMode::StartList(_))
                 {
                     self.timing_mode = TimingMode::Timing;
                 }
@@ -490,7 +492,7 @@ impl TimingStateMachine {
                 self.update_reference_computation_time(&rt);
                 self.race_finished = true;
                 if self.settings.switch_to_timing_automatically
-                    && self.timing_mode == TimingMode::StartList
+                    && matches!(self.timing_mode, TimingMode::StartList(_))
                 {
                     self.timing_mode = TimingMode::Timing;
                 }

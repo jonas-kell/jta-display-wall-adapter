@@ -9,9 +9,10 @@ use crate::{
             JTA_GRAY_COLOR, JTA_GREEN_COLOR,
         },
         timing::TimingMode,
-        TimingStateMachine, FRAME_TIME_NS,
+        TimingSettings, TimingStateMachine, FRAME_TIME_NS,
     },
     interface::{ClientState, ClientStateMachine},
+    server::camera_program_types::HeatCompetitor,
 };
 
 pub struct RenderCache {
@@ -58,6 +59,8 @@ pub fn render_client_frame(
     state: &mut ClientStateMachine,
     cache: &mut RenderCache,
 ) {
+    let intermediate = state.convert_to_table_info_ro();
+
     match &mut state.state {
         ClientState::Created | ClientState::TimingEmptyInit => {
             clear(meta);
@@ -246,7 +249,11 @@ pub fn render_client_frame(
                 }
             }
 
-            match &timing_state_machine.timing_mode {
+            let info_for_table = timing_state_machine
+                .settings
+                .convert_to_table_info_ro(intermediate);
+
+            match &mut timing_state_machine.timing_mode {
                 TimingMode::Timing => {
                     match timing_state_machine.settings.mode {
                         TimingTimeDisplayMode::StreetRun => {
@@ -589,19 +596,36 @@ pub fn render_client_frame(
                         }
                     }
                 }
-                TimingMode::StartList => {
+                TimingMode::StartList(tms) => {
                     let list = match &timing_state_machine.meta {
                         Some(meta) => match &meta.start_list {
                             Some(list) => list.competitors.clone(),
                             None => Vec::new(),
                         },
                         None => Vec::new(),
-                    };
-                    if let Some(first) = list.first() {
-                        draw_text(&first.first_name, 100.0, 30.0, 20.0, meta);
-                    };
+                    }
+                    .iter()
+                    .map(|a| ListLine {
+                        number: a.lane,
+                        athlete: a.clone(),
+                        res: None,
+                    })
+                    .collect();
+
+                    draw_table(
+                        info_for_table,
+                        list,
+                        false,
+                        4,
+                        tms,
+                        meta,
+                        0.0,
+                        (title_height + 1) as f32,
+                        window_width,
+                        window_height - 1.0 - title_height as f32,
+                    );
                 }
-                TimingMode::ResultList => {
+                TimingMode::ResultList(tms) => {
                     let list = match &timing_state_machine.meta {
                         Some(meta) => match &meta.result {
                             Some(list) => list.competitors_evaluated.clone(),
@@ -660,4 +684,140 @@ fn get_holding_top_text(timing_state_machine: &TimingStateMachine) -> Option<Str
     }
 
     return None;
+}
+
+fn construct_list_name_repr(athlete: &HeatCompetitor) -> String {
+    format!(
+        "{} {}",
+        athlete.last_name.to_ascii_uppercase(),
+        athlete.first_name
+    )
+}
+
+#[derive(PartialEq, Eq, Clone)]
+pub struct TableMetaStorage {
+    animation_frame_counter: u128,
+}
+impl TableMetaStorage {
+    pub fn new() -> Self {
+        Self {
+            animation_frame_counter: 0,
+        }
+    }
+}
+
+struct ListLine {
+    pub number: u32,
+    pub athlete: HeatCompetitor,
+    pub res: Option<String>,
+}
+
+/// THIS DOES NOT need a mutable pointer to self. And not a copy of TimingStateMachine. Both would suffice as pointers.
+/// But currently that is what I have to make it work... : // TODO refactor and make pretty
+struct TSMForTableRenderIntermediate {
+    pub table_duration_nr_ms: u32,
+}
+impl ClientStateMachine {
+    fn convert_to_table_info_ro(&self) -> TSMForTableRenderIntermediate {
+        TSMForTableRenderIntermediate {
+            table_duration_nr_ms: self.server_imposed_settings.table_duration_nr_ms,
+        }
+    }
+}
+struct TSMForTableRender {
+    pub max_decimal_places_after_comma: i8,
+    pub table_duration_nr_ms: u32,
+    pub animations_paused: bool,
+}
+impl TimingSettings {
+    fn convert_to_table_info_ro(
+        &mut self,
+        intermediate: TSMForTableRenderIntermediate,
+    ) -> TSMForTableRender {
+        TSMForTableRender {
+            max_decimal_places_after_comma: self.max_decimal_places_after_comma,
+            table_duration_nr_ms: intermediate.table_duration_nr_ms,
+            animations_paused: self.list_animations_stopped,
+        }
+    }
+}
+
+fn draw_table(
+    timing_state_machine_settings: TSMForTableRender,
+    lines: Vec<ListLine>,
+    include_result_line: bool,
+    no_lines: u8,
+    table_meta: &mut TableMetaStorage,
+    meta: &mut RasterizerMeta,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+) {
+    let mut lines = lines;
+
+    let frames_per_page = ((timing_state_machine_settings.table_duration_nr_ms * 1000000)
+        / (FRAME_TIME_NS as u32))
+        + 1;
+
+    const NUMBER_SPACE_FRACTION: f32 = 0.08;
+    const IN_BETWEEN_SPACE_FRACTION: f32 = 0.02;
+    const RESULT_SPACE_FRACTION_TEMPLATE: f32 = 0.3;
+    let result_space_fraction: f32 = match include_result_line {
+        true => RESULT_SPACE_FRACTION_TEMPLATE + IN_BETWEEN_SPACE_FRACTION,
+        false => 0.0,
+    };
+    let identifier_space_fraction: f32 =
+        1.0 - NUMBER_SPACE_FRACTION - result_space_fraction - IN_BETWEEN_SPACE_FRACTION;
+
+    lines.sort_by(|a, b| a.number.cmp(&b.number));
+
+    let lines_in_total = lines.len() as u64;
+    let lines_on_page = no_lines as u64;
+    let no_pages = if lines_in_total == 0 {
+        1
+    } else {
+        if lines_in_total % lines_on_page == 0 {
+            lines_in_total / lines_on_page
+        } else {
+            (lines_in_total as f32 / no_lines as f32).ceil() as u64
+        }
+    };
+    let we_are_on_page: u64 =
+        ((table_meta.animation_frame_counter / (frames_per_page as u128)) as u64) % no_pages;
+    let frame_on_page: u64 =
+        (table_meta.animation_frame_counter % (frames_per_page as u128)) as u64;
+
+    let line_height: f32 = (height as f32) / (no_lines as f32);
+    for (i, line) in lines.iter().enumerate() {
+        if ((i as u64) >= (we_are_on_page * lines_on_page))
+            && ((i as u64) < (we_are_on_page + 1) * lines_on_page)
+        {
+            let line_y_start = ((i % lines_on_page as usize) as f32) * line_height + y;
+
+            draw_text_as_big_as_possible(
+                &format!("{}", line.number),
+                x,
+                line_y_start,
+                (width * NUMBER_SPACE_FRACTION) as usize,
+                (line_height) as usize,
+                &mut FontSizeChooserCache::new(), // TODO this is REALLY inefficient. But there si no time to store it currently... Sorry...
+                meta,
+            );
+            draw_text_scrolling_with_width(
+                &construct_list_name_repr(&line.athlete),
+                x + (width * (NUMBER_SPACE_FRACTION)),
+                line_y_start,
+                line_height * 0.85,
+                width * identifier_space_fraction,
+                frame_on_page,
+                meta,
+            );
+        }
+    }
+
+    // finally increase the animation frame counter after rendering a frame
+    if !timing_state_machine_settings.animations_paused {
+        table_meta.animation_frame_counter += 1;
+    }
 }
