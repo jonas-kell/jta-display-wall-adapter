@@ -87,6 +87,8 @@
         });
     }
 
+    // TODO average and convert to local timezone!!!! this is somehow UTC
+
     const mainStore = useMainStore();
 </script>
 
