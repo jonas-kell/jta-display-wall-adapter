@@ -5,7 +5,7 @@
     <v-text-field
         density="compact"
         type="time"
-        v-model="duration"
+        v-model="windFrom"
         min="00:00"
         max="24:00"
         step="1"
@@ -56,7 +56,7 @@
             Number(hourStr),
             Number(minStr),
             Number(secStr),
-            0
+            0,
         );
 
         if (isNaN(start.getTime())) {
