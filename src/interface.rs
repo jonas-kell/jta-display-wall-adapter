@@ -322,6 +322,8 @@ impl ServerStateMachine {
         // handle all messages
         match msg {
             IncomingInstruction::FromBibServer(bm) => {
+                // TODO store to database and use automated results
+                // also filter for automated and manual events in the ui then
                 match populate_display_from_bib(bm.bib, &self.database_manager) {
                     Ok(data) => match data {
                         Some(de) => self.send_message_to_client(
@@ -1015,6 +1017,30 @@ impl ServerStateMachine {
                                 timestamp: jtt.to_exchange_float(),
                             },
                         ));
+                    }
+
+                    debug!("Jumping to Timestamp: {}", jtt);
+
+                    let heat_data = match generate_bib_data(
+                        self.bib_heat_selection.clone(),
+                        &self.database_manager,
+                    ) {
+                        Some(data) => data.heat_data,
+                        None => {
+                            error!("Could not jump to timestamp, because no heat data found");
+                            return;
+                        }
+                    };
+
+                    if let Some(start) = heat_data.start {
+                        let request_as_duration = Duration::from(jtt);
+                        let start_as_duration = Duration::from(start.time);
+
+                        self.send_message_to_web_control(MessageToWebControl::HighlightBibEntry(
+                            RaceTime::from(request_as_duration.saturating_sub(start_as_duration)),
+                        ));
+                    } else {
+                        warn!("Heat not yet started... Can not jump")
                     }
                 }
             },

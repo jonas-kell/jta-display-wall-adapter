@@ -9,12 +9,14 @@
                 <tr>
                     <th class="pl-2">Event</th>
                     <th class="pl-2">Time</th>
+                    <th class="pl-2">Request</th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-for="row in rows">
-                    <td class="pl-2">{{ row.event }}</td>
-                    <td class="pl-2">{{ row.niceTime }}</td>
+                    <td class="pl-2" :style="{ backgroundColor: row.closest ? 'darkgreen' : undefined }">{{ row.event }}</td>
+                    <td class="pl-2" :style="{ backgroundColor: row.closest ? 'darkgreen' : undefined }">{{ row.niceTime }}</td>
+                    <td class="pl-2" :style="{ backgroundColor: row.closest ? 'darkgreen' : undefined }">{{ jumpTo }}</td>
                 </tr>
             </tbody>
         </table>
@@ -35,6 +37,7 @@
         event: string;
         time: number;
         niceTime: string;
+        closest: boolean;
     };
     const rows = computed<TableEntry[]>(() => {
         if (mainStore.selectedHeatForBibMode == null) {
@@ -43,12 +46,26 @@
 
         let res: TableEntry[] = [];
 
+        let closestTime = 99999999;
+        let closestTimeDifference = 99999999;
+        let targetTime = 999999;
+        if (mainStore.bibJumpTo != null) {
+            targetTime = numberFromRaceTime(mainStore.bibJumpTo);
+        }
+
         let heat = mainStore.selectedHeatForBibMode;
         heat.bib_data_points.forEach((bdp) => {
+            const timeAsNumber = numberFromRaceTime(bdp.race_time);
+            const newDiff = Math.abs(timeAsNumber - targetTime);
+            if (newDiff < closestTimeDifference) {
+                closestTimeDifference = newDiff;
+                closestTime = timeAsNumber;
+            }
             res.push({
                 event: "Bib detected: " + bdp.bib,
-                time: numberFromRaceTime(bdp.race_time),
+                time: timeAsNumber,
                 niceTime: raceTimeStringRepr(bdp.race_time, false, false, 1),
+                closest: false,
             });
         });
 
@@ -56,7 +73,23 @@
             return a.time - b.time;
         });
 
+        if (mainStore.bibJumpTo != null) {
+            res.forEach((a) => {
+                if (a.time == closestTime) {
+                    a.closest = true;
+                }
+            });
+        }
+
         return res;
+    });
+
+    const jumpTo = computed(() => {
+        if (mainStore.bibJumpTo == null) {
+            return "";
+        } else {
+            return raceTimeStringRepr(mainStore.bibJumpTo, false, false, 1);
+        }
     });
 </script>
 

@@ -346,6 +346,7 @@ export type MessageToWebControl =
     | MessageToWebControlStaticConfigurationNotInitialized
     | MessageToWebControlConnectionState
     | MessageToWebControlBibRoundRecorded
+    | MessageToWebControlHighlightBibEntry
     | MessageToWebControlDevMainHeatStartList;
 export type MessageToWebControlAthletesData = { type: "AthletesData"; data: AthleteWithMetadata[] };
 export type MessageToWebControlBibRoundRecorded = { type: "BibRoundRecorded"; data: BibDataPoint };
@@ -359,6 +360,7 @@ export type MessageToWebControlFrametimeReport = { type: "FrametimeReport"; data
 export type MessageToWebControlHeatDataMessage = { type: "HeatDataMessage"; data: HeatData };
 export type MessageToWebControlHeatDataSelectionForBibMode = { type: "HeatDataSelectionForBibMode"; data: BibEntryModeData | null };
 export type MessageToWebControlHeatsMeta = { type: "HeatsMeta"; data: HeatMeta[] };
+export type MessageToWebControlHighlightBibEntry = { type: "HighlightBibEntry"; data: RaceTime };
 export type MessageToWebControlLicensed = { type: "Licensed"; data: ProductKey | null };
 export type MessageToWebControlLogs = { type: "Logs"; data: PermanentlyStoredDataset[] };
 export type MessageToWebControlMainHeat = { type: "MainHeat"; data: HeatData };

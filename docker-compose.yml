@@ -37,11 +37,13 @@ services:
     command: cargo watch --ignore '**/web_client/**' -x "run -- server -v
       --address-camera-program 192.168.8.119 --address-wind-server 192.168.8.119
       --wait-ms-before-testing-for-shutdown=100000
-      --address-display-client=127.0.0.1 --display-client-communication-port
-      5678 --dp-pos-x=1460 --dp-pos-y=1050 --dp-width=360 --dp-height=120
+      --address-display-client=192.168.8.117 --display-client-communication-port
+      5678 --dp-pos-x=0 --dp-pos-y=0 --dp-width=360 --dp-height=120
       --internal-webcontrol-port=6789 --play-sound-on-start --export-folder-path
-      database_container --address-idcapture-server=127.0.0.1
-      --listen-to-timing-program --can-store-to-database-on-off-day"
+      database_container --address-idcapture-server=192.168.8.119
+      --passthrough-address-display-program 192.168.8.119
+      --passthrough-to-display-program --listen-to-timing-program
+      --can-store-to-database-on-off-day"
 
   # --address-bib-server 127.0.0.1
   # --passthrough-address-display-program 192.168.8.119 --passthrough-to-display-program

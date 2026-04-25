@@ -9,7 +9,7 @@ use crate::{
             HeatFinish, HeatIntermediate, HeatMeta, HeatResult, HeatStart, HeatStartList, HeatWind,
         },
     },
-    times::DayTime,
+    times::{DayTime, RaceTime},
     wind::format::WindMeasurement,
 };
 use chrono::NaiveDateTime;
@@ -167,6 +167,7 @@ pub enum MessageToWebControl {
     StaticConfigurationNotInitialized,
     ConnectionState(ConnectionState),
     BibRoundRecorded(BibDataPoint),
+    HighlightBibEntry(RaceTime),
     // DEV test calls
     DevMainHeatStartList(HeatStartList),
 }

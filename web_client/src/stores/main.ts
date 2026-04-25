@@ -64,6 +64,7 @@ import {
     BibEquivalence,
     MessageFromWebControlDeleteBibEquivalence,
     MessageFromWebControlRecordBibRound,
+    RaceTime,
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
@@ -125,6 +126,7 @@ export default defineStore("main", () => {
     const selectedHeatForBibMode = ref(null as null | BibEntryModeData);
     const devMode = ref(false);
     const bibBlocks = ref([] as number[]);
+    const bibJumpTo = ref(null as RaceTime | null);
     const devMainHeatStartList = ref(null as null | HeatStartList);
     const versionMismatchTriggered = ref(null as null | string);
     let frametimeReport = ref(null as null | FrametimeReport);
@@ -236,6 +238,9 @@ export default defineStore("main", () => {
                 return;
             case "ConnectionState":
                 connectionState.value = msg.data;
+                return;
+            case "HighlightBibEntry":
+                bibJumpTo.value = msg.data;
                 return;
             case "BibRoundRecorded":
                 let bdp = msg.data;
@@ -735,6 +740,7 @@ export default defineStore("main", () => {
         createBibEquivalence,
         deleteBibEquivalence,
         recordBibEvent,
+        bibJumpTo,
         bibBlocks,
         selectedHeatForBibMode,
         canEditTimingSettings,
