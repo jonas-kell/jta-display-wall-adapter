@@ -31,7 +31,7 @@ impl Display for IncomingInstruction {
             f,
             "{}",
             match self {
-                IncomingInstruction::FromClient(mfcts) => format!("FromClient: {:?}", mfcts),
+                IncomingInstruction::FromClient(mfcts) => format!("FromClient: {}", mfcts),
                 IncomingInstruction::FromTimingProgram(tci) =>
                     format!("FromTimingProgram: {}", tci),
                 IncomingInstruction::FromExternalDisplayProgram(dsi) =>

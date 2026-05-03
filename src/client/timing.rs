@@ -105,7 +105,7 @@ pub enum TimingUpdate {
     Meta(HeatStartList),
     Wind(RaceWind),
     ResultMeta(HeatResult),
-    Reset,
+    Reset(bool),
     Running(RaceTime),
     Intermediate(RaceTime), // only ever produced by the camera program when sending manual intermediate signal (could never get the light barrier to emit it)
     End(RaceTime),          // always emmitted by the light barrier if active
@@ -434,20 +434,28 @@ impl TimingStateMachine {
                     }
                 }
             }
-            TimingUpdate::Reset => {
-                self.timing_state = TimingState::Stopped;
-                self.held_time_state = None; // make sure, to clear this
-                self.race_wind = None; // make sure, to clear this
-                self.race_finished = false;
-                self.time_held_counter = 0;
-                match &mut self.meta {
-                    Some(meta) => {
-                        meta.result = None;
-                    }
-                    None => (),
-                }
-
+            TimingUpdate::Reset(force) => {
                 // a reset gets sent with all start list requests, so we do not automatically switch anywhere
+
+                // the program sends ONE zero time command, if a run is closed in the camera program
+                // this removes the currently displayed result-list. But we do not want that.
+                // so i not forced, only reset if not currently on a result list
+
+                // TODO think about if we really want to reset (maybe not if meta-change = off)
+
+                if force || !matches!(self.timing_mode, TimingMode::ResultList(_)) {
+                    self.timing_state = TimingState::Stopped;
+                    self.held_time_state = None; // make sure, to clear this
+                    self.race_wind = None; // make sure, to clear this
+                    self.race_finished = false;
+                    self.time_held_counter = 0;
+                    match &mut self.meta {
+                        Some(meta) => {
+                            meta.result = None;
+                        }
+                        None => (),
+                    }
+                }
             }
             TimingUpdate::Wind(rw) => {
                 self.race_wind = Some(rw);

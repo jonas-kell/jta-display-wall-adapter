@@ -49,6 +49,7 @@ use async_channel::Sender;
 use clap::crate_version;
 use images_core::images::{IconsStorage, ImageMeta, ImagesStorage};
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use std::time::{Duration, Instant};
 use std::{path::Path, sync::Arc};
 use tokio::sync::Mutex;
@@ -113,6 +114,24 @@ pub enum MessageFromClientToServer {
     CurrentWindow(Vec<u8>),
     TimingSettingsState(TimingSettings),
     FrametimeReport(FrametimeReport),
+}
+impl Display for MessageFromClientToServer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                MessageFromClientToServer::ServerInternal(_) =>
+                    format!("ServerInternal: {:?}", self),
+                MessageFromClientToServer::Version(_) => format!("Version: {:?}", self),
+                MessageFromClientToServer::CurrentWindow(_) => format!("CurrentWindow"),
+                MessageFromClientToServer::TimingSettingsState(_) =>
+                    format!("TimingSettingsState: {:?}", self),
+                MessageFromClientToServer::FrametimeReport(_) =>
+                    format!("FrametimeReport: {:?}", self),
+            }
+        )
+    }
 }
 
 #[derive(PartialEq, Eq, Clone)]
@@ -528,7 +547,7 @@ impl ServerStateMachine {
                     self.handle_heat_result(dbss.clone(), result);
                 }
                 InstructionFromCameraProgram::ZeroTime => {
-                    self.handle_heat_reset_display();
+                    self.handle_heat_reset_display(false);
                 }
                 InstructionFromCameraProgram::RaceTime(rt) => {
                     self.handle_race_time_display(rt);
@@ -928,7 +947,7 @@ impl ServerStateMachine {
                     };
 
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::Reset,
+                        TimingUpdate::Reset(true),
                     ));
 
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
@@ -972,7 +991,7 @@ impl ServerStateMachine {
 
                     self.handle_bib_mode_selection();
                     self.send_out_main_heat_to_webcontrol();
-                    self.handle_heat_reset_display();
+                    self.handle_heat_reset_display(true);
                 }
                 MessageFromWebControl::DevSendStartList(hsl) => {
                     self.handle_heat_start_list(hsl);
@@ -1127,10 +1146,9 @@ impl ServerStateMachine {
         self.send_out_main_heat_to_webcontrol();
     }
 
-    fn handle_heat_reset_display(&mut self) {
-        // TODO think about if we really want to reset (maybe not if meta-change = off)
+    fn handle_heat_reset_display(&mut self, force: bool) {
         self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-            TimingUpdate::Reset,
+            TimingUpdate::Reset(force),
         ));
     }
 
@@ -1619,6 +1637,16 @@ impl ClientStateMachine {
                 self.switch_mode_with_stashing_timing_state(ClientState::TimingEmptyInit);
             }
             MessageFromServerToClient::TimingStateUpdate(update) => {
+                if matches!(self.state, ClientState::Advertisements)
+                    || matches!(self.state, ClientState::Clock(_))
+                    || matches!(self.state, ClientState::Idle)
+                {
+                    if matches!(update, TimingUpdate::Meta(_)) {
+                        // Meta == the real HeatStartList
+                        self.switch_mode_with_stashing_timing_state(ClientState::TimingEmptyInit);
+                    }
+                }
+
                 if let Some(tsm) = &mut self.timing_state_machine_storage {
                     tsm.process_update(update);
                 } else {
