@@ -35,16 +35,16 @@ services:
     group_add:
       - audio # not technically needed for pulse audio mapping - but can use alsa directly as a fallback
     command: cargo watch --ignore '**/web_client/**' -x "run -- server -v
-      --address-camera-program 192.168.8.119 --address-wind-server 192.168.8.119
+      --address-camera-program 192.168.8.119
       --wait-ms-before-testing-for-shutdown=100000
-      --address-display-client=192.168.8.117 --display-client-communication-port
-      5678 --dp-pos-x=0 --dp-pos-y=0 --dp-width=360 --dp-height=120
-      --internal-webcontrol-port=6789 --play-sound-on-start --export-folder-path
+      --address-display-client=192.168.8.117 --dp-pos-x=0 --dp-pos-y=0
+      --dp-width=360 --dp-height=120 --play-sound-on-start --export-folder-path
       database_container --address-idcapture-server=192.168.8.119
-      --passthrough-address-display-program 192.168.8.119
-      --passthrough-to-display-program --listen-to-timing-program
-      --can-store-to-database-on-off-day"
+      --listen-to-timing-program --can-store-to-database-on-off-day"
 
+  # --internal-webcontrol-port 6789
+  # --display-client-communication-port 5678
+  # --address-wind-server 192.168.8.119
   # --address-bib-server 127.0.0.1
   # --passthrough-address-display-program 192.168.8.119 --passthrough-to-display-program
   # --address-display-client=192.168.150.150
@@ -76,7 +76,7 @@ services:
           sleep 0.5
         done
 
-        watchexec --poll 500ms --restart --watch ./container_target/debug/jta-display-wall-adapter -- 'while true; do ./container_target/debug/jta-display-wall-adapter client --display-client-communication-port 5678 --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000 --dp-pos-x=1460 --dp-pos-y=1050 --do-not-set-client-window-always-on-top   ; done'
+        watchexec --poll 500ms --restart --watch ./container_target/debug/jta-display-wall-adapter -- 'while true; do ./container_target/debug/jta-display-wall-adapter client --hexdump-incoming-communication --wait-ms-before-testing-for-shutdown=100000 --client-emits-frame-every-nr-of-ms=1000 --dp-pos-x=1460 --dp-pos-y=1050 --do-not-set-client-window-always-on-top   ; done'
       "
     # --do-not-set-client-window-always-on-top
 
