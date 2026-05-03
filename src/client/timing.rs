@@ -359,12 +359,22 @@ impl TimingStateMachine {
                     let result_list_copy = match &self.meta {
                         Some(meta) => meta.result.clone(),
                         None => None,
-                    }; // TODO this can cause disaccociation between the title on the result list (from meta from start list) and the displayed results
+                    };
+                    let result_to_enter = match result_list_copy {
+                        None => None,
+                        Some(rl) => {
+                            if rl.id == hsl.id {
+                                Some(rl)
+                            } else {
+                                None // on id mismatch, do not propagate
+                            }
+                        }
+                    };
                     self.meta = Some(TimingStateMeta {
                         title: hsl.name.clone(),
                         distance: rd,
                         start_list: Some(hsl),
-                        result: result_list_copy,
+                        result: result_to_enter,
                     });
 
                     // update settings
@@ -407,7 +417,7 @@ impl TimingStateMachine {
                     self.meta = Some(TimingStateMeta {
                         title: hr.name.clone(),
                         distance: rd,
-                        start_list: start_list_copy,
+                        start_list: start_list_copy, // we assume, this is only ever set for the correct heat results. Must make sure, that FIRST meta and then resultsMeta is sent.
                         result: Some(hr),
                     });
                 } else {

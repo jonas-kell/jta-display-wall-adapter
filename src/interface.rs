@@ -930,9 +930,14 @@ impl ServerStateMachine {
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::Reset,
                     ));
+
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::Meta(data.start_list),
                     ));
+                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                        TimingUpdate::StartList,
+                    ));
+
                     if let Some(result) = data.result {
                         self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                             TimingUpdate::ResultMeta(result),
