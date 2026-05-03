@@ -473,12 +473,31 @@ impl ServerStateMachine {
                 InstructionFromTimingProgram::Timing => {
                     if self.state == ServerState::PassthroughClient {
                         self.send_message_to_client(MessageFromServerToClient::Timing);
+                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                            TimingUpdate::Timing,
+                        ));
+                    }
+                }
+                InstructionFromTimingProgram::Results
+                | InstructionFromTimingProgram::ResultsUpdate => {
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::Timing);
+                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                            TimingUpdate::ResultList,
+                        ));
+                    }
+                }
+                InstructionFromTimingProgram::StartList => {
+                    if self.state == ServerState::PassthroughClient {
+                        self.send_message_to_client(MessageFromServerToClient::Timing);
+                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
+                            TimingUpdate::StartList,
+                        ));
                     }
                 }
                 InstructionFromTimingProgram::SetProperty => {
                     // this is purposefully ignored -> there is no info we can get from it
                 }
-                inst => error!("Unhandled instruction from timing program: {}", inst),
             },
             IncomingInstruction::FromCameraProgram(inst) => match inst {
                 InstructionFromCameraProgram::HeatStartList(list) => {
