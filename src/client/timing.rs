@@ -61,7 +61,7 @@ impl TimingSettings {
             time_continues_running: false,
             switch_to_start_list_automatically: true,
             switch_to_timing_automatically: true,
-            switch_to_results_automatically: false,
+            switch_to_results_automatically: args.switch_to_results_automatically,
             mode: TimingTimeDisplayMode::TimeBigAndHoldTopWithRunName,
             list_animations_stopped: false,
             entries_in_lists: 4,

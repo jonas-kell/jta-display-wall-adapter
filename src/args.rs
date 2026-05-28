@@ -145,6 +145,9 @@ pub struct Args {
     /// Timing control variable for sound playback (initial for client, will get sent from server to client, can be set over webcontrol)
     #[arg(long, action = clap::ArgAction::SetTrue)]
     pub play_sound_on_finish: bool,
+    /// Timing control variable for automatic switching (initial for client, will get sent from server to client, can be set over webcontrol)
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub switch_to_results_automatically: bool,
     /// Product key to unlock system function
     #[arg(long)]
     pub product_key: Option<String>,
