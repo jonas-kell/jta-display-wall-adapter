@@ -233,6 +233,13 @@ impl ApplicationHandler for App {
 
                             self.state_machine.digest_frame_time_percentage(percent);
 
+                            if self.state_machine.debug_report_next_frame {
+                                self.state_machine.push_new_message(
+                                    MessageFromClientToServer::DebugRaceSignalRendered,
+                                );
+                                self.state_machine.debug_report_next_frame = false;
+                            }
+
                             if (self.state_machine.frame_counter + 111) // shoud not trigger together with the other nth-frame logs
                                     % (TARGET_FPS * REPORT_FRAME_LOGS_EVERY_SECONDS)
                                 == 0

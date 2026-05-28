@@ -114,6 +114,8 @@ pub enum MessageFromClientToServer {
     CurrentWindow(Vec<u8>),
     TimingSettingsState(TimingSettings),
     FrametimeReport(FrametimeReport),
+    DebugRaceSignalReceived,
+    DebugRaceSignalRendered,
 }
 impl Display for MessageFromClientToServer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -129,6 +131,10 @@ impl Display for MessageFromClientToServer {
                     format!("TimingSettingsState: {:?}", self),
                 MessageFromClientToServer::FrametimeReport(_) =>
                     format!("FrametimeReport: {:?}", self),
+                MessageFromClientToServer::DebugRaceSignalReceived =>
+                    format!("DebugRaceSignalReceived"),
+                MessageFromClientToServer::DebugRaceSignalRendered =>
+                    format!("DebugRaceSignalRendered"),
             }
         )
     }
@@ -209,6 +215,7 @@ pub struct ServerStateMachine {
     database_version_mismatch: Option<(String, String)>,
     bib_heat_selection: Option<Uuid>,
     heat_start_time_instant: Option<(DayTime, Instant)>,
+    debug_round_trip_timer: Option<Instant>,
 }
 impl ServerStateMachine {
     pub fn new(
@@ -256,6 +263,7 @@ impl ServerStateMachine {
             database_version_mismatch,
             bib_heat_selection: None,
             heat_start_time_instant: None,
+            debug_round_trip_timer: None,
         }
     }
 
@@ -458,6 +466,27 @@ impl ServerStateMachine {
                     if self.comm_channel.web_control_there_to_receive() {
                         self.send_message_to_web_control(MessageToWebControl::FrametimeReport(ftr));
                     }
+                }
+                MessageFromClientToServer::DebugRaceSignalReceived => {
+                    let now = Instant::now();
+                    if let Some(start_rtt_measurement) = &self.debug_round_trip_timer {
+                        debug!(
+                            "Received Round Trip (received) after: {}ms",
+                            now.saturating_duration_since(start_rtt_measurement.clone())
+                                .as_millis()
+                        );
+                    }
+                }
+                MessageFromClientToServer::DebugRaceSignalRendered => {
+                    let now = Instant::now();
+                    if let Some(start_rtt_measurement) = &self.debug_round_trip_timer {
+                        debug!(
+                            "Received Round Trip (rendered) after: {}ms",
+                            now.saturating_duration_since(start_rtt_measurement.clone())
+                                .as_millis()
+                        );
+                    }
+                    self.debug_round_trip_timer = None;
                 }
             },
             IncomingInstruction::FromTimingProgram(inst) => match inst {
@@ -1181,6 +1210,7 @@ impl ServerStateMachine {
     }
 
     fn handle_end_time_display(&mut self, rt: RaceTime) {
+        self.debug_round_trip_timer = Some(Instant::now());
         self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
             TimingUpdate::End(rt),
         ));
@@ -1508,6 +1538,7 @@ pub struct ClientStateMachine {
     outbound_connection_open: bool,
     self_sender: Sender<MessageFromServerToClient>,
     frametime_tracker: FrametimeTracker,
+    pub debug_report_next_frame: bool,
 }
 impl ClientStateMachine {
     pub fn new(args: &Args, sender: Sender<MessageFromServerToClient>) -> Self {
@@ -1531,6 +1562,7 @@ impl ClientStateMachine {
             outbound_connection_open: false,
             self_sender: sender,
             frametime_tracker: FrametimeTracker::new(),
+            debug_report_next_frame: false,
         }
     }
 
@@ -1637,6 +1669,14 @@ impl ClientStateMachine {
                 self.switch_mode_with_stashing_timing_state(ClientState::TimingEmptyInit);
             }
             MessageFromServerToClient::TimingStateUpdate(update) => {
+                match &update {
+                    TimingUpdate::End(_) => {
+                        self.push_new_message(MessageFromClientToServer::DebugRaceSignalReceived);
+                        self.debug_report_next_frame = true;
+                    }
+                    _ => (),
+                };
+
                 if matches!(self.state, ClientState::Advertisements)
                     || matches!(self.state, ClientState::Clock(_))
                     || matches!(self.state, ClientState::Idle)
