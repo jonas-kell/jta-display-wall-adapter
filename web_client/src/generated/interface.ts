@@ -435,7 +435,8 @@ export type TimingSettings = {
     switch_to_results_automatically: boolean;
     mode: TimingTimeDisplayMode;
     list_animations_stopped: boolean;
-    entries_in_lists: number;
+    entries_in_lists_min: number;
+    entries_in_lists_max: number;
     display_bibs_in_start_list: boolean;
 };
 export type Uuid = string;

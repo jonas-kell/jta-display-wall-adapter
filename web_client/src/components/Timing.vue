@@ -167,10 +167,22 @@
                             density="compact"
                             type="number"
                             min="1"
-                            max="8"
-                            v-model.number="mainStore.timingSettings.entries_in_lists"
+                            :max="mainStore.timingSettings.entries_in_lists_max"
+                            v-model.number="mainStore.timingSettings.entries_in_lists_min"
                             step="1"
-                            label="List lines"
+                            label="List lines min"
+                            width="250"
+                            hide-details
+                            class="mt-1"
+                        />
+                        <v-text-field
+                            density="compact"
+                            type="number"
+                            :min="mainStore.timingSettings.entries_in_lists_min"
+                            max="8"
+                            v-model.number="mainStore.timingSettings.entries_in_lists_max"
+                            step="1"
+                            label="List lines max"
                             width="250"
                             hide-details
                             class="mt-1"

@@ -744,7 +744,8 @@ struct TSMForTableRender {
     pub max_decimal_places_after_comma: i8,
     pub table_duration_nr_ms: u32,
     pub animations_paused: bool,
-    pub no_lines_in_lists: u8,
+    pub no_lines_in_lists_min: u8,
+    pub no_lines_in_lists_max: u8,
     pub display_bibs_in_start_list: bool,
 }
 impl TimingSettings {
@@ -756,7 +757,8 @@ impl TimingSettings {
             max_decimal_places_after_comma: self.max_decimal_places_after_comma,
             table_duration_nr_ms: intermediate.table_duration_nr_ms,
             animations_paused: self.list_animations_stopped,
-            no_lines_in_lists: self.entries_in_lists,
+            no_lines_in_lists_min: self.entries_in_lists_min,
+            no_lines_in_lists_max: self.entries_in_lists_max,
             display_bibs_in_start_list: self.display_bibs_in_start_list,
         }
     }
@@ -775,7 +777,36 @@ fn draw_table(
     height: f32,
 ) {
     let mut lines = lines;
-    let lines_on_page = list_settings.no_lines_in_lists.max(1) as u64;
+    let lines_in_total = lines.len() as u64;
+
+    // compute lines on page intelligently
+    let lines_on_page;
+    if lines_in_total <= list_settings.no_lines_in_lists_max as u64 {
+        lines_on_page = lines_in_total.max(list_settings.no_lines_in_lists_min.max(1) as u64);
+    } else {
+        // maximize the spread
+        let mut best_ratio = 0.0;
+        let mut best_line_count = list_settings.no_lines_in_lists_min.max(1) as u64;
+        for test_line in (list_settings.no_lines_in_lists_min.max(1) as u64)
+            ..=(list_settings
+                .no_lines_in_lists_max
+                .max(list_settings.no_lines_in_lists_min.max(1)) as u64)
+        {
+            if lines_in_total % test_line == 0 {
+                best_ratio = 1.1;
+                best_line_count = test_line;
+            } else {
+                let full_pages = (lines_in_total as f64) / (test_line as f64);
+                let partial_page = full_pages - full_pages.floor();
+                if partial_page >= best_ratio {
+                    best_ratio = partial_page;
+                    best_line_count = test_line;
+                }
+            }
+        }
+        lines_on_page = best_line_count;
+    }
+    // computed lines on page
 
     let has_a_third_col = (list_settings.display_bibs_in_start_list && start_list) || !start_list;
 
@@ -794,7 +825,6 @@ fn draw_table(
 
     lines.sort_by(|a, b| a.number.cmp(&b.number));
 
-    let lines_in_total = lines.len() as u64;
     let no_pages = if lines_in_total == 0 {
         1
     } else {

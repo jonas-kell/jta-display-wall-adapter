@@ -43,7 +43,8 @@ pub struct TimingSettings {
     pub switch_to_results_automatically: bool,
     pub mode: TimingTimeDisplayMode,
     pub list_animations_stopped: bool,
-    pub entries_in_lists: u8,
+    pub entries_in_lists_min: u8,
+    pub entries_in_lists_max: u8,
     pub display_bibs_in_start_list: bool,
 }
 impl TimingSettings {
@@ -64,7 +65,8 @@ impl TimingSettings {
             switch_to_results_automatically: args.switch_to_results_automatically,
             mode: TimingTimeDisplayMode::TimeBigAndHoldTopWithRunName,
             list_animations_stopped: false,
-            entries_in_lists: 4,
+            entries_in_lists_min: 4,
+            entries_in_lists_max: 5,
             display_bibs_in_start_list: true,
         }
     }
