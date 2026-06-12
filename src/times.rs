@@ -60,7 +60,7 @@ impl RaceTime {
                 real_force_number_of_decimal_places = 1;
             }
 
-            // do not over-extend if precicion is not given
+            // do not over-extend if precision is not given
             if self.ten_thousands.is_none() {
                 real_force_number_of_decimal_places = 3;
             }
@@ -94,6 +94,7 @@ impl RaceTime {
         Self::from_ten_thousands(
             self.into_ten_thousands(),
             real_force_number_of_decimal_places as u8,
+            true,
         )
     }
 
@@ -117,7 +118,11 @@ impl RaceTime {
         accumulated_time_in_ten_thousands
     }
 
-    pub fn from_ten_thousands(ten_thousands: u64, digits_precision: u8) -> Self {
+    pub fn from_ten_thousands(
+        ten_thousands: u64,
+        digits_precision: u8,
+        always_round_up: bool,
+    ) -> Self {
         let mut ten_thousands = ten_thousands;
 
         // ----- ROUNDING -----
@@ -133,12 +138,19 @@ impl RaceTime {
 
         let remainder = ten_thousands % rounding_unit;
 
-        if remainder * 2 >= rounding_unit {
-            // round upward
-            ten_thousands += rounding_unit - remainder;
+        if always_round_up {
+            if remainder != 0 {
+                // round upward
+                ten_thousands += rounding_unit - remainder;
+            }
         } else {
-            // round downward
-            ten_thousands -= remainder;
+            if remainder * 2 >= rounding_unit {
+                // round upward
+                ten_thousands += rounding_unit - remainder;
+            } else {
+                // round downward
+                ten_thousands -= remainder;
+            }
         }
 
         // ----- DECOMPOSE -----
@@ -294,7 +306,7 @@ impl From<Duration> for RaceTime {
     fn from(value: Duration) -> Self {
         let ten_thousands = (value.as_micros() / 100) as u64;
 
-        Self::from_ten_thousands(ten_thousands, 4)
+        Self::from_ten_thousands(ten_thousands, 4, false)
     }
 }
 
