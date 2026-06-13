@@ -430,7 +430,7 @@ impl RaceWind {
 
         let positive = input.abs();
         let whole_part = positive.floor().clamp(0.0, u8::MAX as f32);
-        let fraction_part = ((((positive - whole_part) * 10.0).floor() as u32) % 10) as u8;
+        let fraction_part = ((((positive - whole_part) * 10.001).floor() as u32) % 10) as u8;
 
         Self {
             back_wind: is_back_wind,
