@@ -10,6 +10,7 @@ mod tcp_listener_bib_detection;
 mod tcp_listener_idcapture_server;
 mod tcp_listener_timing_program;
 mod tcp_listener_wind_server;
+mod tcp_server_hardware_buttons;
 
 pub mod audio_types {
     pub use super::audio::{AudioPlayer, Sound};

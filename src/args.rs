@@ -178,6 +178,12 @@ pub struct Args {
     /// Port where the internal communication between idcapture server and server takes place
     #[arg(long, default_value_t = String::from("8901"))]
     pub idcapture_exchange_port: String,
+    /// Port where the server listens to remote control hardware button connections
+    #[arg(long, default_value_t = String::from("9012"))]
+    pub hardware_button_exchange_port: String,
+    /// Whether the server listens to the hardware-button-exchange interface
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub listen_to_hardware_button_exchange: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]

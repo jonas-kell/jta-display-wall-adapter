@@ -1,4 +1,5 @@
 use crate::{
+    hardware_button_exchange_format::MessageFromHardwareButton,
     idcapture::format::IDCaptureMessage,
     interface::MessageFromClientToServer,
     server::{
@@ -24,6 +25,7 @@ pub enum IncomingInstruction {
     FromWindServer(WindMessageBroadcast),
     FromBibServer(MessageFromBibServer),
     FromIdcaptureServer(IDCaptureMessage),
+    FromHardwareButton(MessageFromHardwareButton),
 }
 impl Display for IncomingInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -43,6 +45,8 @@ impl Display for IncomingInstruction {
                 IncomingInstruction::FromBibServer(bm) => format!("FromBibServer: {:?}", bm),
                 IncomingInstruction::FromIdcaptureServer(idcm) =>
                     format!("FromIdcaptureServer: {:?}", idcm),
+                IncomingInstruction::FromHardwareButton(hbm) =>
+                    format!("FromHardwareButton: {:?}", hbm),
             }
         )
     }

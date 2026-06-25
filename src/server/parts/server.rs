@@ -10,6 +10,7 @@ use crate::server::parts::tcp_listener_bib_detection::tcp_listener_bib_detection
 use crate::server::parts::tcp_listener_idcapture_server::tcp_listener_idcapture_server;
 use crate::server::parts::tcp_listener_timing_program::tcp_listener_timing_program;
 use crate::server::parts::tcp_listener_wind_server::tcp_listener_wind_server;
+use crate::server::parts::tcp_server_hardware_buttons::tcp_server_hardware_buttons;
 use crate::webserver::{get_local_ip, webserver, HttpServerStateManager, Server};
 use std::io::Error;
 use std::net::SocketAddr;
@@ -43,6 +44,19 @@ pub async fn run_server(args: &Args) -> () {
             own_addr_timing
         );
     }
+
+    let own_addr_hardware_button_exchange: Option<SocketAddr> =
+        if args.listen_to_hardware_button_exchange {
+            let addr = format!("0.0.0.0:{}", args.hardware_button_exchange_port)
+                .parse()
+                .expect("Invalid listen address (hardware-buttons)");
+
+            info!("Listening self to the hardware button exchange on {}", addr);
+
+            Some(addr)
+        } else {
+            None
+        };
 
     let (camera_program_timing_address, camera_program_data_address, camera_program_xml_address) =
         if let Some(camera_program_ip) = &args.address_camera_program {
@@ -244,10 +258,18 @@ pub async fn run_server(args: &Args) -> () {
 
     let tcp_client_bib_server_instance = tcp_listener_bib_detection(
         args.clone(),
-        server_state_reader,
+        server_state_reader.clone(),
         comm_channel.clone(),
         shutdown_marker.clone(),
         bib_server_address,
+    );
+
+    let tcp_server_hardware_buttons_instance = tcp_server_hardware_buttons(
+        args.clone(),
+        server_state_reader,
+        comm_channel.clone(),
+        shutdown_marker.clone(),
+        own_addr_hardware_button_exchange,
     );
 
     // spawn the async runtimes in parallel
@@ -259,6 +281,7 @@ pub async fn run_server(args: &Args) -> () {
     let tcp_client_wind_server_task = tokio::spawn(tcp_client_wind_server_instance);
     let tcp_client_idcapture_server_task = tokio::spawn(tcp_client_idcapture_server_instance);
     let tcp_client_bib_server_task = tokio::spawn(tcp_client_bib_server_instance);
+    let tcp_server_hardware_buttons_task = tokio::spawn(tcp_server_hardware_buttons_instance);
     let webserver_task = tokio::spawn(http_server);
     let shutdown_task = tokio::spawn(async move {
         // listen for ctrl-c
@@ -280,6 +303,7 @@ pub async fn run_server(args: &Args) -> () {
         tcp_client_wind_server_task,
         tcp_client_idcapture_server_task,
         tcp_client_bib_server_task,
+        tcp_server_hardware_buttons_task,
         webserver_task,
         shutdown_task,
     ) {

@@ -1,5 +1,6 @@
 use crate::{
     args::{Args, MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS},
+    hardware_button_exchange_format::{HardwareButtonStateBroadcast, MessageFromHardwareButton},
     idcapture::format::{IDCaptureMessage, MessageToIdcaptureServer},
     instructions::{
         IncomingInstruction, InstructionFromCameraProgram, InstructionFromExternalDisplayProgram,
@@ -42,6 +43,9 @@ pub struct InstructionCommunicationChannel {
     outbound_receiver_bib_server: BroadcastReceiverStorage<MessageToBibServer>,
     outbound_sender_idcapture_server: BroadcastSender<MessageToIdcaptureServer>,
     outbound_receiver_idcapture_server: BroadcastReceiverStorage<MessageToIdcaptureServer>,
+    outbound_sender_hardware_button_client: BroadcastSender<HardwareButtonStateBroadcast>,
+    outbound_receiver_hardware_button_client:
+        BroadcastReceiverStorage<HardwareButtonStateBroadcast>,
     connection_check_sender_camera_program_timing_port: BroadcastSender<bool>,
     connection_check_receiver_camera_program_timing_port: BroadcastReceiverStorage<bool>,
     connection_check_sender_camera_program_data_port: BroadcastSender<bool>,
@@ -82,6 +86,10 @@ impl InstructionCommunicationChannel {
             MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
         );
         sid.set_overflow(true);
+        let (mut shb, rhb) = async_broadcast::broadcast::<HardwareButtonStateBroadcast>(
+            MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
+        );
+        shb.set_overflow(true);
         // channels that only check for connection
         let (mut scptp, rcptp) =
             async_broadcast::broadcast::<bool>(MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS);
@@ -112,6 +120,8 @@ impl InstructionCommunicationChannel {
             outbound_receiver_bib_server: BroadcastReceiverStorage::new(rbi, args),
             outbound_sender_idcapture_server: sid,
             outbound_receiver_idcapture_server: BroadcastReceiverStorage::new(rid, args),
+            outbound_sender_hardware_button_client: shb,
+            outbound_receiver_hardware_button_client: BroadcastReceiverStorage::new(rhb, args),
             connection_check_sender_camera_program_timing_port: scptp,
             connection_check_receiver_camera_program_timing_port: BroadcastReceiverStorage::new(
                 rcptp, args,
@@ -233,6 +243,25 @@ impl InstructionCommunicationChannel {
         match self
             .inbound_sender
             .try_send(IncomingInstruction::FromWindServer(inst))
+        {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Internal communication channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                trace!("Internal communication channel is full. Seems like there is no source to consume");
+                Ok(())
+            }
+        }
+    }
+
+    pub fn take_in_command_from_hardware_button(
+        &self,
+        inst: MessageFromHardwareButton,
+    ) -> Result<(), String> {
+        match self
+            .inbound_sender
+            .try_send(IncomingInstruction::FromHardwareButton(inst))
         {
             Ok(_) => Ok(()),
             Err(TrySendError::Closed(_)) => {
@@ -476,6 +505,15 @@ impl InstructionCommunicationChannel {
 
     pub fn idcapture_server_there_to_receive(&self) -> bool {
         self.outbound_sender_idcapture_server.receiver_count() > 0
+    }
+
+    pub fn hardware_button_receiver(&self) -> BroadcastReceiver<HardwareButtonStateBroadcast> {
+        self.outbound_receiver_hardware_button_client
+            .get_active_receiver()
+    }
+
+    pub fn hardware_button_there_to_receive(&self) -> bool {
+        self.outbound_sender_hardware_button_client.receiver_count() > 0
     }
 
     pub fn connection_check(&self, tpe: ConnectionCheck) -> bool {

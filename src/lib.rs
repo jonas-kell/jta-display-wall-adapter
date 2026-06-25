@@ -5,6 +5,7 @@ mod args;
 mod client;
 mod database;
 mod file;
+mod hardware_button_exchange_format;
 mod helpers;
 mod hex;
 mod idcapture;

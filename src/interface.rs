@@ -348,6 +348,10 @@ impl ServerStateMachine {
 
         // handle all messages
         match msg {
+            IncomingInstruction::FromHardwareButton(hbm) => {
+                debug!("Received a hardware button signal: {:?}", hbm)
+                // TODO
+            }
             IncomingInstruction::FromBibServer(bm) => {
                 // TODO store to database and use automated results
                 // also filter for automated and manual events in the ui then
