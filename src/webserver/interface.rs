@@ -142,6 +142,8 @@ pub struct ConnectionState {
     pub display_passthrough_address: String,
     pub timing_program_is_connected: bool,
     pub listening_to_timing_program: bool,
+    pub hardware_buttons_connected: bool,
+    pub listening_to_hardware_buttons: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]

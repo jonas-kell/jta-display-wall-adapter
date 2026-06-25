@@ -40,7 +40,7 @@ services:
       --address-display-client=127.0.0.1 --dp-pos-x=1100 --dp-pos-y=800
       --dp-width=360 --dp-height=120 --play-sound-on-start --export-folder-path
       database_container --address-idcapture-server=192.168.8.119
-      --listen-to-timing-program --can-store-to-database-on-off-day"
+      --listen-to-timing-program --can-store-to-database-on-off-day --listen-to-hardware-button-exchange"
 
   # --internal-webcontrol-port 6789
   # --display-client-communication-port 5678

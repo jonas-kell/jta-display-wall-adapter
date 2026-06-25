@@ -134,6 +134,13 @@
                             </template>
                         </v-tooltip>
                     </span>
+                    <span class="py-1 px-2" v-if="mainStore.connectionState.listening_to_hardware_buttons">
+                        Hardw. Btns:
+                        <v-icon
+                            icon="mdi-circle"
+                            :color="mainStore.connectionState.hardware_buttons_connected ? 'green' : 'red'"
+                        ></v-icon>
+                    </span>
                 </template>
             </div>
 

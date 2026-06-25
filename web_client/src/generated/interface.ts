@@ -95,6 +95,8 @@ export type ConnectionState = {
     display_passthrough_address: string;
     timing_program_is_connected: boolean;
     listening_to_timing_program: boolean;
+    hardware_buttons_connected: boolean;
+    listening_to_hardware_buttons: boolean;
 };
 export type DatabaseStaticState = {
     mode: ApplicationMode;

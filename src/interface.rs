@@ -1360,6 +1360,7 @@ impl ServerStateMachine {
             try_to_connect_to_idcapture: args.address_idcapture_server.is_some(),
             try_to_connect_to_display_passthrough: args.passthrough_to_display_program,
             listening_to_timing_program: args.listen_to_timing_program,
+            listening_to_hardware_buttons: args.listen_to_hardware_button_exchange,
             // ports/addresses
             display_client_address_with_port: format!(
                 "{}:{}",
@@ -1413,6 +1414,7 @@ impl ServerStateMachine {
             camera_program_connected_on_data_port: camera_program_connected_on_data_port,
             camera_program_connected_on_xml_port: camera_program_connected_on_xml_port,
             wind_connected: self.comm_channel.wind_server_there_to_receive(),
+            hardware_buttons_connected: self.comm_channel.hardware_button_there_to_receive(), // TODO convert to number of connections / list ip
             idcapture_connected: self.comm_channel.idcapture_server_there_to_receive(),
             timing_program_is_connected: self.comm_channel.timing_program_there_to_receive(),
         }));
