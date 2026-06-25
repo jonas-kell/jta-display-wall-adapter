@@ -17,12 +17,13 @@ def wlanConnect():
 
     wlan = network.WLAN(network.STA_IF)
     if not wlan.isconnected():
+        wlan.active(True)
+
         print("Connecting to WLAN-Networks")
         for ap in wlan.scan():
             print(ap)
 
         print("Connecting to WLAN-Network")
-        wlan.active(True)
 
         wlan.connect(wlanSSID, wlanPW)
         for i in range(10):  # wait at most 10 seconds for wifi chip to connect
