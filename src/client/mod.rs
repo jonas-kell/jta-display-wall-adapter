@@ -12,4 +12,4 @@ pub const REPORT_FRAME_LOGS_EVERY_SECONDS: u64 = 10;
 pub const PUBLISH_FRAME_TIME_MESSAGE_EVERY_SECONDS: u64 = 2;
 pub const FRAME_TIME_NS: u64 = 1_000_000_000 / TARGET_FPS as u64;
 
-pub use timing::{ClockState, TimingSettings, TimingStateMachine, TimingUpdate};
+pub use timing::{ClockState, TimingModeSwitch, TimingSettings, TimingStateMachine, TimingUpdate};

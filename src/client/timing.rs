@@ -1,6 +1,7 @@
 use crate::{
     args::Args,
     client::{rendering::TableMetaStorage, FRAME_TIME_NS},
+    comm_enums::ClientView,
     interface::{
         ClientInternalMessageFromServerToClient::EmitTimingSettingsUpdate,
         MessageFromServerToClient,
@@ -101,9 +102,6 @@ pub enum TimingState {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum TimingUpdate {
-    StartList,
-    Timing,
-    ResultList,
     Meta(HeatStartList),
     Wind(RaceWind),
     ResultMeta(HeatResult),
@@ -111,6 +109,13 @@ pub enum TimingUpdate {
     Running(RaceTime),
     Intermediate(RaceTime), // only ever produced by the camera program when sending manual intermediate signal (could never get the light barrier to emit it)
     End(RaceTime),          // always emmitted by the light barrier if active
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum TimingModeSwitch {
+    StartList,
+    Timing,
+    ResultList,
 }
 
 // TODO could implement some mechanism to differentiate between relays and normal races over 1000m. This is also kind of unnecessary and probably would only ever matter for 3000m
@@ -345,15 +350,6 @@ impl TimingStateMachine {
 
     pub fn process_update(&mut self, rtu: TimingUpdate) {
         match rtu {
-            TimingUpdate::Timing => {
-                self.timing_mode = TimingMode::Timing;
-            }
-            TimingUpdate::StartList => {
-                self.timing_mode = TimingMode::StartList(TableMetaStorage::new());
-            }
-            TimingUpdate::ResultList => {
-                self.timing_mode = TimingMode::ResultList(TableMetaStorage::new());
-            }
             TimingUpdate::Meta(hsl) => {
                 if self.settings.can_currently_update_meta {
                     let rd = RaceDistance::new(hsl.distance_meters);
@@ -544,6 +540,28 @@ impl TimingStateMachine {
                     ));
                 }
             }
+        }
+    }
+
+    pub fn process_mode_switch(&mut self, tms: TimingModeSwitch) {
+        match tms {
+            TimingModeSwitch::Timing => {
+                self.timing_mode = TimingMode::Timing;
+            }
+            TimingModeSwitch::StartList => {
+                self.timing_mode = TimingMode::StartList(TableMetaStorage::new());
+            }
+            TimingModeSwitch::ResultList => {
+                self.timing_mode = TimingMode::ResultList(TableMetaStorage::new());
+            }
+        }
+    }
+
+    pub fn get_view_mode(&self) -> ClientView {
+        match self.timing_mode {
+            TimingMode::Timing => ClientView::Timing,
+            TimingMode::StartList(_) => ClientView::StartList,
+            TimingMode::ResultList(_) => ClientView::ResultList,
         }
     }
 

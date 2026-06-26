@@ -12,14 +12,14 @@ impl HardwareButtonStateBroadcast {
     }
 }
 
-// TODO more general. Support buttn mapping and more controllers
+// TODO more general. Support button mapping and more controllers
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MessageFromHardwareButton {
     pub buttons_pressed: Vec<bool>,
 }
 impl MessageFromHardwareButton {
-    pub fn parse_as_wall_controller(data: Self) -> WallControllerButtonsState {
+    fn parse_as_wall_controller(data: Self) -> WallControllerButtonsState {
         WallControllerButtonsState {
             blue: *data.buttons_pressed.get(0).unwrap_or(&false),
             green: *data.buttons_pressed.get(1).unwrap_or(&false),
@@ -28,6 +28,57 @@ impl MessageFromHardwareButton {
             red: *data.buttons_pressed.get(4).unwrap_or(&false),
         }
     }
+}
+
+pub struct WallControllerButtonStateParser {
+    previous_state: WallControllerButtonsState,
+}
+impl WallControllerButtonStateParser {
+    pub fn new() -> Self {
+        Self {
+            previous_state: WallControllerButtonsState {
+                blue: false,
+                green: false,
+                yellow: false,
+                white: false,
+                red: false,
+            },
+        }
+    }
+
+    pub fn parse_data_as_wall_controller(
+        &mut self,
+        mes: MessageFromHardwareButton,
+    ) -> Option<WallControllerButtonEvent> {
+        let parsed_state = MessageFromHardwareButton::parse_as_wall_controller(mes);
+        let prev_state = &self.previous_state;
+
+        let res = if !prev_state.blue && parsed_state.blue {
+            Some(WallControllerButtonEvent::BluePressed)
+        } else if !prev_state.green && parsed_state.green {
+            Some(WallControllerButtonEvent::GreenPressed)
+        } else if !prev_state.red && parsed_state.red {
+            Some(WallControllerButtonEvent::RedPressed)
+        } else if !prev_state.white && parsed_state.white {
+            Some(WallControllerButtonEvent::WhitePressed)
+        } else if !prev_state.yellow && parsed_state.yellow {
+            Some(WallControllerButtonEvent::YellowPressed)
+        } else {
+            None
+        };
+
+        self.previous_state = parsed_state;
+
+        return res;
+    }
+}
+
+pub enum WallControllerButtonEvent {
+    BluePressed,
+    GreenPressed,
+    YellowPressed,
+    WhitePressed,
+    RedPressed,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

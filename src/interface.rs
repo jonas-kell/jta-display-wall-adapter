@@ -1,4 +1,6 @@
 use crate::client::frametime::{FrametimeReport, FrametimeTracker};
+use crate::client::TimingModeSwitch;
+use crate::comm_enums::{ButtonAction, ClientView};
 use crate::database::{
     create_heat_assignment, delete_athlete, delete_bib_equivalence, delete_evaluation,
     delete_heat_assignment, delete_pdf_setting, get_all_athletes_meta_data,
@@ -6,7 +8,7 @@ use crate::database::{
     populate_display_from_bib, ApplicationMode, DatabaseStaticState,
 };
 use crate::hardware_button_exchange_format::{
-    HardwareButtonStateBroadcast, MessageFromHardwareButton,
+    HardwareButtonStateBroadcast, WallControllerButtonEvent, WallControllerButtonStateParser,
 };
 use crate::idcapture::format::IDCaptureMessage;
 use crate::instructions::InstructionFromExternalDisplayProgram::{Frame, ServerInfo};
@@ -94,14 +96,13 @@ pub enum MessageFromServerToClient {
     Clear,
     DisplayExternalFrame(Vec<u8>),
     AdvertisementImages(Vec<(String, Vec<u8>)>),
-    Advertisements,
-    Timing,
     TimingStateUpdate(TimingUpdate),
     TimingSettingsUpdate(TimingSettings),
     RequestTimingSettings,
     Clock(DayTime),
     ClientInternal(ClientInternalMessageFromServerToClient),
     PushDisplayEntry(DisplayEntry),
+    ButtonAction(ButtonAction),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -119,6 +120,7 @@ pub enum MessageFromClientToServer {
     FrametimeReport(FrametimeReport),
     DebugRaceSignalReceived,
     DebugRaceSignalRendered,
+    ViewSwitched(ClientView),
 }
 impl Display for MessageFromClientToServer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -138,6 +140,7 @@ impl Display for MessageFromClientToServer {
                     format!("DebugRaceSignalReceived"),
                 MessageFromClientToServer::DebugRaceSignalRendered =>
                     format!("DebugRaceSignalRendered"),
+                MessageFromClientToServer::ViewSwitched(a) => format!("ViewSwitched: {:?}", a),
             }
         )
     }
@@ -219,6 +222,7 @@ pub struct ServerStateMachine {
     bib_heat_selection: Option<Uuid>,
     heat_start_time_instant: Option<(DayTime, Instant)>,
     debug_round_trip_timer: Option<Instant>,
+    hardware_button_state_parser_wall_controller: WallControllerButtonStateParser,
 }
 impl ServerStateMachine {
     pub fn new(
@@ -267,6 +271,7 @@ impl ServerStateMachine {
             bib_heat_selection: None,
             heat_start_time_instant: None,
             debug_round_trip_timer: None,
+            hardware_button_state_parser_wall_controller: WallControllerButtonStateParser::new(),
         }
     }
 
@@ -351,19 +356,6 @@ impl ServerStateMachine {
 
         // handle all messages
         match msg {
-            IncomingInstruction::FromHardwareButton(hbm) => {
-                let wall_controller_state =
-                    MessageFromHardwareButton::parse_as_wall_controller(hbm);
-                debug!(
-                    "Received a hardware button signal: {:?}",
-                    wall_controller_state
-                );
-                self.send_message_to_hardware_button(HardwareButtonStateBroadcast::wall_control(
-                    false, true, false, true, false,
-                ));
-
-                // TODO real functionality
-            }
             IncomingInstruction::FromBibServer(bm) => {
                 // TODO store to database and use automated results
                 // also filter for automated and manual events in the ui then
@@ -504,7 +496,92 @@ impl ServerStateMachine {
                     }
                     self.debug_round_trip_timer = None;
                 }
+                MessageFromClientToServer::ViewSwitched(view) => {
+                    match view {
+                        ClientView::Advertisements => {
+                            self.send_message_to_hardware_button(
+                                HardwareButtonStateBroadcast::wall_control(
+                                    false, false, false, false, true,
+                                ),
+                            );
+                        }
+                        ClientView::StartList => {
+                            self.send_message_to_hardware_button(
+                                HardwareButtonStateBroadcast::wall_control(
+                                    true, false, false, false, false,
+                                ),
+                            );
+                        }
+                        ClientView::Timing => {
+                            self.send_message_to_hardware_button(
+                                HardwareButtonStateBroadcast::wall_control(
+                                    false, true, false, false, false,
+                                ),
+                            );
+                        }
+                        ClientView::ResultList => {
+                            self.send_message_to_hardware_button(
+                                HardwareButtonStateBroadcast::wall_control(
+                                    false, false, true, false, false,
+                                ),
+                            );
+                        }
+                        ClientView::Other => {
+                            self.send_message_to_hardware_button(
+                                HardwareButtonStateBroadcast::wall_control(
+                                    false, false, false, false, false,
+                                ),
+                            );
+                        }
+                    };
+                }
             },
+            IncomingInstruction::FromHardwareButton(hbm) => {
+                trace!("Received a hardware button signal: {:?}", hbm);
+                let wall_controller_state = self
+                    .hardware_button_state_parser_wall_controller
+                    .parse_data_as_wall_controller(hbm);
+
+                if let Some(wall_controller_state) = wall_controller_state {
+                    if self.state == ServerState::PassthroughClient {
+                        match wall_controller_state {
+                            WallControllerButtonEvent::BluePressed => {
+                                self.send_message_to_client(
+                                    MessageFromServerToClient::ButtonAction(
+                                        ButtonAction::ToResultList,
+                                    ),
+                                );
+                            }
+                            WallControllerButtonEvent::GreenPressed => {
+                                self.send_message_to_client(
+                                    MessageFromServerToClient::ButtonAction(ButtonAction::ToTiming),
+                                );
+                            }
+                            WallControllerButtonEvent::YellowPressed => {
+                                self.send_message_to_client(
+                                    MessageFromServerToClient::ButtonAction(
+                                        ButtonAction::ToStartList,
+                                    ),
+                                );
+                            }
+                            WallControllerButtonEvent::WhitePressed => {
+                                self.send_message_to_client(
+                                    MessageFromServerToClient::ButtonAction(
+                                        ButtonAction::PreviousRun,
+                                    ),
+                                );
+                            }
+                            WallControllerButtonEvent::RedPressed => {
+                                self.send_message_to_client(
+                                    MessageFromServerToClient::ButtonAction(
+                                        ButtonAction::AdvanceRun,
+                                    ),
+                                );
+                            }
+                        }
+                    }
+                }
+            }
             IncomingInstruction::FromTimingProgram(inst) => match inst {
                 InstructionFromTimingProgram::ClientInfo => (),
                 InstructionFromTimingProgram::Freetext(text) => {
@@ -531,31 +608,30 @@ impl ServerStateMachine {
                 }
                 InstructionFromTimingProgram::Advertisements => {
                     if self.state == ServerState::PassthroughClient {
-                        self.send_message_to_client(MessageFromServerToClient::Advertisements);
+                        self.send_message_to_client(MessageFromServerToClient::ButtonAction(
+                            ButtonAction::Advertisements,
+                        ));
                     }
                 }
                 InstructionFromTimingProgram::Timing => {
                     if self.state == ServerState::PassthroughClient {
-                        self.send_message_to_client(MessageFromServerToClient::Timing);
-                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                            TimingUpdate::Timing,
+                        self.send_message_to_client(MessageFromServerToClient::ButtonAction(
+                            ButtonAction::ToTiming,
                         ));
                     }
                 }
                 InstructionFromTimingProgram::Results
                 | InstructionFromTimingProgram::ResultsUpdate => {
                     if self.state == ServerState::PassthroughClient {
-                        self.send_message_to_client(MessageFromServerToClient::Timing);
-                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                            TimingUpdate::ResultList,
+                        self.send_message_to_client(MessageFromServerToClient::ButtonAction(
+                            ButtonAction::ToResultList,
                         ));
                     }
                 }
                 InstructionFromTimingProgram::StartList => {
                     if self.state == ServerState::PassthroughClient {
-                        self.send_message_to_client(MessageFromServerToClient::Timing);
-                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                            TimingUpdate::StartList,
+                        self.send_message_to_client(MessageFromServerToClient::ButtonAction(
+                            ButtonAction::ToStartList,
                         ));
                     }
                 }
@@ -612,7 +688,9 @@ impl ServerStateMachine {
             IncomingInstruction::FromWebControl(inst) => match inst {
                 MessageFromWebControl::Advertisements => {
                     if self.state == ServerState::PassthroughClient {
-                        self.send_message_to_client(MessageFromServerToClient::Advertisements);
+                        self.send_message_to_client(MessageFromServerToClient::ButtonAction(
+                            ButtonAction::Advertisements,
+                        ));
                     }
                 }
                 MessageFromWebControl::FreeText(text) => {
@@ -688,25 +766,22 @@ impl ServerStateMachine {
                 }
                 MessageFromWebControl::Timing => {
                     if self.state == ServerState::PassthroughClient {
-                        self.send_message_to_client(MessageFromServerToClient::Timing);
-                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                            TimingUpdate::Timing,
+                        self.send_message_to_client(MessageFromServerToClient::ButtonAction(
+                            ButtonAction::ToTiming,
                         ));
                     }
                 }
                 MessageFromWebControl::StartList => {
                     if self.state == ServerState::PassthroughClient {
-                        self.send_message_to_client(MessageFromServerToClient::Timing);
-                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                            TimingUpdate::StartList,
+                        self.send_message_to_client(MessageFromServerToClient::ButtonAction(
+                            ButtonAction::ToStartList,
                         ));
                     }
                 }
                 MessageFromWebControl::ResultList => {
                     if self.state == ServerState::PassthroughClient {
-                        self.send_message_to_client(MessageFromServerToClient::Timing);
-                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                            TimingUpdate::ResultList,
+                        self.send_message_to_client(MessageFromServerToClient::ButtonAction(
+                            ButtonAction::ToResultList,
                         ));
                     }
                 }
@@ -998,17 +1073,17 @@ impl ServerStateMachine {
                     self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                         TimingUpdate::Meta(data.start_list),
                     ));
-                    self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                        TimingUpdate::StartList,
-                    ));
+                    self.send_message_to_client(MessageFromServerToClient::ButtonAction(
+                        ButtonAction::ToStartList,
+                    )); // also switches to timing. But we are there anyway
 
                     if let Some(result) = data.result {
                         self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
                             TimingUpdate::ResultMeta(result),
                         ));
-                        self.send_message_to_client(MessageFromServerToClient::TimingStateUpdate(
-                            TimingUpdate::ResultList,
-                        ));
+                        self.send_message_to_client(MessageFromServerToClient::ButtonAction(
+                            ButtonAction::ToResultList,
+                        )); // also switches to timing. But we are there anyway
                     }
                 }
                 // Dev mode and debug signals
@@ -1697,11 +1772,24 @@ impl ClientStateMachine {
                     }
                 }
             }
-            MessageFromServerToClient::Advertisements => {
-                self.switch_mode_with_stashing_timing_state(ClientState::Advertisements);
-            }
-            MessageFromServerToClient::Timing => {
-                self.switch_mode_with_stashing_timing_state(ClientState::TimingEmptyInit);
+            MessageFromServerToClient::ButtonAction(button_action) => {
+                match button_action {
+                    ButtonAction::Advertisements => {
+                        self.switch_mode_with_stashing_timing_state(ClientState::Advertisements)
+                    }
+                    ButtonAction::ToTiming => {
+                        self.pass_mode_change_to_tsm_and_switch_to_timing(TimingModeSwitch::Timing)
+                    }
+                    ButtonAction::ToResultList => self
+                        .pass_mode_change_to_tsm_and_switch_to_timing(TimingModeSwitch::ResultList),
+                    ButtonAction::ToStartList => self
+                        .pass_mode_change_to_tsm_and_switch_to_timing(TimingModeSwitch::StartList),
+                    ButtonAction::AdvanceRun | ButtonAction::PreviousRun => {
+                        // TODO this should actually discriminate and only send to advertisements
+
+                        self.switch_mode_with_stashing_timing_state(ClientState::Advertisements)
+                    }
+                }
             }
             MessageFromServerToClient::TimingStateUpdate(update) => {
                 match &update {
@@ -1742,6 +1830,8 @@ impl ClientStateMachine {
                         }
                     }
                 }
+
+                self.send_client_view_state_update();
             }
             MessageFromServerToClient::TimingSettingsUpdate(set) => {
                 // force the new timing settings into possibly existing Timing state machines:
@@ -1787,6 +1877,34 @@ impl ClientStateMachine {
                     }
                 }
             }
+        }
+    }
+
+    fn pass_mode_change_to_tsm_and_switch_to_timing(&mut self, mode: TimingModeSwitch) {
+        self.switch_mode_with_stashing_timing_state(ClientState::TimingEmptyInit);
+
+        // now def in timing mode // TODO refactor timings state living in multiple places if it is a persistent thing...
+        match &mut self.state {
+            ClientState::Timing(tsm) => {
+                tsm.process_mode_switch(mode);
+            }
+            _ => {
+                error!("This should never be reached!!!")
+            }
+        }
+    }
+
+    fn send_client_view_state_update(&mut self) {
+        match &self.state {
+            ClientState::Advertisements => {
+                self.push_new_message(MessageFromClientToServer::ViewSwitched(
+                    ClientView::Advertisements,
+                ));
+            }
+            ClientState::Timing(tsm) => {
+                self.push_new_message(MessageFromClientToServer::ViewSwitched(tsm.get_view_mode()));
+            }
+            _ => self.push_new_message(MessageFromClientToServer::ViewSwitched(ClientView::Other)),
         }
     }
 
@@ -1844,6 +1962,8 @@ impl ClientStateMachine {
                 self.state = s;
             }
         }
+
+        self.send_client_view_state_update();
     }
 
     pub fn push_new_message(&mut self, msg: MessageFromClientToServer) {

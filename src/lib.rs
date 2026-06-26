@@ -3,6 +3,7 @@ extern crate log;
 
 mod args;
 mod client;
+mod comm_enums;
 mod database;
 mod file;
 mod hardware_button_exchange_format;
