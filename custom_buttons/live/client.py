@@ -3,15 +3,18 @@ import json
 import time
 
 from environment import getEnvValue
+from led import readButtonState, leds
 
 
 STOP_BYTE = b"\x1E"
 
 
 class TcpClient:
-    def __init__(self):
+    def __init__(self, receivedCallback):
         self.targetIp = getEnvValue("targetip")
         self.targetPort = int(getEnvValue("targetport"))
+
+        self.receivedCallback = receivedCallback
 
         self.sock = None
         self.buffer = b""
@@ -83,6 +86,7 @@ class TcpClient:
                 if packet:
                     try:
                         obj = json.loads(packet.decode("utf-8"))
+                        self.receivedCallback(obj)
                         print("Received:", obj)
                     except Exception as e:
                         print("Invalid JSON:", e)
@@ -99,12 +103,28 @@ class TcpClient:
 def startTcpClient(ip):
     print(f"Network IP: {ip}")
 
-    client = TcpClient()
+    def receivedCallback(message):
+        if "buttons_light_on" in message:
+            print("Updating LED state")
+            vals = message["buttons_light_on"]
+            for index, is_on in enumerate(vals):
+                if index < len(leds):
+                    if bool(is_on):
+                        leds[index].on()
+                    else:
+                        leds[index].off()
+
+    client = TcpClient(receivedCallback)
+    
+    buttonState = readButtonState()
 
     while True:
         client.poll()
 
-        # Example sending every iteration (remove later)
-        # client.send({"hello": "world"})
-
+        newButtonState = readButtonState()
+        if (buttonState != newButtonState):
+            buttonState = newButtonState
+            client.send({"buttons_pressed": newButtonState})
+            print(newButtonState)
+            
         time.sleep_ms(10)

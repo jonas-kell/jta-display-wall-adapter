@@ -482,6 +482,35 @@ impl InstructionCommunicationChannel {
         }
     }
 
+    pub fn send_out_command_to_hardware_button_listeners(
+        &self,
+        inst: HardwareButtonStateBroadcast,
+    ) -> Result<(), String> {
+        match self
+            .outbound_sender_hardware_button_client
+            .try_broadcast(inst)
+        {
+            Ok(Some(_)) => {
+                trace!("Thrown away old message in internal comm channel (to hardware buttons)");
+                Ok(())
+            }
+            Ok(None) => Ok(()),
+            Err(BroadcastTrySendError::Inactive(_)) => {
+                warn!(
+                    "Outbound internal channel not open, no active receivers (to hardware buttons)",
+                );
+                Ok(())
+            }
+            Err(BroadcastTrySendError::Full(_)) => {
+                error!("Hardware button receivers are there, but outbound internal channel full. This should not happen!");
+                Ok(())
+            }
+            Err(BroadcastTrySendError::Closed(_)) => Err(format!(
+                "Hardware button communication channel went away unexpectedly"
+            )),
+        }
+    }
+
     pub fn wind_server_receiver(&self) -> BroadcastReceiver<MessageToWindServer> {
         self.outbound_receiver_wind_server.get_active_receiver()
     }

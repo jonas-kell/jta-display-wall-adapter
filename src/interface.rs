@@ -5,6 +5,9 @@ use crate::database::{
     get_database_static_state, get_main_heat, init_database_static_state,
     populate_display_from_bib, ApplicationMode, DatabaseStaticState,
 };
+use crate::hardware_button_exchange_format::{
+    HardwareButtonStateBroadcast, MessageFromHardwareButton,
+};
 use crate::idcapture::format::IDCaptureMessage;
 use crate::instructions::InstructionFromExternalDisplayProgram::{Frame, ServerInfo};
 use crate::open_webcontrol;
@@ -349,8 +352,17 @@ impl ServerStateMachine {
         // handle all messages
         match msg {
             IncomingInstruction::FromHardwareButton(hbm) => {
-                debug!("Received a hardware button signal: {:?}", hbm)
-                // TODO
+                let wall_controller_state =
+                    MessageFromHardwareButton::parse_as_wall_controller(hbm);
+                debug!(
+                    "Received a hardware button signal: {:?}",
+                    wall_controller_state
+                );
+                self.send_message_to_hardware_button(HardwareButtonStateBroadcast::wall_control(
+                    false, true, false, true, false,
+                ));
+
+                // TODO real functionality
             }
             IncomingInstruction::FromBibServer(bm) => {
                 // TODO store to database and use automated results
@@ -1486,6 +1498,23 @@ impl ServerStateMachine {
             }
         } else {
             debug!("No web control connected. Skipping sending");
+        }
+    }
+
+    fn send_message_to_hardware_button(&mut self, inst: HardwareButtonStateBroadcast) {
+        if self.comm_channel.hardware_button_there_to_receive() {
+            match self
+                .comm_channel
+                .send_out_command_to_hardware_button_listeners(inst)
+            {
+                Ok(()) => (),
+                Err(e) => error!(
+                    "Failed to send out instruction to hardware buttons: {}",
+                    e.to_string()
+                ),
+            }
+        } else {
+            debug!("No hardware button connected. Skipping sending");
         }
     }
 
