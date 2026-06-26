@@ -9,5 +9,6 @@
     ],
     "rust-analyzer.cargo.extraEnv": {
         "OUT_DIR": "images_cache_builder"
-    }
+    },
+    "micropico.syncFolder": "custom_buttons/live"
 }
