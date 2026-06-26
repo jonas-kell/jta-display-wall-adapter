@@ -1702,7 +1702,7 @@ impl ClientStateMachine {
             }
             MessageFromServerToClient::DisplayText(text) => {
                 debug!("Server requested display mode to be switched to text");
-                self.switch_mode_with_stashing_timing_state(ClientState::DisplayText(text));
+                self.switch_mode_with_stashing_timing_state(ClientState::DisplayText(text), true);
             }
             MessageFromServerToClient::ServerImposedSettings(settings) => {
                 // size/position properties of the window are not reflected in internal state but by the real window -> needs instructions to change
@@ -1726,7 +1726,7 @@ impl ClientStateMachine {
                 debug!("DONE rescaling Animations");
             }
             MessageFromServerToClient::Clear => {
-                self.switch_mode_with_stashing_timing_state(ClientState::Idle);
+                self.switch_mode_with_stashing_timing_state(ClientState::Idle, true);
             }
             MessageFromServerToClient::DisplayExternalFrame(data) => {
                 // data is bmp file data
@@ -1740,13 +1740,15 @@ impl ClientStateMachine {
 
                 if let Some((w, h)) = self.current_frame_dimensions {
                     // store rescaled to dynamically cache
-                    self.switch_mode_with_stashing_timing_state(ClientState::DisplayExternalFrame(
-                        image.get_rescaled(w, h),
-                    ));
+                    self.switch_mode_with_stashing_timing_state(
+                        ClientState::DisplayExternalFrame(image.get_rescaled(w, h)),
+                        true,
+                    );
                 } else {
-                    self.switch_mode_with_stashing_timing_state(ClientState::DisplayExternalFrame(
-                        image,
-                    ));
+                    self.switch_mode_with_stashing_timing_state(
+                        ClientState::DisplayExternalFrame(image),
+                        true,
+                    );
                 }
             }
             MessageFromServerToClient::AdvertisementImages(new_images) => {
@@ -1774,9 +1776,8 @@ impl ClientStateMachine {
             }
             MessageFromServerToClient::ButtonAction(button_action) => {
                 match button_action {
-                    ButtonAction::Advertisements => {
-                        self.switch_mode_with_stashing_timing_state(ClientState::Advertisements)
-                    }
+                    ButtonAction::Advertisements => self
+                        .switch_mode_with_stashing_timing_state(ClientState::Advertisements, true),
                     ButtonAction::ToTiming => {
                         self.pass_mode_change_to_tsm_and_switch_to_timing(TimingModeSwitch::Timing)
                     }
@@ -1787,7 +1788,10 @@ impl ClientStateMachine {
                     ButtonAction::AdvanceRun | ButtonAction::PreviousRun => {
                         // TODO this should actually discriminate and only send to advertisements
 
-                        self.switch_mode_with_stashing_timing_state(ClientState::Advertisements)
+                        self.switch_mode_with_stashing_timing_state(
+                            ClientState::Advertisements,
+                            true,
+                        )
                     }
                 }
             }
@@ -1806,16 +1810,19 @@ impl ClientStateMachine {
                 {
                     if matches!(update, TimingUpdate::Meta(_)) {
                         // Meta == the real HeatStartList
-                        self.switch_mode_with_stashing_timing_state(ClientState::TimingEmptyInit);
+                        self.switch_mode_with_stashing_timing_state(
+                            ClientState::TimingEmptyInit,
+                            true,
+                        );
                     }
                 }
 
                 if let Some(tsm) = &mut self.timing_state_machine_storage {
-                    tsm.process_update(update);
+                    tsm.process_update(update.clone());
                 } else {
                     match &mut self.state {
                         ClientState::Timing(tsm) => {
-                            tsm.process_update(update);
+                            tsm.process_update(update.clone());
                         }
                         _ => {
                             let mut new_timing_state_machine = TimingStateMachine::new(
@@ -1823,7 +1830,7 @@ impl ClientStateMachine {
                                 &self.timing_settings_template,
                                 self.self_sender.clone(),
                             );
-                            new_timing_state_machine.process_update(update);
+                            new_timing_state_machine.process_update(update.clone());
 
                             // there was no timing state machine to update
                             self.timing_state_machine_storage = Some(new_timing_state_machine);
@@ -1831,7 +1838,12 @@ impl ClientStateMachine {
                     }
                 }
 
-                self.send_client_view_state_update();
+                match update {
+                    TimingUpdate::Running(_) => (), // too much spam to interface
+                    _ => {
+                        self.send_client_view_state_update();
+                    }
+                }
             }
             MessageFromServerToClient::TimingSettingsUpdate(set) => {
                 // force the new timing settings into possibly existing Timing state machines:
@@ -1854,9 +1866,10 @@ impl ClientStateMachine {
             }
             MessageFromServerToClient::Clock(dt) => {
                 trace!("Switch to clock mode"); // this is called often if the camera program is in clock mode, so only trace
-                self.switch_mode_with_stashing_timing_state(ClientState::Clock(ClockState::new(
-                    &dt,
-                )));
+                self.switch_mode_with_stashing_timing_state(
+                    ClientState::Clock(ClockState::new(&dt)),
+                    true,
+                );
             }
             MessageFromServerToClient::PushDisplayEntry(entry) => {
                 // force the new entry into possibly existing Timing state machines:
@@ -1881,7 +1894,8 @@ impl ClientStateMachine {
     }
 
     fn pass_mode_change_to_tsm_and_switch_to_timing(&mut self, mode: TimingModeSwitch) {
-        self.switch_mode_with_stashing_timing_state(ClientState::TimingEmptyInit);
+        // sending update (last param) needs to happen after mode switch
+        self.switch_mode_with_stashing_timing_state(ClientState::TimingEmptyInit, false);
 
         // now def in timing mode // TODO refactor timings state living in multiple places if it is a persistent thing...
         match &mut self.state {
@@ -1892,6 +1906,9 @@ impl ClientStateMachine {
                 error!("This should never be reached!!!")
             }
         }
+
+        // needs to happen after mode switch
+        self.send_client_view_state_update();
     }
 
     fn send_client_view_state_update(&mut self) {
@@ -1927,7 +1944,11 @@ impl ClientStateMachine {
         ));
     }
 
-    fn switch_mode_with_stashing_timing_state(&mut self, new_state: ClientState) {
+    fn switch_mode_with_stashing_timing_state(
+        &mut self,
+        new_state: ClientState,
+        send_out_button_state: bool,
+    ) {
         match std::mem::replace(&mut self.state, ClientState::TimingEmptyInit) {
             ClientState::Timing(timing_sm) => {
                 self.timing_state_machine_storage = Some(timing_sm);
@@ -1963,7 +1984,9 @@ impl ClientStateMachine {
             }
         }
 
-        self.send_client_view_state_update();
+        if send_out_button_state {
+            self.send_client_view_state_update();
+        }
     }
 
     pub fn push_new_message(&mut self, msg: MessageFromClientToServer) {
