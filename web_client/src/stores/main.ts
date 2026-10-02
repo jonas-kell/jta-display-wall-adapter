@@ -68,6 +68,7 @@ import {
 } from "../generated/interface";
 import { CircularBuffer } from "../functions/circularBuffer";
 import { dayTimeStringRepr, imageURLfromBMPBytes, imageURLfromBMPBytesArray, windStringRepr } from "../functions/representation";
+import { getNonLocalDomainOrIp } from "../functions/url";
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -259,24 +260,6 @@ export default defineStore("main", () => {
                 return _exhaustive;
         }
         console.error("Received unhandled message type:", msg);
-    }
-
-    function getNonLocalDomainOrIp(): string | null {
-        const name = window.location.hostname;
-
-        if (name == "localhost") {
-            return null;
-        }
-
-        if (name == "127.0.0.1") {
-            return null;
-        }
-
-        if (name == "0.0.0.0") {
-            return null;
-        }
-
-        return name;
     }
 
     async function initWS() {

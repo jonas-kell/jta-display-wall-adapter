@@ -251,25 +251,25 @@
         }
     });
 
-    function generateBib(download: boolean) {
-        const res = generatePDF(
+    async function generateBib(download: boolean) {
+        const res = await generatePDF(
             download,
             true,
             processedBackgroundImageBib.value,
             mainStore.pdfConfigurationSettings.filter((set) => set.setting_for == PDFSettingFor.Bib),
-            athleteDataSortedFiltered.value
+            athleteDataSortedFiltered.value,
         );
         if (res) {
             currentPDF.value = res;
         }
     }
-    function generateCertificate(download: boolean) {
-        const res = generatePDF(
+    async function generateCertificate(download: boolean) {
+        const res = await generatePDF(
             download,
             false,
             processedBackgroundImageCertificate.value,
             mainStore.pdfConfigurationSettings.filter((set) => set.setting_for == PDFSettingFor.Certificate),
-            athleteDataSortedFiltered.value
+            athleteDataSortedFiltered.value,
         );
         if (res) {
             currentPDF.value = res;
@@ -397,7 +397,7 @@
         return Math.max(
             ...athleteData.value.map((d) => {
                 return d.roundTimes.length;
-            })
+            }),
         );
     });
 

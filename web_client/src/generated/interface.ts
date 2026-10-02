@@ -376,7 +376,12 @@ export type NaiveDate = string;
 export type NaiveDateTime = string;
 export type PDFConfigurationContent =
     | PDFConfigurationContentPDFConfigurationContentText
-    | PDFConfigurationContentPDFConfigurationContentReference;
+    | PDFConfigurationContentPDFConfigurationContentReference
+    | PDFConfigurationContentPDFConfigurationContentImageReference;
+export type PDFConfigurationContentPDFConfigurationContentImageReference = { type: "PDFConfigurationContentImageReference"; data: {
+        reference: string;
+    }
+ };
 export type PDFConfigurationContentPDFConfigurationContentReference = { type: "PDFConfigurationContentReference"; data: {
         reference: string;
         reference_content: string | null;

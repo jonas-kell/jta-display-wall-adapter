@@ -100,6 +100,9 @@ pub enum PDFConfigurationContent {
         reference: String,
         reference_content: Option<String>,
     },
+    PDFConfigurationContentImageReference {
+        reference: String,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, TypescriptSerializable)]

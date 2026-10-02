@@ -162,18 +162,23 @@
         });
     });
 
-    function generatePDFcomponent() {
+    async function generatePDFcomponent() {
         if (generatingCurrently.value) {
             switch (generatingCurrently.value) {
                 case PDFSettingFor.Bib:
                     viewer.value?.setPDFtoRender(
-                        generatePDF(false, true, processedBackgroundImageBib.value, settingsBib.value, null) ?? ""
+                        (await generatePDF(false, true, processedBackgroundImageBib.value, settingsBib.value, null)) ?? "",
                     );
                     break;
                 case PDFSettingFor.Certificate:
                     viewer.value?.setPDFtoRender(
-                        generatePDF(false, false, processedBackgroundImageCertificate.value, settingsCertificate.value, null) ??
-                            ""
+                        (await generatePDF(
+                            false,
+                            false,
+                            processedBackgroundImageCertificate.value,
+                            settingsCertificate.value,
+                            null,
+                        )) ?? "",
                     );
                     break;
                 default:
@@ -191,7 +196,7 @@
         {
             deep: true,
             immediate: true,
-        }
+        },
     );
 </script>
 

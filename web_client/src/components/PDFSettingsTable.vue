@@ -18,16 +18,36 @@
                 <th scope="col"><input class="pl-2" type="number" v-model="xRef" style="width: 100%" /></th>
                 <th scope="col"><input class="pl-2" type="number" v-model="yRef" style="width: 100%" /></th>
                 <th scope="col"><input class="pl-2" type="number" v-model="sizeRef" style="width: 100%" /></th>
-                <th scope="col"><input class="pl-2" type="checkbox" v-model="boldRef" style="width: 100%" /></th>
-                <th scope="col"><input class="pl-2" type="checkbox" v-model="italicRef" style="width: 100%" /></th>
-                <th scope="col"><input class="pl-2" type="checkbox" v-model="centeredRef" style="width: 100%" /></th>
+                <th scope="col">
+                    <span v-if="typeRef != 'ImageReference'">
+                        <input class="pl-2" type="checkbox" v-model="boldRef" style="width: 100%" />
+                    </span>
+                </th>
+                <th scope="col">
+                    <span v-if="typeRef != 'ImageReference'">
+                        <input class="pl-2" type="checkbox" v-model="italicRef" style="width: 100%" />
+                    </span>
+                </th>
+                <th scope="col">
+                    <span v-if="typeRef != 'ImageReference'">
+                        <input class="pl-2" type="checkbox" v-model="centeredRef" style="width: 100%" />
+                    </span>
+                </th>
                 <th scope="col">
                     <v-select :items="types" v-model="typeRef" width="100%" density="compact" :hide-details="true"></v-select>
                 </th>
                 <th scope="col">
                     <input class="pl-2" type="text" v-model="contentRef" style="width: 100%" v-if="typeRef == 'Text'" />
                     <v-select
-                        :items="Object.values(PDFConfigurationContentReferenceReference) as string[] ?? []"
+                        :items="(Object.values(PDFConfigurationContentReferenceReference) as string[]) ?? []"
+                        v-model="contentRef"
+                        width="100%"
+                        density="compact"
+                        :hide-details="true"
+                        v-else-if="typeRef == 'Reference'"
+                    ></v-select>
+                    <v-select
+                        :items="(Object.values(PDFConfigurationContentImageReferenceReference) as string[]) ?? []"
                         v-model="contentRef"
                         width="100%"
                         density="compact"
@@ -54,14 +74,34 @@
                 <td class="pl-2">{{ setting.pos_x }}</td>
                 <td class="pl-2">{{ setting.pos_y }}</td>
                 <td class="pl-2">{{ setting.size }}</td>
-                <td class="pl-2">{{ setting.bold }}</td>
-                <td class="pl-2">{{ setting.italic }}</td>
-                <td class="pl-2">{{ setting.centered }}</td>
-                <td class="pl-2">{{ setting.content.type == "PDFConfigurationContentText" ? "Text" : "Reference" }}</td>
+                <td class="pl-2">
+                    <span v-if="setting.content.type != 'PDFConfigurationContentImageReference'">{{ setting.bold }}</span>
+                </td>
+                <td class="pl-2">
+                    <span v-if="setting.content.type != 'PDFConfigurationContentImageReference'">{{ setting.italic }}</span>
+                </td>
+                <td class="pl-2">
+                    <span v-if="setting.content.type != 'PDFConfigurationContentImageReference'">{{ setting.centered }}</span>
+                </td>
+                <td class="pl-2">
+                    {{
+                        setting.content.type == "PDFConfigurationContentText"
+                            ? "Text"
+                            : setting.content.type == "PDFConfigurationContentReference"
+                              ? "Reference"
+                              : "ImageRef."
+                    }}
+                </td>
                 <td class="pl-2" v-if="setting.content.type == 'PDFConfigurationContentText'">
                     {{ setting.content.data.text }}
                 </td>
-                <td class="pl-2" v-if="setting.content.type == 'PDFConfigurationContentReference'">
+                <td
+                    class="pl-2"
+                    v-if="
+                        setting.content.type == 'PDFConfigurationContentReference' ||
+                        setting.content.type == 'PDFConfigurationContentImageReference'
+                    "
+                >
                     {{ setting.content.data.reference }}
                 </td>
                 <td class="pl-2">
@@ -90,10 +130,10 @@
     import { uuid } from "../functions/uuid";
     import useMainStore from "../stores/main";
     import { computed, ref } from "vue";
-    import { PDFConfigurationContentReferenceReference } from "../functions/pdf";
+    import { PDFConfigurationContentImageReferenceReference, PDFConfigurationContentReferenceReference } from "../functions/pdf";
 
-    type FieldType = "Text" | "Reference";
-    const types = ["Text", "Reference"] as FieldType[];
+    type FieldType = "Text" | "Reference" | "ImageReference";
+    const types = ["Text", "Reference", "ImageReference"] as FieldType[];
 
     const props = defineProps<{ settings: PDFConfigurationSetting[]; setting_for: PDFSettingFor }>();
 
@@ -136,12 +176,19 @@
         italicRef.value = set.italic;
         centeredRef.value = set.centered;
         sizeRef.value = String(set.size);
-        typeRef.value = set.content.type == "PDFConfigurationContentText" ? "Text" : "Reference"; // TODO more dynamic
+        typeRef.value =
+            set.content.type == "PDFConfigurationContentText"
+                ? "Text"
+                : set.content.type == "PDFConfigurationContentReference"
+                  ? "Reference"
+                  : "ImageReference"; // TODO more dynamic
         contentRef.value = String(
-            set.content.type == "PDFConfigurationContentText" ? set.content.data.text : set.content.data.reference
+            set.content.type == "PDFConfigurationContentText"
+                ? set.content.data.text // only text
+                : set.content.data.reference, // for reference and image-reference
         );
         content2Ref.value = String(
-            (set.content.type == "PDFConfigurationContentText" ? null : set.content.data.reference_content) ?? ""
+            (set.content.type == "PDFConfigurationContentReference" ? set.content.data.reference_content : null) ?? "",
         );
     }
 
@@ -175,6 +222,14 @@
                 data: {
                     reference: updateContent,
                     reference_content: updateContent2 == null || updateContent2 == "" ? null : updateContent2,
+                },
+            };
+        }
+        if (typeRef.value == "ImageReference") {
+            content = {
+                type: "PDFConfigurationContentImageReference",
+                data: {
+                    reference: updateContent,
                 },
             };
         }

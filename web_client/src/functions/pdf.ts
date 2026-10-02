@@ -2,6 +2,8 @@ import { jsPDF } from "jspdf";
 import { PDFConfigurationSetting, RaceTime } from "./../generated/interface";
 import { AthletePrintData } from "./sharedAthleteTypes";
 import { raceTimeStringRepr, subtractRaceTimes } from "./representation";
+import { getNonLocalDomainOrIp } from "./url";
+import { restURL } from "./environment";
 
 export enum PDFConfigurationContentReferenceReference {
     Bib = "Bib",
@@ -31,13 +33,18 @@ export enum PDFConfigurationContentReferenceReference {
     SpkGuess = "SpkGuess",
 }
 
-export function generatePDF(
+export enum PDFConfigurationContentImageReferenceReference {
+    BibAruco1 = "BibAruco1",
+    BibAruco2 = "BibAruco2",
+}
+
+export async function generatePDF(
     download: boolean,
     landscape: boolean,
     bgImage: string | null,
     settings: PDFConfigurationSetting[],
-    data: AthletePrintData[] | null
-): string | null {
+    data: AthletePrintData[] | null,
+): Promise<string | null> {
     // A4 page portrait
     let PAGE_HEIGHT = 297;
     let PAGE_WIDTH = 210;
@@ -56,7 +63,7 @@ export function generatePDF(
     const BG_ALIAS = "background-image";
     let bgAdded = false;
 
-    function page(athlete: AthletePrintData | null) {
+    async function page(athlete: AthletePrintData | null) {
         if (bgImage) {
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
@@ -67,7 +74,7 @@ export function generatePDF(
             }
         }
 
-        settings.forEach((set) => {
+        for (const set of settings) {
             doc.setFont(TEXT_FONT, "normal"); // also bold or italic
             if (set.bold) {
                 doc.setFont(TEXT_FONT, "bold");
@@ -76,12 +83,15 @@ export function generatePDF(
                 doc.setFont(TEXT_FONT, "italic");
             }
             doc.setFontSize(set.size);
-            let text = "";
             switch (set.content.type) {
                 case "PDFConfigurationContentText":
-                    text = set.content.data.text;
+                    let textfix = set.content.data.text;
+                    doc.text(textfix, set.pos_x, set.pos_y, {
+                        align: set.centered ? "center" : "left",
+                    });
                     break;
                 case "PDFConfigurationContentReference":
+                    let textref = "";
                     if (athlete) {
                         const alt = set.content.data.reference_content ?? "";
                         const altTextIfRound = (i: number) => {
@@ -118,7 +128,7 @@ export function generatePDF(
                                     subtractRaceTimes(relevantRoundTime, previousRoundTime),
                                     false,
                                     true,
-                                    2
+                                    2,
                                 );
                             } else {
                                 return "";
@@ -126,107 +136,154 @@ export function generatePDF(
                         };
                         switch (set.content.data.reference) {
                             case PDFConfigurationContentReferenceReference.Bib:
-                                text = String(athlete.bib);
+                                textref = String(athlete.bib);
                                 break;
                             case PDFConfigurationContentReferenceReference.Name:
-                                text = String(athlete.firstName + " " + athlete.lastName);
+                                textref = String(athlete.firstName + " " + athlete.lastName);
                                 break;
                             case PDFConfigurationContentReferenceReference.FirstName:
-                                text = String(athlete.firstName);
+                                textref = String(athlete.firstName);
                                 break;
                             case PDFConfigurationContentReferenceReference.LastName:
-                                text = String(athlete.lastName);
+                                textref = String(athlete.lastName);
                                 break;
                             case PDFConfigurationContentReferenceReference.HasRound1:
-                                text = altTextIfRound(1);
+                                textref = altTextIfRound(1);
                                 break;
                             case PDFConfigurationContentReferenceReference.HasRound2:
-                                text = altTextIfRound(2);
+                                textref = altTextIfRound(2);
                                 break;
                             case PDFConfigurationContentReferenceReference.HasRound3:
-                                text = altTextIfRound(3);
+                                textref = altTextIfRound(3);
                                 break;
                             case PDFConfigurationContentReferenceReference.HasRound4:
-                                text = altTextIfRound(4);
+                                textref = altTextIfRound(4);
                                 break;
                             case PDFConfigurationContentReferenceReference.HasRound5:
-                                text = altTextIfRound(5);
+                                textref = altTextIfRound(5);
                                 break;
                             case PDFConfigurationContentReferenceReference.HasRound6:
-                                text = altTextIfRound(6);
+                                textref = altTextIfRound(6);
                                 break;
                             case PDFConfigurationContentReferenceReference.TotalTimeRound1:
-                                text = timeTextOfRoundIfRound(1);
+                                textref = timeTextOfRoundIfRound(1);
                                 break;
                             case PDFConfigurationContentReferenceReference.TotalTimeRound2:
-                                text = timeTextOfRoundIfRound(2);
+                                textref = timeTextOfRoundIfRound(2);
                                 break;
                             case PDFConfigurationContentReferenceReference.TotalTimeRound3:
-                                text = timeTextOfRoundIfRound(3);
+                                textref = timeTextOfRoundIfRound(3);
                                 break;
                             case PDFConfigurationContentReferenceReference.TotalTimeRound4:
-                                text = timeTextOfRoundIfRound(4);
+                                textref = timeTextOfRoundIfRound(4);
                                 break;
                             case PDFConfigurationContentReferenceReference.TotalTimeRound5:
-                                text = timeTextOfRoundIfRound(5);
+                                textref = timeTextOfRoundIfRound(5);
                                 break;
                             case PDFConfigurationContentReferenceReference.TotalTimeRound6:
-                                text = timeTextOfRoundIfRound(6);
+                                textref = timeTextOfRoundIfRound(6);
                                 break;
                             case PDFConfigurationContentReferenceReference.TimeRound1:
-                                text = timeTextOfOnlyRoundIfRound(1);
+                                textref = timeTextOfOnlyRoundIfRound(1);
                                 break;
                             case PDFConfigurationContentReferenceReference.TimeRound2:
-                                text = timeTextOfOnlyRoundIfRound(2);
+                                textref = timeTextOfOnlyRoundIfRound(2);
                                 break;
                             case PDFConfigurationContentReferenceReference.TimeRound3:
-                                text = timeTextOfOnlyRoundIfRound(3);
+                                textref = timeTextOfOnlyRoundIfRound(3);
                                 break;
                             case PDFConfigurationContentReferenceReference.TimeRound4:
-                                text = timeTextOfOnlyRoundIfRound(4);
+                                textref = timeTextOfOnlyRoundIfRound(4);
                                 break;
                             case PDFConfigurationContentReferenceReference.TimeRound5:
-                                text = timeTextOfOnlyRoundIfRound(5);
+                                textref = timeTextOfOnlyRoundIfRound(5);
                                 break;
                             case PDFConfigurationContentReferenceReference.TimeRound6:
-                                text = timeTextOfOnlyRoundIfRound(6);
+                                textref = timeTextOfOnlyRoundIfRound(6);
                                 break;
                             case PDFConfigurationContentReferenceReference.FinalTime:
                                 if (athlete.roundTimes.length > 0) {
-                                    text = timeTextOfRoundIfRound(athlete.roundTimes.length);
+                                    textref = timeTextOfRoundIfRound(athlete.roundTimes.length);
                                 }
                                 break;
                             case PDFConfigurationContentReferenceReference.SpkGuess:
                             case PDFConfigurationContentReferenceReference.SpkTime:
-                                // TODO addthese cases
-                                text = "";
+                                // TODO add these cases
+                                textref = "";
                                 break;
                             default:
                                 break;
                         }
                     } else {
-                        text = "ref";
+                        textref = "ref";
+                    }
+                    doc.text(textref, set.pos_x, set.pos_y, {
+                        align: set.centered ? "center" : "left",
+                    });
+                    break;
+                case "PDFConfigurationContentImageReference":
+                    const ARUCO_RESOLUTION = 200;
+                    let width = 0.0;
+                    let height = 0.0;
+                    let url = "";
+                    const BASE_REST_URL = restURL(getNonLocalDomainOrIp());
+
+                    function calculateArucoIndex(athlete: AthletePrintData | null, first: boolean) {
+                        if (athlete) {
+                            return parseInt(String(athlete.bib)) + (first ? 0 : 500);
+                        } else {
+                            return 10000;
+                        }
+                    }
+
+                    switch (set.content.data.reference) {
+                        case PDFConfigurationContentImageReferenceReference.BibAruco1:
+                            width = set.size;
+                            height = set.size;
+                            url =
+                                BASE_REST_URL +
+                                "aruco/" +
+                                calculateArucoIndex(athlete, true) +
+                                "/" +
+                                ARUCO_RESOLUTION +
+                                "/mrk.png";
+                            break;
+                        case PDFConfigurationContentImageReferenceReference.BibAruco2:
+                            width = set.size;
+                            height = set.size;
+                            url =
+                                BASE_REST_URL +
+                                "aruco/" +
+                                calculateArucoIndex(athlete, false) +
+                                "/" +
+                                ARUCO_RESOLUTION +
+                                "/mrk.png";
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if (url != "") {
+                        let uri = await fetchAsDataUri(url);
+                        doc.addImage(uri, set.pos_x, set.pos_y, width, height);
                     }
                     break;
                 default:
                     break;
             }
-            doc.text(text, set.pos_x, set.pos_y, {
-                align: set.centered ? "center" : "left",
-            });
-        });
+        }
     }
 
     if (data && data.length > 0) {
         for (let index = 0; index < data.length; index++) {
             const athlete = data[index];
-            page(athlete);
+            await page(athlete);
             if (index + 1 < data.length) {
                 doc.addPage();
             }
         }
     } else {
-        page(null);
+        await page(null);
     }
 
     if (download) {
@@ -236,4 +293,23 @@ export function generatePDF(
     }
 
     return null;
+}
+
+async function fetchAsDataUri(url: string): Promise<string> {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+    }
+
+    const contentType = response.headers.get("content-type") ?? "application/octet-stream";
+
+    const bytes = new Uint8Array(await response.arrayBuffer());
+
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    }
+
+    return `data:${contentType};base64,${btoa(binary)}`;
 }
