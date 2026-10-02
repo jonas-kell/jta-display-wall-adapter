@@ -1,5 +1,5 @@
 use crate::server::comm_channel::InstructionCommunicationChannel;
-use crate::webserver::routes::ws_route;
+use crate::webserver::routes::{aruco_image_route, aruco_route, ws_route};
 use crate::webserver::static_files;
 use actix_cors::Cors;
 pub use actix_web::dev::Server;
@@ -38,6 +38,14 @@ pub fn webserver(
                     .route("/{path:.*}", web::get().to(static_files::static_handler)),
             )
             .service(web::scope("/ws").route("/{path:.*}", web::get().to(ws_route)))
+            .service(
+                web::scope("/rest")
+                    .route("/aruco_bits/{id}", web::get().to(aruco_route))
+                    .route(
+                        "/aruco/{id}/{width}/mrk.png",
+                        web::get().to(aruco_image_route),
+                    ),
+            )
             .service(web::redirect("/", format!("/{}/", STATIC_PATH_SEGMENT)))
     })
     .bind(addr)

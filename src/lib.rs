@@ -2,6 +2,7 @@
 extern crate log;
 
 mod args;
+mod aruco;
 mod client;
 mod comm_enums;
 mod database;

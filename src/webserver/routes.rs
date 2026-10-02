@@ -1,6 +1,7 @@
-use crate::server::comm_channel::InstructionCommunicationChannel;
+use crate::aruco::aruco_image;
 use crate::webserver::interface::MessageFromWebControl;
-use actix_web::{web, HttpRequest, Responder};
+use crate::{aruco::aruco_bits, server::comm_channel::InstructionCommunicationChannel};
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use actix_ws::Message;
 use futures::StreamExt;
 use std::{sync::Arc, time::Duration};
@@ -129,4 +130,31 @@ pub async fn ws_route(
     });
 
     Ok(response)
+}
+
+pub async fn aruco_route(id: web::Path<u16>) -> actix_web::Result<impl Responder> {
+    let id = id.into_inner();
+
+    match serde_json::to_string(&aruco_bits(id.into())) {
+        Ok(content) => Ok(HttpResponse::Ok()
+            .content_type("application/json")
+            .body(content)),
+        Err(err) => Ok(HttpResponse::InternalServerError()
+            .content_type("application/text")
+            .body(err.to_string())),
+    }
+}
+
+pub async fn aruco_image_route(path: web::Path<(u16, u16)>) -> actix_web::Result<impl Responder> {
+    let (id, width) = path.into_inner();
+
+    match aruco_image(id.into(), width.into()) {
+        Ok(content) => Ok(HttpResponse::Ok()
+            .insert_header(("Content-Disposition", "inline"))
+            .content_type("image/png")
+            .body(content)),
+        Err(err) => Ok(HttpResponse::InternalServerError()
+            .content_type("application/text")
+            .body(err.to_string())),
+    }
 }
