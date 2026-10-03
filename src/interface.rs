@@ -565,11 +565,16 @@ impl ServerStateMachine {
                                 );
                             }
                             WallControllerButtonEvent::WhitePressed => {
-                                self.send_message_to_client(
-                                    MessageFromServerToClient::ButtonAction(
-                                        ButtonAction::PreviousRun,
-                                    ),
-                                );
+                                self.handle_rest_status();
+
+                                // TODO reactivate / fully implement previous runs.
+                                // For now the usage of that button was repurposed
+
+                                // self.send_message_to_client(
+                                //     MessageFromServerToClient::ButtonAction(
+                                //         ButtonAction::PreviousRun,
+                                //     ),
+                                // );
                             }
                             WallControllerButtonEvent::RedPressed => {
                                 self.send_message_to_client(
@@ -1140,6 +1145,9 @@ impl ServerStateMachine {
                 MessageFromWebControl::DevSendWind(wind) => {
                     self.handle_heat_wind(wind);
                 }
+                MessageFromWebControl::DevRestButton => {
+                    self.handle_rest_status();
+                }
             },
             IncomingInstruction::FromWindServer(inst) => match inst {
                 Measured(wind_measurement) => {
@@ -1616,6 +1624,13 @@ impl ServerStateMachine {
 
     pub fn allows_external_connections(&self) -> bool {
         return self.static_state.is_some();
+    }
+
+    pub fn handle_rest_status(&mut self) {
+        match self.comm_channel.notify_rest_status_endpoint() {
+            Ok(_) => debug!("Forwarded rest status info"),
+            Err(e) => debug!("Could not forward rest status info: {}", e),
+        };
     }
 }
 

@@ -140,7 +140,7 @@ pub async fn aruco_route(id: web::Path<u16>) -> actix_web::Result<impl Responder
             .content_type("application/json")
             .body(content)),
         Err(err) => Ok(HttpResponse::InternalServerError()
-            .content_type("application/text")
+            .content_type("text/plain")
             .body(err.to_string())),
     }
 }
@@ -154,7 +154,30 @@ pub async fn aruco_image_route(path: web::Path<(u16, u16)>) -> actix_web::Result
             .content_type("image/png")
             .body(content)),
         Err(err) => Ok(HttpResponse::InternalServerError()
-            .content_type("application/text")
+            .content_type("text/plain")
             .body(err.to_string())),
+    }
+}
+
+pub async fn query_status(
+    comm_channel_data: web::Data<Arc<InstructionCommunicationChannel>>,
+) -> impl Responder {
+    match comm_channel_data.query_rest_status_endpoint() {
+        Ok(Ok(dat)) => HttpResponse::Ok()
+            .insert_header(("Content-Disposition", "inline"))
+            .content_type("text/plain")
+            .body(dat.to_string()),
+        Ok(Err(_)) => {
+            HttpResponse::BadRequest() // technically "NoContent" or smth, but the poller accepts all 200 status codes, so this is a kind of matching non-200 code
+                .content_type("text/plain")
+                .body("Nothing there")
+        }
+        Err(e) => {
+            error!("{}", e);
+
+            HttpResponse::InternalServerError()
+                .content_type("text/plain")
+                .body("Channel closed")
+        }
     }
 }

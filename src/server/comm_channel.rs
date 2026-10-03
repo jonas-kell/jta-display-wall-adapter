@@ -15,7 +15,7 @@ use async_broadcast::{
     InactiveReceiver, Receiver as BroadcastReceiverLibrary, RecvError as BroadcastRecvError,
     Sender as BroadcastSender, TrySendError as BroadcastTrySendError,
 };
-use async_channel::{Receiver, RecvError, Sender, TrySendError};
+use async_channel::{Receiver, RecvError, Sender, TryRecvError, TrySendError};
 use std::time::Duration;
 use tokio::time::{self, error::Elapsed};
 
@@ -46,6 +46,8 @@ pub struct InstructionCommunicationChannel {
     outbound_sender_hardware_button_client: BroadcastSender<HardwareButtonStateBroadcast>,
     outbound_receiver_hardware_button_client:
         BroadcastReceiverStorage<HardwareButtonStateBroadcast>,
+    outbound_sender_rest_status: Sender<bool>,
+    outbound_receiver_rest_status: Receiver<bool>,
     connection_check_sender_camera_program_timing_port: BroadcastSender<bool>,
     connection_check_receiver_camera_program_timing_port: BroadcastReceiverStorage<bool>,
     connection_check_sender_camera_program_data_port: BroadcastSender<bool>,
@@ -60,6 +62,7 @@ impl InstructionCommunicationChannel {
         let (is, ir) = async_channel::bounded::<IncomingInstruction>(
             MAX_NUMBER_OF_MESSAGES_IN_INTERNAL_BUFFERS,
         );
+        let (osrest, orrest) = async_channel::bounded::<bool>(1);
 
         // outbound channels could have multiple targets (broadcast), but in any case must support, that they can discard messages if there is no active receiver available
         let (mut os, or) = async_broadcast::broadcast::<InstructionToTimingProgram>(
@@ -122,6 +125,8 @@ impl InstructionCommunicationChannel {
             outbound_receiver_idcapture_server: BroadcastReceiverStorage::new(rid, args),
             outbound_sender_hardware_button_client: shb,
             outbound_receiver_hardware_button_client: BroadcastReceiverStorage::new(rhb, args),
+            outbound_sender_rest_status: osrest,
+            outbound_receiver_rest_status: orrest,
             connection_check_sender_camera_program_timing_port: scptp,
             connection_check_receiver_camera_program_timing_port: BroadcastReceiverStorage::new(
                 rcptp, args,
@@ -584,6 +589,32 @@ impl InstructionCommunicationChannel {
             ConnectionCheck::ExternalDisplayProgramPassthrough => self
                 .connection_check_receiver_external_display_passthrough
                 .get_active_receiver(),
+        }
+    }
+
+    pub fn notify_rest_status_endpoint(&self) -> Result<(), String> {
+        match self.outbound_sender_rest_status.try_send(true) {
+            Ok(_) => Ok(()),
+            Err(TrySendError::Closed(_)) => {
+                Err(format!("Outbount rest status comm channel closed..."))
+            }
+            Err(TrySendError::Full(_)) => {
+                // fine, because only one signal can be set at a time
+                Ok(())
+            }
+        }
+    }
+
+    pub fn query_rest_status_endpoint(&self) -> Result<Result<bool, ()>, String> {
+        match self.outbound_receiver_rest_status.try_recv() {
+            Ok(dat) => Ok(Ok(dat)),
+            Err(TryRecvError::Closed) => {
+                Err(format!("Outbount rest status comm channel closed..."))
+            }
+            Err(TryRecvError::Empty) => {
+                // fine, because only one signal can be set at a time
+                Ok(Err(()))
+            }
         }
     }
 }

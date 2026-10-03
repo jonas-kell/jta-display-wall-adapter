@@ -27,6 +27,7 @@
             Evaluate one Athlete
         </v-btn>
         <v-btn @click="debugDisplay" class="mt-2" max-width="40em"> Send Bib Test </v-btn>
+        <v-btn @click="restTest" class="mt-2" max-width="40em"> Test Rest State </v-btn>
     </div>
 </template>
 
@@ -40,6 +41,7 @@
         HeatCompetitorResult,
         MessageFromWebControlDevRequestMainHeatStartList,
         MessageFromWebControlDevReset,
+        MessageFromWebControlDevRestButton,
         MessageFromWebControlDevSendEvaluated,
         MessageFromWebControlDevSendFinishSignal,
         MessageFromWebControlDevSendIntermediateSignal,
@@ -103,6 +105,12 @@
         } else {
             console.error("No startlist... Sad");
         }
+    }
+
+    function restTest() {
+        mainStore.sendGenericWSCommand({
+            type: "DevRestButton",
+        } as MessageFromWebControlDevRestButton);
     }
 
     function sendWind() {

@@ -1,5 +1,5 @@
 use crate::server::comm_channel::InstructionCommunicationChannel;
-use crate::webserver::routes::{aruco_image_route, aruco_route, ws_route};
+use crate::webserver::routes::{aruco_image_route, aruco_route, query_status, ws_route};
 use crate::webserver::static_files;
 use actix_cors::Cors;
 pub use actix_web::dev::Server;
@@ -44,7 +44,8 @@ pub fn webserver(
                     .route(
                         "/aruco/{id}/{width}/mrk.png",
                         web::get().to(aruco_image_route),
-                    ),
+                    )
+                    .route("/query_status", web::get().to(query_status)),
             )
             .service(web::redirect("/", format!("/{}/", STATIC_PATH_SEGMENT)))
     })

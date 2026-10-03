@@ -69,6 +69,7 @@ pub enum MessageFromWebControl {
     DevSendResultList(HeatResult),
     DevSendWind(HeatWind),
     DevRequestMainHeatStartList,
+    DevRestButton,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, TypescriptSerializable)]

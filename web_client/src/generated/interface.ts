@@ -278,7 +278,8 @@ export type MessageFromWebControl =
     | MessageFromWebControlDevSendEvaluated
     | MessageFromWebControlDevSendResultList
     | MessageFromWebControlDevSendWind
-    | MessageFromWebControlDevRequestMainHeatStartList;
+    | MessageFromWebControlDevRequestMainHeatStartList
+    | MessageFromWebControlDevRestButton;
 export type MessageFromWebControlAddBibEquivalence = { type: "AddBibEquivalence"; data: BibEquivalence };
 export type MessageFromWebControlAdvertisements = { type: "Advertisements" };
 export type MessageFromWebControlClock = { type: "Clock"; data: DayTime };
@@ -291,6 +292,7 @@ export type MessageFromWebControlDeleteHeatAssignment = { type: "DeleteHeatAssig
 export type MessageFromWebControlDeletePDFConfigurationSetting = { type: "DeletePDFConfigurationSetting"; data: Uuid };
 export type MessageFromWebControlDevRequestMainHeatStartList = { type: "DevRequestMainHeatStartList" };
 export type MessageFromWebControlDevReset = { type: "DevReset" };
+export type MessageFromWebControlDevRestButton = { type: "DevRestButton" };
 export type MessageFromWebControlDevSendEvaluated = { type: "DevSendEvaluated"; data: CompetitorEvaluated };
 export type MessageFromWebControlDevSendFinishSignal = { type: "DevSendFinishSignal"; data: HeatFinish };
 export type MessageFromWebControlDevSendIntermediateSignal = { type: "DevSendIntermediateSignal"; data: HeatIntermediate };
