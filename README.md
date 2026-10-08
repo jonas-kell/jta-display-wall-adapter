@@ -26,12 +26,6 @@ echo -e "UID=$UID\nHOME=$HOME" > .env
 docker compose up
 ```
 
-## Build and run
-
-```cmd
-docker compose -f docker-compose.buildrun.yml up
-```
-
 ## Build for Linux
 
 ```cmd
