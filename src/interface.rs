@@ -1656,7 +1656,8 @@ pub struct ClientStateMachine {
     pub window_state_needs_update: Option<(u32, u32, u32, u32)>,
     pub permanent_images_storage: ImagesStorage,
     pub permanent_icons_storage: IconsStorage,
-    pub current_frame_dimensions: Option<(u32, u32)>,
+    pub current_pixel_buffer_dimensions: Option<(u32, u32)>,
+    pub desired_frame_dimensions: Option<(u32, u32)>,
     pub server_imposed_settings: ServerImposedSettings,
     timing_state_machine_storage: Option<TimingStateMachine>,
     timing_settings_template: TimingSettings,
@@ -1680,7 +1681,8 @@ impl ClientStateMachine {
             window_state_needs_update: None,
             permanent_images_storage: images_storage,
             permanent_icons_storage: icons_storage,
-            current_frame_dimensions: None,
+            current_pixel_buffer_dimensions: None,
+            desired_frame_dimensions: None,
             server_imposed_settings: ServerImposedSettings::new(args),
             timing_state_machine_storage: None,
             timing_settings_template: TimingSettings::new(args),
@@ -1753,7 +1755,7 @@ impl ClientStateMachine {
                     Ok(image) => image,
                 };
 
-                if let Some((w, h)) = self.current_frame_dimensions {
+                if let Some((w, h)) = self.current_pixel_buffer_dimensions {
                     // store rescaled to dynamically cache
                     self.switch_mode_with_stashing_timing_state(
                         ClientState::DisplayExternalFrame(image.get_rescaled(w, h)),

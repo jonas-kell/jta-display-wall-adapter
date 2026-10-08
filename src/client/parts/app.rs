@@ -156,20 +156,29 @@ impl ApplicationHandler for App {
                     new_size.width, new_size.height
                 );
 
-                if let Some((width, height)) = self.state_machine.current_frame_dimensions {
-                    if width != new_size.width || height != new_size.height {
-                        error!(
-                            "The window tells it was resized to {}x{}, but we expected {}x{}",
-                            new_size.width, new_size.height, width, height
-                        );
-                    } else {
-                        warn!("The resize dimensions from manager match what was expected");
+                if let Some((known_width, known_height)) =
+                    self.state_machine.current_pixel_buffer_dimensions
+                {
+                    if let Some((desired_width, desired_height)) =
+                        self.state_machine.desired_frame_dimensions
+                    {
+                        if known_width != new_size.width
+                            || known_height != new_size.height
+                            || known_width != desired_width
+                            || known_height != desired_height
+                        {
+                            error!(
+                                "The window tells it was resized to physical {}x{}. We currently think the pixel buffer is {}x{}. And we wanted {}x{}",
+                                new_size.width, new_size.height, known_width, known_height, desired_width, desired_height
+                            );
+                        } else {
+                            info!("The resize dimensions from manager match what was expected");
+                        }
                     }
                 }
 
-                // force the values to what we know internally (as in our application there will never be an external resize (e.g. by mouse) anyway)
-                // user the values from state_machine, not from the resize event
-                self.re_initialize_pixels(new_size.width, new_size.height);
+                // adapt the pixel buffer to the physical window, to avoid problems there
+                self.resize_pixels(new_size.width, new_size.height);
             }
             WindowEvent::Moved(p) => {
                 debug!("The window was moved: {:?}", p);
@@ -249,7 +258,7 @@ impl ApplicationHandler for App {
                                     REPORT_FRAME_LOGS_EVERY_SECONDS
                                 );
                                 if let Some((sm_x, sm_y)) =
-                                    self.state_machine.current_frame_dimensions
+                                    self.state_machine.current_pixel_buffer_dimensions
                                 {
                                     trace!(
                                         "Rendered a size of {}x{} - texture: {}x{}",
@@ -292,6 +301,8 @@ impl App {
 
         // write out file to reposition window externally on wayland
         if let Some((x, y, w, h)) = self.state_machine.window_state_needs_update {
+            self.state_machine.desired_frame_dimensions = Some((w, h));
+
             if let Some(window) = &self.window {
                 info!("Repositioning window: {} {}", x, y);
                 window.set_outer_position(PhysicalPosition::new(x, y));
@@ -315,6 +326,7 @@ impl App {
                         }
                     }
                 }
+
                 info!("Setting window size: {} {}", w, h);
                 window.set_max_inner_size(Some(PhysicalSize::new(w, h)));
                 window.set_min_inner_size(Some(PhysicalSize::new(w, h)));
@@ -322,15 +334,31 @@ impl App {
                     None => debug!("Window resizing request went to the display system"), // this triggers the WindowEvent::Resized above
                     Some(size) => {
                         // if this is the same as before, it failed, if it is a different one, we were successful
+                        // the documentation says, this is the case where resizing is disallowed... We'll see about that
                         info!(
                             "Window resizing request was answered with size: {}x{}",
                             size.width, size.height
                         );
-                        self.re_initialize_pixels(size.width, size.height);
+
+                        if let Some((desired_width, desired_height)) =
+                            self.state_machine.desired_frame_dimensions
+                        {
+                            if size.width != desired_width || size.height != desired_height {
+                                warn!("Request did not go out to the display system just now, our resize got ignored");
+                                warn!(
+                                    "Desired: {}x{}, Physical:{}x{}",
+                                    desired_width, desired_height, size.width, size.height
+                                );
+                            }
+                        }
                     }
                 }
+
+                debug!("Processed a window state change request -> clear the request");
                 // update the state we think we have in the state machine
                 self.state_machine.window_state_needs_update = None;
+            } else {
+                warn!("Received a window state update request, but window not set");
             }
         }
 
@@ -386,16 +414,29 @@ impl App {
         }
     }
 
-    fn re_initialize_pixels(&mut self, width_to_use: u32, height_to_use: u32) {
-        // Create every time (defer until window mapped) - resizing was not deemed successfull
-        if let Some(window) = &self.window {
+    fn resize_pixels(&mut self, width_to_use: u32, height_to_use: u32) {
+        debug!(
+            "Pixel resize request triggered with {}x{}",
+            width_to_use, height_to_use
+        );
+
+        if let Some(pixels) = &mut self.pixels {
+            if let Err(e) = pixels.resize_surface(width_to_use, height_to_use) {
+                error!("Failed to resize pixels surface: {}", e);
+            }
+            if let Err(e) = pixels.resize_buffer(width_to_use, height_to_use) {
+                error!("Failed to resize pixels buffer: {}", e);
+            }
+        } else if let Some(window) = &self.window {
+            // Create every time (defer until window mapped) - resizing was not deemed successfull
             let surface_texture = SurfaceTexture::new(width_to_use, height_to_use, window.clone());
             self.pixels = Some(Pixels::new(width_to_use, height_to_use, surface_texture).unwrap());
-            debug!("Pixels were (re)-initialized");
+            debug!("Pixels were initialized");
         } else {
             error!("Window should be mapped by now. This is not possible...");
         }
-        debug!("Setting state machine's knowledge about the window size");
-        self.state_machine.current_frame_dimensions = Some((width_to_use, height_to_use));
+
+        debug!("Setting state machine's knowledge about the pixel-buffer size");
+        self.state_machine.current_pixel_buffer_dimensions = Some((width_to_use, height_to_use));
     }
 }
