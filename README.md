@@ -38,12 +38,6 @@ docker compose -f docker-compose.buildrun.yml up
 docker compose -f docker-compose.build.yml up --abort-on-container-exit && docker compose -f docker-compose.build.yml down --remove-orphans
 ```
 
-Or legacy linux versions (older glibc).
-
-```cmd
-docker compose -f docker-compose.buildlegacy.yml up --abort-on-container-exit && docker compose -f docker-compose.buildlegacy.yml down --remove-orphans
-```
-
 ## Cross compile Windows executable on Linux
 
 You need to do [these steps](./PrepareForWindowsCompilation.md) once per machine.
@@ -64,7 +58,7 @@ you need [npcap](https://npcap.com/).
 
 ## Build and push to docker hub
 
-CAUTION: js must have been compiled beforehand -> run Build for linux, legacy or windows first!!!!
+CAUTION: js must have been compiled beforehand -> run Build for linux or windows first!!!!
 
 ```cmd
 docker buildx create --use
