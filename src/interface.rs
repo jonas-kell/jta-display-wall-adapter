@@ -62,7 +62,7 @@ use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ServerImposedSettings {
-    pub position: (u32, u32, u32, u32),
+    pub window_state: (u32, u32, u32, u32, u32, u32),
     pub table_duration_nr_ms: u32,
     pub slideshow_duration_nr_ms: u32,
     pub slideshow_transition_duration_nr_ms: u32,
@@ -72,7 +72,14 @@ pub struct ServerImposedSettings {
 impl ServerImposedSettings {
     fn new(args: &Args) -> Self {
         Self {
-            position: (args.dp_pos_x, args.dp_pos_y, args.dp_width, args.dp_height),
+            window_state: (
+                args.dp_pos_x,
+                args.dp_pos_y,
+                args.dp_width,
+                args.dp_height,
+                args.dp_width_pixel,
+                args.dp_height_pixel,
+            ),
             table_duration_nr_ms: args.table_duration_nr_ms,
             slideshow_duration_nr_ms: args.slideshow_duration_nr_ms,
             slideshow_transition_duration_nr_ms: args.slideshow_transition_duration_nr_ms,
@@ -415,11 +422,13 @@ impl ServerStateMachine {
                     // init-impose the server settings from the server
                     let server_imposed_settings = ServerImposedSettings::new(&self.args);
                     debug!(
-                        "Requesting window change on client: {} {} {} {}",
-                        server_imposed_settings.position.0,
-                        server_imposed_settings.position.1,
-                        server_imposed_settings.position.2,
-                        server_imposed_settings.position.3,
+                        "Requesting window change on client: x{} y{} w{} h{} pw{} ph{}",
+                        server_imposed_settings.window_state.0,
+                        server_imposed_settings.window_state.1,
+                        server_imposed_settings.window_state.2,
+                        server_imposed_settings.window_state.3,
+                        server_imposed_settings.window_state.4,
+                        server_imposed_settings.window_state.5,
                     );
                     self.send_message_to_client(MessageFromServerToClient::ServerImposedSettings(
                         server_imposed_settings,
@@ -1656,8 +1665,9 @@ pub struct ClientStateMachine {
     pub window_state_needs_update: Option<(u32, u32, u32, u32)>,
     pub permanent_images_storage: ImagesStorage,
     pub permanent_icons_storage: IconsStorage,
+    pub desired_window_dimensions: (u32, u32),
+    pub desired_pixel_buffer_dimensions: (u32, u32),
     pub current_pixel_buffer_dimensions: Option<(u32, u32)>,
-    pub desired_frame_dimensions: Option<(u32, u32)>,
     pub server_imposed_settings: ServerImposedSettings,
     timing_state_machine_storage: Option<TimingStateMachine>,
     timing_settings_template: TimingSettings,
@@ -1681,8 +1691,9 @@ impl ClientStateMachine {
             window_state_needs_update: None,
             permanent_images_storage: images_storage,
             permanent_icons_storage: icons_storage,
+            desired_window_dimensions: (args.dp_width, args.dp_height),
+            desired_pixel_buffer_dimensions: (args.dp_width_pixel, args.dp_height_pixel),
             current_pixel_buffer_dimensions: None,
-            desired_frame_dimensions: None,
             server_imposed_settings: ServerImposedSettings::new(args),
             timing_state_machine_storage: None,
             timing_settings_template: TimingSettings::new(args),
@@ -1723,9 +1734,11 @@ impl ClientStateMachine {
             }
             MessageFromServerToClient::ServerImposedSettings(settings) => {
                 // size/position properties of the window are not reflected in internal state but by the real window -> needs instructions to change
-                let (x, y, w, h) = settings.position;
+                let (x, y, w, h, pw, ph) = settings.window_state;
                 debug!("Server requested an update of the window position/size");
                 self.window_state_needs_update = Some((x, y, w, h));
+                self.desired_window_dimensions = (w, h);
+                self.desired_pixel_buffer_dimensions = (pw, ph);
 
                 // store other (mainly rendering) settings
                 self.server_imposed_settings = settings;
