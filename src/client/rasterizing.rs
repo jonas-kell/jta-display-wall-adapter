@@ -1,5 +1,4 @@
 use crate::{client::FRAME_TIME_NS, interface::ServerImposedSettings};
-use core::f32;
 use fontdue::{
     layout::{GlyphPosition, Layout, LayoutSettings, TextStyle},
     Font,
